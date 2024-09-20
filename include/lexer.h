@@ -2,7 +2,9 @@
 #define LEXER_H
 #include "token.h"
 #include "multi_line_comment_fsm.h"
+#include "error.h"
 #include <string>
+#include <vector>
 #include <unordered_map>
 
 class Lexer {
@@ -14,6 +16,7 @@ class Lexer {
         int line_number;
         int token_number;
         std::unordered_map <std::string, Token::TokenType> reserve_words;
+        std::vector <Error> errors;  // 保存a类错误
 
     public:
         Lexer(std::string source);

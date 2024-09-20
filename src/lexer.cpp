@@ -4,6 +4,7 @@ Lexer::Lexer(std::string source) {
     this->source = source;
     this->line_number = 0;
     this->pos = 0;
+    this->errors = std::vector<Error>();
     for(int i = 0; i < static_cast<int>(Token::Token::ReserveWord::COUNT); i++) {
         Token::ReserveWord type = static_cast<Token::Token::ReserveWord>(i);
         std::string type_string = type_to_string(type);
@@ -67,11 +68,14 @@ Token Lexer::next() {
         return idenfr();     
     else if (ch == '/') {
         pos++;
-        if (source[pos] == '/') // single-line comment 
+        if (source[pos] == '/') {// single-line comment 
             skip_single_line_comment();
+            return next();
+        }
         else if (source[pos] == '*') {// multi-line comment
             pos++;
             skip_multi_line_comment();
+            return next();
         } else // DIV
             return Token{"/", Token::TokenType::DIV, line_number};    
     }
@@ -79,6 +83,33 @@ Token Lexer::next() {
         return strcon();
     else if (ch == '\'') // chrcon
         return chrcon();   
+    else if (ch == '!') { // ! or !=
+        if (source[pos + 1] == '=') {
+            pos += 2;
+            return Token{"!=",Token::TokenType::NEQ, line_number};
+        } else {
+            pos++;
+            return Token{"!", Token::TokenType::NOT, line_number};
+        }
+    } else if (ch == '&') {
+        if (source[pos + 1] == '&') {
+            pos += 2;
+            return Token{"&&", Token::AND, line_number};
+        } else { // Error! type: a
+            pos++;
+            errors.push_back(Error(line_number, 'a'));
+            return next();
+        }
+    } else if (ch == '|') {
+        if (source[pos + 1] == '|') {
+            pos += 2;
+            return Token{"||", Token::OR, line_number};
+        } else { // Error! type: a
+            pos++;
+            errors.push_back(Error(line_number, 'a'));
+            return next();
+        }
+    }
 }
 
 Token Lexer::intcon() {
