@@ -56,12 +56,25 @@ Lexer::~Lexer() {
 
 }
 
+// jump over the comment
+// windows: \r\n linux: \n
+
 Token Lexer::next() {
     char ch = source[pos];
     if (isdigit(ch)) // number
         return intcon();
     else if (isalpha(ch) || ch == '_') // identifier start with alpha or _
         return idenfr();     
+    else if (ch == '/') {
+        pos++;
+        if (source[pos] == '/') // single-line comment 
+            skip_single_line_comment();
+        else if (source[pos] == '*') {// multi-line comment
+            pos++;
+            skip_multi_line_comment();
+        } else
+            return Token{"/", Token::TokenType::DIV, line_number};    
+    }    
 }
 
 Token Lexer::intcon() {
@@ -83,5 +96,44 @@ Token Lexer::idenfr() {
         return Token{identifier, type, line_number};
     } else {
         return Token{identifier, Token::TokenType::IDENFR, line_number};
+    }
+}
+
+void Lexer::skip_single_line_comment() {
+    while (pos < source.length() && source[pos] != '\n') {
+        pos++;
+    }
+    if (source[pos] == '\n') {
+        line_number++;
+        pos++;
+    }
+}
+
+void Lexer::skip_multi_line_comment() {
+    State state = State::S1; // start state
+    while (pos < source.length()) {
+        switch (state) {
+            case State::S1:
+                if (source[pos] == '*')
+                    state = State::S2;
+                break;
+            case State::S2:
+                if (source[pos] == '/')
+                    state = State::S3;
+                else if (source[pos] == '*')
+                    state = State::S2;
+                else
+                    state = State::S1;
+                break;    
+            case State::S3:
+                break;
+            default:
+                break;
+        }
+        pos++;
+        if (state == State::S3) {
+            pos++;
+            break;
+        }
     }
 }
