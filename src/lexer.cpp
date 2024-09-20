@@ -109,6 +109,69 @@ Token Lexer::next() {
             errors.push_back(Error(line_number, 'a'));
             return next();
         }
+    } else if (ch == '+') {
+        pos++;
+        return Token{"+", Token::TokenType::PLUS, line_number};
+    } else if (ch == '-') {
+        pos++;
+        return Token{"-", Token::TokenType::MINU, line_number};
+    } else if (ch == '*') {
+        pos++;
+        return Token{"*", Token::TokenType::MULT, line_number};
+    } else if (ch == '%') {
+        pos++;
+        return Token{"%", Token::TokenType::MOD, line_number};
+    } else if (ch == '<') {
+        if (source[pos + 1] == '=') {
+            pos += 2;
+            return Token{"<=", Token::LEQ, line_number};
+        } else {
+            pos++;
+            return Token{"<", Token::LSS, line_number};
+        }
+    } else if (ch == '>') {
+        if (source[pos + 1] == '=') {
+            pos += 2;
+            return Token{">=", Token::GEQ, line_number};
+        } else {
+            pos++;
+            return Token{">", Token::GRE, line_number};
+        }
+    } else if (ch == '=') {
+        if (source[pos + 1] == '=') {
+            pos += 2;
+            return Token{"==", Token::EQL, line_number};
+        } else {
+            pos++;
+            return Token{"=", Token::ASSIGN, line_number};
+        }
+    } else if (ch == ';') {
+        pos++;
+        return Token{";", Token::SEMICN, line_number};
+    } else if (ch == ',') {
+        pos++;
+        return Token{",", Token::COMMA, line_number};
+    } else if (ch == '(') {
+        pos++;
+        return Token{"(", Token::LPARENT, line_number};
+    } else if (ch == ')') {
+        pos++;
+        return Token{")", Token::RPARENT, line_number};
+    } else if (ch == '[') {
+        pos++;
+        return Token{"[", Token::LBRACK, line_number};
+    } else if (ch == ']') {
+        pos++;
+        return Token{"]", Token::RBRACK, line_number};
+    } else if (ch == '{') {
+        pos++;
+        return Token{"{", Token::LBRACE, line_number};
+    } else if (ch == '}') {
+        pos++;
+        return Token{"}", Token::RBRACE, line_number};
+    } else {
+        pos++;
+        return Token{"", Token::TokenType::COUNT, line_number};
     }
 }
 
