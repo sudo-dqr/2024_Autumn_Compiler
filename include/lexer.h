@@ -5,6 +5,8 @@
 #include "error.h"
 #include <string>
 #include <vector>
+#include <fstream>
+#include <iostream>
 #include <unordered_map>
 
 class Lexer {
@@ -22,18 +24,16 @@ class Lexer {
         Lexer(std::string source);
         ~Lexer();
         Token next();
+        void run();
 
     private:
-        Token::TokenType transfer_type(Token::ReserveWord type);
         Token intcon();
         Token idenfr();
         Token strcon();
         Token chrcon();
         void skip_single_line_comment();
         void skip_multi_line_comment();
-
-    private:
-        std::string type_to_string(Token::ReserveWord type);     
+        void initialize_reverse_word_map();    
 };
 
 

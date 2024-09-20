@@ -15,5 +15,6 @@ int main() {
     buffer << file.rdbuf();
     string text = buffer.str();
     Lexer lexer = Lexer(text);
+    lexer.run();
 }
 

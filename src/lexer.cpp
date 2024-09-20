@@ -2,55 +2,27 @@
 
 Lexer::Lexer(std::string source) {
     this->source = source;
-    this->line_number = 0;
+    this->line_number = 1;
     this->pos = 0;
     this->errors = std::vector<Error>();
-    for(int i = 0; i < static_cast<int>(Token::Token::ReserveWord::COUNT); i++) {
-        Token::ReserveWord type = static_cast<Token::Token::ReserveWord>(i);
-        std::string type_string = type_to_string(type);
-        Token::TokenType token_type = transfer_type(type);
-        this->reserve_words.insert({type_string, token_type});
-    }
+    initialize_reverse_word_map();
 }
 
-std::string Lexer::type_to_string(Token::ReserveWord type) {
-    switch (type) {
-        case Token::ReserveWord::MAINTK: return "main"; break;
-        case Token::ReserveWord::CONSTTK: return "const"; break;
-        case Token::ReserveWord::INTTK: return "int"; break;
-        case Token::ReserveWord::CHARTK: return "char"; break;
-        case Token::ReserveWord::BREAKTK: return "break"; break;
-        case Token::ReserveWord::CONTINUETK: return "continue"; break;
-        case Token::ReserveWord::IFTK: return "if"; break;
-        case Token::ReserveWord::ELSETK: return "else"; break;
-        case Token::ReserveWord::FORTK: return "for"; break;
-        case Token::ReserveWord::GETINTTK: return "getint"; break;
-        case Token::ReserveWord::GETCHARTK: return "getchar"; break;
-        case Token::ReserveWord::PRINTFTK: return "printf"; break;
-        case Token::ReserveWord::RETURNTK: return "return"; break;
-        case Token::ReserveWord::VOIDTK: return "void"; break;                                       
-        default: return ""; break;
-    }
-}
-
-Token::TokenType Lexer::transfer_type(Token::ReserveWord type) {
-    switch (type) {
-        case Token::ReserveWord::MAINTK: return Token::TokenType::MAINTK; break;
-        case Token::ReserveWord::CONSTTK: return Token::TokenType::CONSTTK; break;
-        case Token::ReserveWord::INTTK: return Token::TokenType::INTTK; break;
-        case Token::ReserveWord::CHARTK: return Token::TokenType::CHARTK; break;
-        case Token::ReserveWord::BREAKTK: return Token::TokenType::BREAKTK; break;
-        case Token::ReserveWord::CONTINUETK: return Token::TokenType::CONTINUETK; break;
-        case Token::ReserveWord::IFTK: return Token::TokenType::IFTK; break;
-        case Token::ReserveWord::ELSETK: return Token::TokenType::ELSETK; break;
-        case Token::ReserveWord::FORTK: return Token::TokenType::FORTK; break;
-        case Token::ReserveWord::GETINTTK: return Token::TokenType::GETINTTK; break;
-        case Token::ReserveWord::GETCHARTK: return Token::TokenType::GETCHARTK; break;
-        case Token::ReserveWord::PRINTFTK: return Token::TokenType::PRINTFTK; break;
-        case Token::ReserveWord::RETURNTK: return Token::TokenType::RETURNTK; break;
-        case Token::ReserveWord::VOIDTK: return Token::TokenType::VOIDTK; break;                                       
-        default: return Token::TokenType::COUNT; break;
-    }
+void Lexer::initialize_reverse_word_map() {
+    reserve_words["if"] = Token::TokenType::IFTK;
+    reserve_words["else"] = Token::TokenType::ELSETK;
+    reserve_words["while"] = Token::TokenType::FORTK;
+    reserve_words["return"] = Token::TokenType::RETURNTK;
+    reserve_words["int"] = Token::TokenType::INTTK;
+    reserve_words["char"] = Token::TokenType::CHARTK;
+    reserve_words["void"] = Token::TokenType::VOIDTK;
+    reserve_words["const"] = Token::TokenType::CONSTTK;
+    reserve_words["main"] = Token::TokenType::MAINTK;
+    reserve_words["break"] = Token::TokenType::BREAKTK;
+    reserve_words["continue"] = Token::TokenType::CONTINUETK;
+    reserve_words["getint"] = Token::TokenType::GETINTTK;
+    reserve_words["getchar"] = Token::TokenType::GETCHARTK;
+    reserve_words["printf"] = Token::TokenType::PRINTFTK;
 }
 
 Lexer::~Lexer() {
@@ -169,9 +141,13 @@ Token Lexer::next() {
     } else if (ch == '}') {
         pos++;
         return Token{"}", Token::RBRACE, line_number};
+    } else if (ch == '\n') {
+        line_number++;
+        pos++;
+        return next();
     } else {
         pos++;
-        return Token{"", Token::TokenType::COUNT, line_number};
+        return next();
     }
 }
 
@@ -242,6 +218,7 @@ Token Lexer::strcon() {
     if (source[pos] == '\"') {
         pos++;
     } // else: error
+    str = "\"" + str + "\"";
     return Token{str, Token::TokenType::STRCON, line_number};
 }
 
@@ -250,5 +227,21 @@ Token Lexer::chrcon() {
     pos++;
     chr.push_back(source[pos++]);
     pos++;
+    chr = "\'" + chr + "\'";
     return Token{chr, Token::TokenType::CHRCON, line_number};
+}
+
+void Lexer::run() {
+    std::ofstream out("lexer.txt", std::ofstream::out);
+    while (pos < source.length()) {
+        Token token = next();
+        out << token.to_string() << std::endl;
+    }
+    out.close();
+
+    if (!errors.empty()) {
+        std::ofstream error_out("error.txt", std::ofstream::out);
+        error_out << errors[0].to_string() << std::endl;
+        error_out.close();
+    }
 }
