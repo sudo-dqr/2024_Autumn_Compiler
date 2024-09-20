@@ -25,6 +25,7 @@ class Lexer {
         Token intcon();
         Token idenfr();
         Token strcon();
+        Token chrcon();
         void skip_single_line_comment();
         void skip_multi_line_comment();
 

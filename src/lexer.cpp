@@ -72,10 +72,13 @@ Token Lexer::next() {
         else if (source[pos] == '*') {// multi-line comment
             pos++;
             skip_multi_line_comment();
-        } else
+        } else // DIV
             return Token{"/", Token::TokenType::DIV, line_number};    
-    } else if (ch == '\"') // strcon
+    }
+    else if (ch == '\"') // strcon
         return strcon();
+    else if (ch == '\'') // chrcon
+        return chrcon();   
 }
 
 Token Lexer::intcon() {
@@ -146,4 +149,12 @@ Token Lexer::strcon() {
         pos++;
     } // else: error
     return Token{str, Token::TokenType::STRCON, line_number};
+}
+
+Token Lexer::chrcon() {
+    std::string chr = "";
+    pos++;
+    chr.push_back(source[pos++]);
+    pos++;
+    return Token{chr, Token::TokenType::CHRCON, line_number};
 }
