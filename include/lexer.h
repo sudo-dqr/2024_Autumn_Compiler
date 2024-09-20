@@ -18,13 +18,13 @@ class Lexer {
     public:
         Lexer(std::string source);
         ~Lexer();
-        bool has_next();
         Token next();
 
     private:
         Token::TokenType transfer_type(Token::ReserveWord type);
         Token intcon();
         Token idenfr();
+        Token strcon();
         void skip_single_line_comment();
         void skip_multi_line_comment();
 

@@ -74,7 +74,8 @@ Token Lexer::next() {
             skip_multi_line_comment();
         } else
             return Token{"/", Token::TokenType::DIV, line_number};    
-    }    
+    } else if (ch == '\"') // strcon
+        return strcon();
 }
 
 Token Lexer::intcon() {
@@ -131,9 +132,18 @@ void Lexer::skip_multi_line_comment() {
                 break;
         }
         pos++;
-        if (state == State::S3) {
-            pos++;
-            break;
-        }
+        if (state == State::S3) break;
     }
+}
+
+Token Lexer::strcon() {
+    std::string str = "";
+    pos++;
+    while (pos < source.length() && source[pos] != '\"') {
+        str.push_back(source[pos++]);
+    }
+    if (source[pos] == '\"') {
+        pos++;
+    } // else: error
+    return Token{str, Token::TokenType::STRCON, line_number};
 }
