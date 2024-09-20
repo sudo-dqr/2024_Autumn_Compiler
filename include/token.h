@@ -15,7 +15,7 @@ class Token {
         enum ReserveWord {
             MAINTK, CONSTTK, INTTK, CHARTK, BREAKTK, CONTINUETK,IFTK, 
             ELSETK, FORTK, GETINTTK, GETCHARTK, PRINTFTK, RETURNTK, VOIDTK,
-            COUNT // 变体数量
+            COUNT
         };
 
     private:
