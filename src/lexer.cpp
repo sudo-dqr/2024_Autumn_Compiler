@@ -69,7 +69,6 @@ void Lexer::next() {
         } else { // Error! type: a
             pos++;
             errors.push_back(Error(line_number, 'a'));
-            tokens.push_back(Token{"HELL", Token::TokenType::Null, line_number});
         }
     } else if (ch == '|') {
         if (source[pos + 1] == '|') {
@@ -78,7 +77,6 @@ void Lexer::next() {
         } else { // Error! type: a
             pos++;
             errors.push_back(Error(line_number, 'a'));
-            tokens.push_back(Token{"HELL", Token::TokenType::Null, line_number});
         }
     } else if (ch == '+') {
         pos++;
@@ -143,10 +141,8 @@ void Lexer::next() {
     } else if (ch == '\n') {
         line_number++;
         pos++;
-        tokens.push_back({"HELL", Token::TokenType::Null, line_number});
     } else {
         pos++;
-        tokens.push_back({"HELL", Token::TokenType::Null, line_number});
     }
 }
 
@@ -240,7 +236,6 @@ void Lexer::run() {
         next();
     }
     for (int i = 0; i < tokens.size(); i++) {
-        if (tokens[i].get_type() == Token::TokenType::Null) continue;
         out << tokens[i].to_string() << std::endl;
     }
     out.close();

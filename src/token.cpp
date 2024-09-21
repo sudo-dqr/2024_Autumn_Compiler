@@ -149,8 +149,6 @@ std::string Token::to_string() {
         case RBRACE:
             type_str = "RBRACE";
             break;
-        case Null:
-            break;
     }
     return type_str + " " + this->token;    
 }
