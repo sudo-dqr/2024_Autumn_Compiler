@@ -5,13 +5,14 @@ Lexer::Lexer(std::string source) {
     this->line_number = 1;
     this->pos = 0;
     this->errors = std::vector<Error>();
+    this->tokens = std::vector<Token>();
     initialize_reverse_word_map();
 }
 
 void Lexer::initialize_reverse_word_map() {
     reserve_words["if"] = Token::TokenType::IFTK;
     reserve_words["else"] = Token::TokenType::ELSETK;
-    reserve_words["while"] = Token::TokenType::FORTK;
+    reserve_words["for"] = Token::TokenType::FORTK;
     reserve_words["return"] = Token::TokenType::RETURNTK;
     reserve_words["int"] = Token::TokenType::INTTK;
     reserve_words["char"] = Token::TokenType::CHARTK;
@@ -32,134 +33,132 @@ Lexer::~Lexer() {
 // jump over the comment
 // windows: \r\n linux: \n
 
-Token Lexer::next() {
+void Lexer::next() {
     char ch = source[pos];
     if (isdigit(ch)) // number
-        return intcon();
+        intcon();
     else if (isalpha(ch) || ch == '_') // identifier start with alpha or _
-        return idenfr();     
+        idenfr();
     else if (ch == '/') {
         pos++;
         if (source[pos] == '/') {// single-line comment 
             skip_single_line_comment();
-            return next();
         }
         else if (source[pos] == '*') {// multi-line comment
             pos++;
             skip_multi_line_comment();
-            return next();
         } else // DIV
-            return Token{"/", Token::TokenType::DIV, line_number};    
+            tokens.push_back(Token{"/", Token::TokenType::DIV, line_number});    
     }
     else if (ch == '\"') // strcon
-        return strcon();
+        strcon();
     else if (ch == '\'') // chrcon
-        return chrcon();   
+        chrcon();   
     else if (ch == '!') { // ! or !=
         if (source[pos + 1] == '=') {
             pos += 2;
-            return Token{"!=",Token::TokenType::NEQ, line_number};
+            tokens.push_back(Token{"!=",Token::TokenType::NEQ, line_number});
         } else {
             pos++;
-            return Token{"!", Token::TokenType::NOT, line_number};
+            tokens.push_back(Token{"!", Token::TokenType::NOT, line_number});
         }
     } else if (ch == '&') {
         if (source[pos + 1] == '&') {
             pos += 2;
-            return Token{"&&", Token::AND, line_number};
+            tokens.push_back(Token{"&&", Token::AND, line_number});
         } else { // Error! type: a
             pos++;
             errors.push_back(Error(line_number, 'a'));
-            return next();
+            tokens.push_back(Token{"HELL", Token::TokenType::Null, line_number});
         }
     } else if (ch == '|') {
         if (source[pos + 1] == '|') {
             pos += 2;
-            return Token{"||", Token::OR, line_number};
+            tokens.push_back(Token{"||", Token::OR, line_number});
         } else { // Error! type: a
             pos++;
             errors.push_back(Error(line_number, 'a'));
-            return next();
+            tokens.push_back(Token{"HELL", Token::TokenType::Null, line_number});
         }
     } else if (ch == '+') {
         pos++;
-        return Token{"+", Token::TokenType::PLUS, line_number};
+        tokens.push_back(Token{"+", Token::TokenType::PLUS, line_number});
     } else if (ch == '-') {
         pos++;
-        return Token{"-", Token::TokenType::MINU, line_number};
+        tokens.push_back(Token{"-", Token::TokenType::MINU, line_number});
     } else if (ch == '*') {
         pos++;
-        return Token{"*", Token::TokenType::MULT, line_number};
+        tokens.push_back(Token{"*", Token::TokenType::MULT, line_number});
     } else if (ch == '%') {
         pos++;
-        return Token{"%", Token::TokenType::MOD, line_number};
+        tokens.push_back(Token{"%", Token::TokenType::MOD, line_number});
     } else if (ch == '<') {
         if (source[pos + 1] == '=') {
             pos += 2;
-            return Token{"<=", Token::LEQ, line_number};
+            tokens.push_back(Token{"<=", Token::LEQ, line_number});
         } else {
             pos++;
-            return Token{"<", Token::LSS, line_number};
+            tokens.push_back(Token{"<", Token::LSS, line_number});
         }
     } else if (ch == '>') {
         if (source[pos + 1] == '=') {
             pos += 2;
-            return Token{">=", Token::GEQ, line_number};
+            tokens.push_back(Token{">=", Token::GEQ, line_number});
         } else {
             pos++;
-            return Token{">", Token::GRE, line_number};
+            tokens.push_back(Token{">", Token::GRE, line_number});
         }
     } else if (ch == '=') {
         if (source[pos + 1] == '=') {
             pos += 2;
-            return Token{"==", Token::EQL, line_number};
+            tokens.push_back(Token{"==", Token::EQL, line_number});
         } else {
             pos++;
-            return Token{"=", Token::ASSIGN, line_number};
+            tokens.push_back(Token{"=", Token::ASSIGN, line_number});
         }
     } else if (ch == ';') {
         pos++;
-        return Token{";", Token::SEMICN, line_number};
+        tokens.push_back(Token{";", Token::SEMICN, line_number});
     } else if (ch == ',') {
         pos++;
-        return Token{",", Token::COMMA, line_number};
+        tokens.push_back(Token{",", Token::COMMA, line_number});
     } else if (ch == '(') {
         pos++;
-        return Token{"(", Token::LPARENT, line_number};
+        tokens.push_back(Token{"(", Token::LPARENT, line_number});
     } else if (ch == ')') {
         pos++;
-        return Token{")", Token::RPARENT, line_number};
+        tokens.push_back(Token{")", Token::RPARENT, line_number});
     } else if (ch == '[') {
         pos++;
-        return Token{"[", Token::LBRACK, line_number};
+        tokens.push_back(Token{"[", Token::LBRACK, line_number});
     } else if (ch == ']') {
         pos++;
-        return Token{"]", Token::RBRACK, line_number};
+        tokens.push_back(Token{"]", Token::RBRACK, line_number});
     } else if (ch == '{') {
         pos++;
-        return Token{"{", Token::LBRACE, line_number};
+        tokens.push_back(Token{"{", Token::LBRACE, line_number});
     } else if (ch == '}') {
         pos++;
-        return Token{"}", Token::RBRACE, line_number};
+        tokens.push_back(Token{"}", Token::RBRACE, line_number});
     } else if (ch == '\n') {
         line_number++;
         pos++;
-        return next();
+        tokens.push_back({"HELL", Token::TokenType::Null, line_number});
     } else {
         pos++;
-        return next();
+        tokens.push_back({"HELL", Token::TokenType::Null, line_number});
     }
 }
 
-Token Lexer::intcon() {
+void Lexer::intcon() {
     std::string number = "";
     while (pos < source.length() && isdigit(source[pos])) {
         number.push_back(source[pos++]);
     }
-    return Token{number, Token::TokenType::INTCON, line_number};
+    tokens.push_back(Token{number, Token::TokenType::INTCON, line_number});
 }
 
-Token Lexer::idenfr() {
+void Lexer::idenfr() {
     std::string identifier = "";
     while (pos < source.length() && (isalnum(source[pos]) || source[pos] == '_')) { // in the middle of identifier can be digit/alpha/_
         identifier.push_back(source[pos++]);
@@ -167,9 +166,9 @@ Token Lexer::idenfr() {
     auto it = reserve_words.find(identifier); //  iterator; end?
     if(it != reserve_words.end()) { // find!
         Token::TokenType type = it->second;
-        return Token{identifier, type, line_number};
-    } else {
-        return Token{identifier, Token::TokenType::IDENFR, line_number};
+        tokens.push_back(Token{identifier, type, line_number});
+    } else { // not find!s
+        tokens.push_back(Token{identifier, Token::TokenType::IDENFR, line_number});
     }
 }
 
@@ -209,7 +208,7 @@ void Lexer::skip_multi_line_comment() {
     }
 }
 
-Token Lexer::strcon() {
+void Lexer::strcon() {
     std::string str = "";
     pos++;
     while (pos < source.length() && source[pos] != '\"') {
@@ -219,23 +218,30 @@ Token Lexer::strcon() {
         pos++;
     } // else: error
     str = "\"" + str + "\"";
-    return Token{str, Token::TokenType::STRCON, line_number};
+    tokens.push_back(Token{str, Token::TokenType::STRCON, line_number});
 }
 
-Token Lexer::chrcon() {
+void Lexer::chrcon() {
     std::string chr = "";
     pos++;
-    chr.push_back(source[pos++]);
-    pos++;
+    // 需要考虑转义字符
+    if (source[pos] == '\\') {
+        chr.push_back(source[pos++]);
+    } 
+    chr.push_back(source[pos]);
+    pos +=2;
     chr = "\'" + chr + "\'";
-    return Token{chr, Token::TokenType::CHRCON, line_number};
+    tokens.push_back(Token{chr, Token::TokenType::CHRCON, line_number});
 }
 
 void Lexer::run() {
     std::ofstream out("lexer.txt", std::ofstream::out);
     while (pos < source.length()) {
-        Token token = next();
-        out << token.to_string() << std::endl;
+        next();
+    }
+    for (int i = 0; i < tokens.size(); i++) {
+        if (tokens[i].get_type() == Token::TokenType::Null) continue;
+        out << tokens[i].to_string() << std::endl;
     }
     out.close();
 

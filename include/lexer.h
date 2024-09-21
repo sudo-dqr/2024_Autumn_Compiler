@@ -19,18 +19,19 @@ class Lexer {
         int token_number;
         std::unordered_map <std::string, Token::TokenType> reserve_words;
         std::vector <Error> errors;  // 保存a类错误
+        std::vector <Token> tokens;
 
     public:
         Lexer(std::string source);
         ~Lexer();
-        Token next();
+        void next();
         void run();
 
     private:
-        Token intcon();
-        Token idenfr();
-        Token strcon();
-        Token chrcon();
+        void intcon();
+        void idenfr();
+        void strcon();
+        void chrcon();
         void skip_single_line_comment();
         void skip_multi_line_comment();
         void initialize_reverse_word_map();    
