@@ -1,4 +1,4 @@
-cd submit
+cd ../submit
 rm submit.zip
 rm CMakeLists.txt
 rm *.cpp
