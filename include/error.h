@@ -1,21 +1,8 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-#include <string>
-#include <iostream>
+#include <fstream>
 
-class Error {
-    private:
-        int line_number;
-        char error_type;
-
-    public:
-        Error(int line_number, char error_type);
-        ~Error();
-
-        int get_line_number();
-        char get_error_type();
-        std::string to_string();
-};
+void report_error(int line_number, char type);
 
 #endif // ERROR_H
