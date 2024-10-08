@@ -401,27 +401,80 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                 report_error(get_curtoken().get_line_number(), 'i');
                 next_token();
             }
-        } else { // 1,2,8,9
-            // 2余下的情况中一定以LVal开头, 1,8,9一定以LVal开头
+            return std::make_unique<Stmt>(res);
+        } else { // 1,2,9,10
+            // 2余下的情况中一定以LVal开头, 1,9,10一定以LVal开头
+            start_recovery(); // 将LVal读到recoverybuf中
             auto lval = parse_lval();
-            if (get_curtoken().get_type() == Token::ASSIGN) { // rule 1,8,9
-
+            if (get_curtoken().get_type() == Token::ASSIGN) { // rule 1,9,10
+                abort_recovery(); // 不再恢复
+                next_token(); // 跳过=
+                if (get_curtoken().get_type() == Token::GETINTTK ||
+                    get_curtoken().get_type() == Token::GETCHARTK ) { // rule 9,10
+                    next_token(); // 跳过getint/getchar
+                    next_token(); // 跳过(
+                    if (get_curtoken().get_type() == Token::RPARENT) {
+                        next_token();
+                    } else { // j error
+                        unget_token();
+                        report_error(get_curtoken().get_line_number(), 'j');
+                        next_token();
+                    }
+                    if (get_curtoken().get_type() == Token::SEMICN) {
+                        next_token();
+                    } else { // i error
+                        unget_token();
+                        report_error(get_curtoken().get_line_number(), 'i');
+                        next_token();
+                    }
+                    if (get_curtoken().get_type() == Token::GETINTTK) {
+                        auto res = std::make_unique<GetIntStmt>();
+                        res->lval = std::move(lval);
+                        return std::make_unique<Stmt>(res);
+                    } else {
+                        auto res = std::make_unique<GetCharStmt>();
+                        res->lval = std::move(lval);
+                        return std::make_unique<Stmt>(res);
+                    }
+                } else { // rule 1
+                    auto res = std::make_unique<AssignStmt>();
+                    res->lval = std::move(lval);
+                    res->exp = parse_exp();
+                    if (get_curtoken().get_type() == Token::SEMICN) {
+                        next_token();
+                    } else { // i error
+                        unget_token();
+                        report_error(get_curtoken().get_line_number(), 'i');
+                        next_token();
+                    }
+                    return std::make_unique<Stmt>(res);
+                }
             } else { // rule 2
-
+                done_recovery(); // token恢复到backbuf中重新读取
+                auto res = std::make_unique<ExpStmt>();
+                res->exp = parse_exp();
+                if (get_curtoken().get_type() == Token::SEMICN) {
+                    next_token();
+                } else { // i error
+                    unget_token();
+                    report_error(get_curtoken().get_line_number(), 'i');
+                    next_token();
+                }
+                return std::make_unique<Stmt>(res);
             }
         }
     }
 }
 
-//! 关于else {1, 2, 8, 9} 部分的分析
-//! 对于规则 1, 8, 9一定以LVal开头
+//! 关于else {1, 2, 9, 10} 部分的分析
+//! 对于规则 1, 9, 10一定以LVal开头
 //! 对于规则 2, 排除了之前的情况后，开头元素也为LVal
 //! 可以首先试着读一个LVal, 然后判断后续的token
-//! 但是问题是：对于规则1,8,9 读到的LVal是有用的，但是对于规则2，读到的LVal是无用的(规则2需要保存Exp)
-//! 需要设置一个机制，缓存读到的LVal, 如果判断得到的规则是1,8,9，那么读到的LVal是有用的, 将tokens放入buffer中，相当已经读过了
+//! 但是问题是：对于规则1,9,10 读到的LVal是有用的，但是对于规则2，读到的LVal是无用的(规则2需要保存Exp)
+//! 需要设置一个机制，缓存读到的LVal, 如果判断得到的规则是1,9,10，那么读到的LVal是有用的, 将tokens放入buffer中，相当已经读过了
 //! 如果判断得到的规则是2, 那么读到的LVal是无用的，将tokens放入backbuf中，相当于没有读过, 重新读取, 解析成Exp
 //! 设置一个Recovery模式, 增加一个Recoverybuffer, 保存读取的LVal中的tokens
-//! 如果判断得到的规则是1,8,9, 将Recoverybuffer中的tokens放入buffer中
+//! 如果判断得到的规则是1,9,10, 将Recoverybuffer中的tokens放入buffer中
 //! 如果判断得到的规则是2, 将Recoverybuffer中的tokens放入backbuf中, 重新读取
 //! 为什么不能接着用backbuf? 因为我们要回复的其实就是LVal的tokens, 需要有一个明确的起始点
 
