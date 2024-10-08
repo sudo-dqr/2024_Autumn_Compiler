@@ -294,3 +294,23 @@ std::unique_ptr<FuncFParam> Parser::parse_funcfparam() {
     }
     return res;
 }
+
+std::unique_ptr<Block> Parser::parse_block() {
+    next_token(); // 跳过{
+    auto res = std::make_unique<Block>();
+    while (get_curtoken().get_type() != Token::RBRACE) {
+        res->block_items.push_back(parse_blockitem());
+    }
+    next_token(); // 跳过}
+    return res;
+}
+
+std::unique_ptr<BlockItem> Parser::parse_blockitem() {
+    if (get_curtoken().get_type() == Token::INTTK 
+        || get_curtoken().get_type() == Token::CHARTK
+        || get_curtoken().get_type() == Token::CONSTTK) {
+        return std::make_unique<BlockItem>(parse_decl());
+    } else {
+        return std::make_unique<BlockItem>(parse_stmt());
+    }
+}
