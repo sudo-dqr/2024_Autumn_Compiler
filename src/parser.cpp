@@ -138,3 +138,27 @@ std::unique_ptr<ConstDef> Parser::parse_constdef() {
     res->const_init_val = parse_const_initval();
     return res;
 }
+
+std::unique_ptr<VarDef> Parser::parse_vardef() {
+    auto res = std::make_unique<VarDef>();
+    res->ident = std::make_unique<Ident>(get_curtoken().get_token());
+    next_token();
+    if (get_curtoken().get_type() == Token::LBRACK) {
+        next_token();
+        res->const_exp = parse_constexp();
+        if (get_curtoken().get_type() == Token::RBRACK) {
+            next_token();
+        } else { // k error
+            unget_token();
+            report_error(get_curtoken().get_line_number(), 'k');
+            next_token();
+        }
+    }
+    if (get_curtoken().get_type() == Token::ASSIGN) {
+        next_token();
+        res->init_val = parse_initval();
+    } else {
+        res->init_val = nullptr;
+    }
+    return res;
+}
