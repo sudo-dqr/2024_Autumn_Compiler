@@ -12,6 +12,8 @@ class Parser {
         Lexer &lexer;
         std::deque<Token> buffer; // 正常的token缓存区
         std::deque<Token> backbuf; // 保存预读的token
+        std::deque<Token> recoverybuf; // 保存stmt处理中读LVal的token 这部分实际上是可能解析错误的, 见parser.cpp中的注释
+        bool is_recovering = false; // 是否正在恢复
 
     public:    
         enum CompUnitType {
@@ -24,6 +26,9 @@ class Parser {
         void next_token();
         Token get_curtoken();
         void unget_token();
+        void start_recovery();
+        void done_recovery();
+        void abort_recovery();
 
     private:
         std::unique_ptr<CompUnit> parse_comp_unit();
@@ -51,6 +56,16 @@ class Parser {
         std::unique_ptr<MainFunc> parse_mainfunc();
         std::unique_ptr<FuncFParam> parse_funcfparam();
         std::unique_ptr<Stmt> parse_stmt();
+        std::unique_ptr<IfStmt> parse_ifstmt();
+        std::unique_ptr<Cond> parse_cond();
+        std::unique_ptr<ForStmt> parse_forstmt();
+        std::unique_ptr<AssignStmt> parse_assignstmt();
+        std::unique_ptr<BreakStmt> parse_breakstmt();
+        std::unique_ptr<ContinueStmt> parse_continuestmt();
+        std::unique_ptr<ReturnStmt> parse_returnstmt();
+        std::unique_ptr<PrintfStmt> parse_printfstmt();
+        std::unique_ptr<LVal> parse_lval();
+        std::unique_ptr<LOrExp> parse_lorexp();
 
 };
 

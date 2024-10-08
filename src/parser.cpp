@@ -1,11 +1,12 @@
 #include "parser.h"
 
 void Parser::next_token() {
+    auto buf = is_recovering ? recoverybuf : buffer;
     if (!backbuf.empty()) { // 将预读的token从backbuf移回buffer
-        buffer.push_back(backbuf.back());
+        buf.push_back(backbuf.back());
         backbuf.pop_back();
     } else if (lexer.has_next()) {
-        buffer.push_back(lexer.next());
+        buf.push_back(lexer.next());
     } else {
         std::cout << "Error! No Lexer Read!" << std::endl;
     }
@@ -18,12 +19,45 @@ void Parser::next_token() {
 }
 
 Token Parser::get_curtoken() {
-    return buffer.back();
+    return (is_recovering ? recoverybuf : buffer).back();
 }
 
-void Parser::unget_token() { // 将预读的token从buffer转移到backbuf
-    backbuf.push_back(buffer.back());
-    buffer.pop_back();
+void Parser::unget_token() { 
+    auto buf = is_recovering ? recoverybuf : buffer;
+    backbuf.push_back(buf.back());
+    buf.pop_back();
+}
+
+void Parser::start_recovery() {
+    is_recovering = true;
+    if (!buffer.empty()) { // 将buffer中的最新token复制一个到recoverybuf中(LVal的起始token)
+        recoverybuf.push_back(buffer.back());
+    }
+}
+
+void Parser::done_recovery() { // 将recoverybuf中的token恢复到backbuf中重新解析
+    is_recovering = false;
+    while (!recoverybuf.empty()) { // 逆序填入backbuf, buffer读取的是正序
+        backbuf.push_back(recoverybuf.back());
+        recoverybuf.pop_back();
+    }
+    if (!buffer.empty()) {
+        backbuf.pop_back(); // 这个元素是start时从buffer复制到recoverybuf的
+    }
+}
+
+void Parser::abort_recovery() { // 将recoverybuf中的token放到buffer中，相当于正常解析过了，不再重新解析(不再恢复)
+    is_recovering = false;
+    if (!buffer.empty()) {
+        recoverybuf.pop_front(); // 这个元素是start时从buffer复制到recoverybuf的
+    }
+    while (!recoverybuf.empty()) { // 顺序填入buffer
+        buffer.push_back(recoverybuf.front());
+        recoverybuf.pop_front();
+    }
+    while (buffer.size() > 5) { // 控制buffer的大小
+        buffer.pop_front();
+    }
 }
 
 std::unique_ptr<CompUnit> Parser::parse() {
@@ -312,5 +346,209 @@ std::unique_ptr<BlockItem> Parser::parse_blockitem() {
         return std::make_unique<BlockItem>(parse_decl());
     } else {
         return std::make_unique<BlockItem>(parse_stmt());
+    }
+}
+
+std::unique_ptr<Stmt> Parser::parse_stmt() {
+    if (get_curtoken().get_type() == Token::LBRACE) { // Block
+        return std::make_unique<Stmt>(parse_block());
+    } else if (get_curtoken().get_type() == Token::IFTK) { //IF
+        return std::make_unique<Stmt>(parse_ifstmt());
+    } else if (get_curtoken().get_type() == Token::FORTK) { //FOR
+        return std::make_unique<Stmt>(parse_forstmt());
+    } else if (get_curtoken().get_type() == Token::BREAKTK) { //BREAK
+        return std::make_unique<Stmt>(parse_breakstmt());
+    } else if (get_curtoken().get_type() == Token::CONTINUETK) { // CONTINUE
+        return std::make_unique<Stmt>(parse_continuestmt());
+    } else if (get_curtoken().get_type() == Token::RETURNTK) { // RETURN 
+        return std::make_unique<Stmt>(parse_returnstmt());
+    } else if (get_curtoken().get_type() == Token::PRINTFTK) { // PRINTF
+        return std::make_unique<Stmt>(parse_printfstmt());
+    } else if (get_curtoken().get_type() == Token::LPARENT ||
+                get_curtoken().get_type() == Token::PLUS ||
+                get_curtoken().get_type() == Token::MINU || 
+                get_curtoken().get_type() == Token::NOT ||
+                get_curtoken().get_type() == Token::INTCON ||
+                get_curtoken().get_type() == Token::CHRCON) { // EXP 注意这里不能有IDENFR
+        auto res = std::make_unique<ExpStmt>();
+        res->exp = parse_exp();
+        if (get_curtoken().get_type() == Token::SEMICN) {
+            next_token();
+        } else { // i error
+            unget_token();
+            report_error(get_curtoken().get_line_number(), 'i');
+            next_token();
+        }
+        return std::make_unique<Stmt>(res);
+    } else if (get_curtoken().get_type() == Token::SEMICN) { // [EXP];(无exp)
+        auto res = std::make_unique<ExpStmt>();
+        res->exp = nullptr;
+        next_token();
+        return std::make_unique<Stmt>(res);
+    } else { // IDENTFR : may be rule 1,2,8,9
+        Token t1 = get_curtoken();
+        next_token();
+        Token t2 = get_curtoken();
+        unget_token();
+        unget_token();
+        if (t1.get_type() == Token::IDENFR && t2.get_type() == Token::LPARENT) { // rule2 ident()
+            auto res = std::make_unique<ExpStmt>();
+            res->exp = parse_exp();
+            if (get_curtoken().get_type() == Token::SEMICN) {
+                next_token(); // 读到LVal的起始token
+            } else { // i error
+                unget_token();
+                report_error(get_curtoken().get_line_number(), 'i');
+                next_token();
+            }
+        } else { // 1,2,8,9
+            // 2余下的情况中一定以LVal开头, 1,8,9一定以LVal开头
+            auto lval = parse_lval();
+            if (get_curtoken().get_type() == Token::ASSIGN) { // rule 1,8,9
+
+            } else { // rule 2
+
+            }
+        }
+    }
+}
+
+//! 关于else {1, 2, 8, 9} 部分的分析
+//! 对于规则 1, 8, 9一定以LVal开头
+//! 对于规则 2, 排除了之前的情况后，开头元素也为LVal
+//! 可以首先试着读一个LVal, 然后判断后续的token
+//! 但是问题是：对于规则1,8,9 读到的LVal是有用的，但是对于规则2，读到的LVal是无用的(规则2需要保存Exp)
+//! 需要设置一个机制，缓存读到的LVal, 如果判断得到的规则是1,8,9，那么读到的LVal是有用的, 将tokens放入buffer中，相当已经读过了
+//! 如果判断得到的规则是2, 那么读到的LVal是无用的，将tokens放入backbuf中，相当于没有读过, 重新读取, 解析成Exp
+//! 设置一个Recovery模式, 增加一个Recoverybuffer, 保存读取的LVal中的tokens
+//! 如果判断得到的规则是1,8,9, 将Recoverybuffer中的tokens放入buffer中
+//! 如果判断得到的规则是2, 将Recoverybuffer中的tokens放入backbuf中, 重新读取
+//! 为什么不能接着用backbuf? 因为我们要回复的其实就是LVal的tokens, 需要有一个明确的起始点
+
+std::unique_ptr<IfStmt> Parser::parse_ifstmt() {
+    next_token(); // 跳过if
+    next_token(); // 跳过(
+    auto res = std::make_unique<IfStmt>();
+    res->condition = parse_cond();
+    if (get_curtoken().get_type() == Token::RPARENT) {
+        next_token();
+    } else { // j error
+        unget_token();
+        report_error(get_curtoken().get_line_number(), 'j');
+        next_token();
+    }
+    res->if_stmt = parse_stmt();
+    if (get_curtoken().get_type() == Token::ELSETK) {
+        next_token();
+        res->else_stmt = parse_stmt();
+    } else {
+        res->else_stmt = nullptr;
+    }
+    return res;
+}
+
+std::unique_ptr<Cond> Parser::parse_cond() {
+    auto res = std::make_unique<Cond>();
+    res->lor_exp = parse_lorexp();
+    return res;
+}
+
+std::unique_ptr<ForStmt> Parser::parse_forstmt() {
+    next_token(); // 跳过for
+    next_token(); // 跳过(
+    auto res = std::make_unique<ForStmt>();
+    // 第一个子句
+    if (get_curtoken().get_type() == Token::SEMICN) {
+        res->assign1 = nullptr;
+    } else {
+        res->assign1 = parse_assignstmt();
+    }
+    next_token(); // 跳过;
+    // 第二个子句
+    if (get_curtoken().get_type() == Token::SEMICN) {
+        res->condition = nullptr;
+    } else {
+        res->condition = parse_cond();
+    }
+    next_token(); // 跳过;
+    // 第三个子句
+    if (get_curtoken().get_type() == Token::RPARENT) {
+        res->assign2 = nullptr;
+    } else {
+        res->assign2 = parse_assignstmt();
+    }
+    next_token(); // 跳过)
+    res->stmt = parse_stmt();
+    return res;
+}
+
+std::unique_ptr<BreakStmt> Parser::parse_breakstmt() {
+    next_token(); // 跳过break
+    if (get_curtoken().get_type() == Token::SEMICN) {
+        next_token();
+    } else { // l error
+        unget_token();
+        report_error(get_curtoken().get_line_number(), 'l');
+        next_token();
+    }
+}
+
+std::unique_ptr<ContinueStmt> Parser::parse_continuestmt() {
+    next_token(); // 跳过continue
+    if (get_curtoken().get_type() == Token::SEMICN) {
+        next_token();
+    } else { // l error
+        unget_token();
+        report_error(get_curtoken().get_line_number(), 'l');
+        next_token();
+    }
+}
+
+std::unique_ptr<ReturnStmt> Parser::parse_returnstmt() {
+    auto res = std::make_unique<ReturnStmt>();
+    next_token(); // 跳过return
+    // 实际上是推导Exp的FIRST集 最终划归到求UnaryExp的FIRST集
+    if (get_curtoken().get_type() == Token::IDENFR ||
+        get_curtoken().get_type() == Token::LPARENT ||
+        get_curtoken().get_type() == Token::PLUS ||
+        get_curtoken().get_type() == Token::MINU || 
+        get_curtoken().get_type() == Token::NOT ||
+        get_curtoken().get_type() == Token::INTCON ||
+        get_curtoken().get_type() == Token::CHRCON) {
+        res->return_exp = parse_exp();
+    } else {
+        res->return_exp = nullptr;
+    }
+    if (get_curtoken().get_type() == Token::SEMICN) {
+        next_token();
+    } else { // i error
+        unget_token();
+        report_error(get_curtoken().get_line_number(), 'i');
+        next_token();
+    }
+}
+
+std::unique_ptr<PrintfStmt> Parser::parse_printfstmt() {
+    next_token(); // 跳过printf
+    next_token(); // 跳过(
+    auto res = std::make_unique<PrintfStmt>();
+    res->str = parse_stringconst();
+    while (get_curtoken().get_type() == Token::COMMA) {
+        next_token();
+        res->exps.push_back(parse_exp());
+    }
+    if (get_curtoken().get_type() == Token::RPARENT) {
+        next_token();
+    } else { // j error
+        unget_token();
+        report_error(get_curtoken().get_line_number(), 'j');
+        next_token();
+    }
+    if (get_curtoken().get_type() == Token::SEMICN) {
+        next_token();
+    } else { // i error
+        unget_token();
+        report_error(get_curtoken().get_line_number(), 'i');
+        next_token();
     }
 }
