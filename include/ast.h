@@ -69,7 +69,7 @@ struct StringConst : public Node {
 struct CompUnit : public Node {
     std::vector<std::unique_ptr<FuncDef>> func_defs;
     std::vector<std::unique_ptr<Decl>> decls;
-    std::vector<std::unique_ptr<MainFunc>> main_func;
+    std::unique_ptr<MainFunc> main_func;
 
     void print(std::ostream &os) override;
 };
