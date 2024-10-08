@@ -264,3 +264,33 @@ std::unique_ptr<MainFunc> Parser::parse_mainfunc() {
     res->block = parse_block();
     return res;
 }
+
+std::unique_ptr<FuncFParams> Parser::parse_funcfparams() {
+    auto res = std::make_unique<FuncFParams>();
+    res->func_fparams.push_back(parse_funcfparam());
+    while (get_curtoken().get_type() == Token::COMMA) {
+        next_token();
+        res->func_fparams.push_back(parse_funcfparam());
+    }
+    return res;
+}
+
+std::unique_ptr<FuncFParam> Parser::parse_funcfparam() {
+    auto res = std::make_unique<FuncFParam>();
+    res->btype = parse_btype();
+    res->ident = parse_ident();
+    if (get_curtoken().get_type() == Token::LBRACK) {
+        next_token();
+        if (get_curtoken().get_type() == Token::RBRACK) {
+            next_token();
+        } else { // k error
+            unget_token();
+            report_error(get_curtoken().get_line_number(), 'k');
+            next_token();
+        }
+        res->is_array = true;
+    } else {
+        res->is_array = false;
+    }
+    return res;
+}

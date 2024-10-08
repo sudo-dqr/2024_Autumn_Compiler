@@ -48,6 +48,7 @@ class Parser {
         std::unique_ptr<FuncFParams> parse_funcfparams();
         std::unique_ptr<Block> parse_block();
         std::unique_ptr<MainFunc> parse_mainfunc();
+        std::unique_ptr<FuncFParam> parse_funcfparam();
 
 };
 
