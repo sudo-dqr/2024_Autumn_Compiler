@@ -31,10 +31,8 @@ struct VarDef;
 struct ConstExp;
 struct Exp;
 struct StringConst;
-struct ArrayConstInitVal;
-struct ArrayInitVal;
-using ConstInitVal = std::variant<std::unique_ptr<ConstExp>, std::unique_ptr<ArrayConstInitVal>, std::unique_ptr<StringConst>>;
-using InitVal = std::variant<std::unique_ptr<Exp>, std::unique_ptr<ArrayInitVal>, std::unique_ptr<StringConst>>;
+using ConstInitVal = std::variant<std::unique_ptr<ConstExp>, std::vector<std::unique_ptr<ConstExp>>, std::unique_ptr<StringConst>>;
+using InitVal = std::variant<std::unique_ptr<Exp>, std::vector<std::unique_ptr<Exp>>, std::unique_ptr<StringConst>>;
 struct AssignStmt;
 struct ExpStmt;
 struct IfStmt;
@@ -65,6 +63,7 @@ struct StringConst : public Node {
     std::string str;
 
     void print(std::ostream &os) override;
+    StringConst(std::string str) : str(str) {}
 };
 
 struct CompUnit : public Node {
@@ -337,17 +336,4 @@ struct Cond : public Node {
 
     void print(std::ostream &os) override;
 };
-
-struct ArrayInitVal : public Node {
-    std::vector<std::unique_ptr<Exp>> exps;
-
-    void print(std::ostream &os) override;
-};
-
-struct ArrayConstInitVal : public Node {
-    std::vector<std::unique_ptr<ConstExp>> exps;
-
-    void print(std::ostream &os) override;
-};
-
 #endif

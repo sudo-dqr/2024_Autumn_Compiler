@@ -162,3 +162,49 @@ std::unique_ptr<VarDef> Parser::parse_vardef() {
     }
     return res;
 }
+
+std::unique_ptr<ConstExp> Parser::parse_constexp() {
+    auto res = std::make_unique<ConstExp>();
+    res->add_exp = parse_addexp();
+    return res;
+}
+
+std::unique_ptr<ConstInitVal> Parser::parse_const_initval() {
+    if (get_curtoken().get_type() == Token::STRCON) {
+        return std::make_unique<ConstInitVal>(std::make_unique<StringConst>(get_curtoken().get_token()));
+    } else if (get_curtoken().get_type() == Token::LBRACE) {
+        auto vec = std::vector<std::unique_ptr<ConstExp>>();
+        next_token();
+        if (get_curtoken().get_type() != Token::RBRACE) {
+            vec.push_back(parse_constexp());
+            while (get_curtoken().get_type() == Token::COMMA) {
+                next_token();
+                vec.push_back(parse_constexp());
+            }
+        }
+        next_token(); // 跳过 }
+        return std::make_unique<ConstInitVal>(vec);
+    } else {
+        return std::make_unique<ConstInitVal>(parse_constexp());
+    }
+}
+
+std::unique_ptr<InitVal> Parser::parse_initval() {
+    if (get_curtoken().get_type() == Token::STRCON) {
+        return std::make_unique<InitVal>(std::make_unique<StringConst>(get_curtoken().get_token()));
+    } else if (get_curtoken().get_type() == Token::LBRACE) {
+        auto vec = std::vector<std::unique_ptr<Exp>>();
+        next_token();
+        if (get_curtoken().get_type() != Token::RBRACE) {
+            vec.push_back(parse_exp());
+            while (get_curtoken().get_type() == Token::COMMA) {
+                next_token();
+                vec.push_back(parse_exp());
+            }
+        }
+        next_token();
+        return std::make_unique<InitVal>(vec);
+    } else {
+        return std::make_unique<InitVal>(parse_exp());
+    }
+}
