@@ -99,12 +99,14 @@ struct ConstDecl : public Node {
 struct BType : public Node {
     std::string btype;
 
+    BType(std::string btype) : btype(btype) {}
     void print(std::ostream &os) override;
 };
 
 struct FuncType : public Node {
     std::string func_type;
 
+    FuncType(std::string func_type) : func_type(func_type) {}
     void print(std::ostream &os) override;
 };
 
