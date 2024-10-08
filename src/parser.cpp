@@ -88,7 +88,9 @@ std::unique_ptr<ConstDecl> Parser::parse_constdecl() {
     if (get_curtoken().get_type() == Token::SEMICN) { // ;结尾
         next_token();
     } else { // i error
+        unget_token();
         report_error(get_curtoken().get_line_number(), 'i');
+        next_token();
     }
 }
 
@@ -103,7 +105,9 @@ std::unique_ptr<VarDecl> Parser::parse_vardecl() {
     if (get_curtoken().get_type() == Token::SEMICN) {
         next_token();
     } else { // i error
+        unget_token();
         report_error(get_curtoken().get_line_number(), 'i');
+        next_token();
     }
 }
 
@@ -112,5 +116,25 @@ std::unique_ptr<BType> Parser::parse_btype() {
     std::unique_ptr<BType> res = std::make_unique<BType>();
     res->btype = t.get_token();
     next_token();
+    return res;
+}
+
+std::unique_ptr<ConstDef> Parser::parse_constdef() {
+    auto res = std::make_unique<ConstDef>();
+    res->ident = std::make_unique<Ident>(get_curtoken().get_token());
+    next_token(); // 跳过ident
+    if (get_curtoken().get_type() == Token::LBRACK) {
+        next_token();
+        res->const_exp = parse_constexp();
+        if (get_curtoken().get_type() == Token::RBRACK) {
+            next_token();
+        } else { // k  error
+            unget_token();
+            report_error(get_curtoken().get_line_number(), 'k');
+            next_token();
+        }
+    }
+    next_token();
+    res->const_init_val = parse_const_initval();
     return res;
 }

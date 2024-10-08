@@ -58,6 +58,7 @@ struct Ident : public Node {
     std::string ident;
 
     void print(std::ostream &os) override;
+    Ident(std::string ident) : ident(ident) {}
 };
 
 struct StringConst : public Node {

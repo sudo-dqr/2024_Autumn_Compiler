@@ -36,6 +36,8 @@ class Parser {
         std::unique_ptr<BType> parse_btype();
         std::unique_ptr<ConstDef> parse_constdef();
         std::unique_ptr<VarDef> parse_vardef();
+        std::unique_ptr<ConstExp> parse_constexp();
+        std::unique_ptr<ConstInitVal> parse_const_initval();
 
 };
 
