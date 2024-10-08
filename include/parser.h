@@ -45,6 +45,9 @@ class Parser {
         std::unique_ptr<FuncType> parse_functype();
         std::unique_ptr<Ident> parse_ident();
         std::unique_ptr<StringConst> parse_stringconst();
+        std::unique_ptr<FuncFParams> parse_funcfparams();
+        std::unique_ptr<Block> parse_block();
+        std::unique_ptr<MainFunc> parse_mainfunc();
 
 };
 

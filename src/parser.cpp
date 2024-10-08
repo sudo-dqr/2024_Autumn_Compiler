@@ -209,7 +209,23 @@ std::unique_ptr<InitVal> Parser::parse_initval() {
 std::unique_ptr<FuncDef> Parser::parse_funcdef() {
     auto res = std::make_unique<FuncDef>();
     res->func_type = parse_functype();
-
+    res->ident = parse_ident();
+    next_token(); // 跳过 (
+    if (get_curtoken().get_type() == Token::RPARENT) {
+        res->func_fparams = nullptr;
+        next_token();
+    } else {
+        res->func_fparams = parse_funcfparams();
+        if (get_curtoken().get_type() == Token::RPARENT) {
+            next_token();
+        } else { // j error
+            unget_token();
+            report_error(get_curtoken().get_line_number(), 'j');
+            next_token();
+        }
+    }
+    res->block = parse_block();
+    return res;
 }
 
 std::unique_ptr<FuncType> Parser::parse_functype() {
@@ -230,5 +246,21 @@ std::unique_ptr<StringConst> Parser::parse_stringconst() {
     Token t = get_curtoken();
     auto res = std::make_unique<StringConst>(t.get_token());
     next_token();
+    return res;
+}
+
+std::unique_ptr<MainFunc> Parser::parse_mainfunc() {
+    next_token(); // 跳过int
+    next_token(); // 跳过main
+    next_token(); // 跳过(
+    if (get_curtoken().get_type() == Token::RPARENT) {
+        next_token();
+    } else { // j error
+        unget_token();
+        report_error(get_curtoken().get_line_number(), 'j');
+        next_token();
+    }
+    auto res = std::make_unique<MainFunc>();
+    res->block = parse_block();
     return res;
 }
