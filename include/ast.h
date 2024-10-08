@@ -337,4 +337,16 @@ struct Cond : public Node {
     void print(std::ostream &os) override;
 };
 
+struct ArrayInitVal : public Node {
+    std::vector<std::unique_ptr<Exp>> exps;
+
+    void print(std::ostream &os) override;
+};
+
+struct ArrayConstInitVal : public Node {
+    std::vector<std::unique_ptr<ConstExp>> exps;
+
+    void print(std::ostream &os) override;
+};
+
 #endif

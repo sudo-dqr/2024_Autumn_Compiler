@@ -66,3 +66,40 @@ Parser::CompUnitType Parser::comp_unit_judge_next_type() {
         return CompUnitType::DECL;
     }
 }
+
+std::unique_ptr<Decl> Parser::parse_decl() {
+    Token t = get_curtoken();
+    if (t.get_type() == Token::CONSTTK) {
+        return std::make_unique<Decl>(std::move(parse_constdecl()));
+    } else {
+        return std::make_unique<Decl>(std::move(parse_vardecl()));
+    }
+}
+
+std::unique_ptr<ConstDecl> Parser::parse_constdecl() {
+    next_token(); // 跳过const
+    auto res = std::make_unique<ConstDecl>();
+    res->btype = parse_btype();
+    next_token(); // 跳过btype
+    res->const_defs.push_back(parse_constdef());
+    while (get_curtoken().get_type() == Token::COMMA) { // ConstDef {, ConstDef}
+        next_token();
+        res->const_defs.push_back(parse_constdef());
+    }
+    if (get_curtoken().get_type() == Token::SEMICN) { // ;结尾
+        next_token();
+    } else { // i error
+        report_error(get_curtoken().get_line_number(), 'i');
+    }
+}
+
+std::unique_ptr<VarDecl> Parser::parse_vardecl() {
+
+}
+
+std::unique_ptr<BType> Parser::parse_btype() {
+    Token t = get_curtoken();
+    std::unique_ptr<BType> res = std::make_unique<BType>();
+    res->btype = t.get_token();
+    return res;
+}

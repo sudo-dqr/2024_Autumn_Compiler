@@ -3,7 +3,8 @@
 
 #include "lexer.h"
 #include "ast.h"
-#include "deque"
+#include "error.h"
+#include <deque>
 
 class Parser {
 
@@ -30,6 +31,10 @@ class Parser {
         std::unique_ptr<Decl> parse_decl();
         std::unique_ptr<FuncDef> parse_funcdef();
         std::unique_ptr<MainFunc> parse_mainfunc();
+        std::unique_ptr<ConstDecl> parse_constdecl();
+        std::unique_ptr<VarDecl> parse_vardecl();
+        std::unique_ptr<BType> parse_btype();
+        std::unique_ptr<ConstDef> parse_constdef();
 
 };
 
