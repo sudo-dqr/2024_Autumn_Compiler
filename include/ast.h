@@ -20,7 +20,7 @@ struct FuncDef;
 struct MainFunc;
 struct ConstDecl;
 struct VarDecl;
-using Decl = std::variant<std::unique_ptr<ConstDecl>, std::unique_ptr<VarDecl>>;
+using Decl = std::variant<ConstDecl, VarDecl>;
 struct FuncType;
 struct Ident;
 struct FuncFParam;
@@ -32,8 +32,27 @@ struct VarDef;
 struct ConstExp;
 struct Exp;
 struct StringConst;
-using ConstInitVal = std::variant<std::unique_ptr<ConstExp>, std::vector<std::unique_ptr<ConstExp>>, std::unique_ptr<StringConst>>;
-using InitVal = std::variant<std::unique_ptr<Exp>, std::vector<std::unique_ptr<Exp>>, std::unique_ptr<StringConst>>;
+
+//! 不能直接将数组放在variant中, 否则在后序输出时, vector类并没有print方法, 包装一下
+//! 另外还需要注意的是, 在使用std::visit访问variant时, 不能直接访问unique_ptr, 需要解引用, 
+//! 这里尤其要注意数组中保存的是unique_ptr的情况
+struct ConstExps : public Node {
+    std::vector<std::unique_ptr<ConstExp>> const_exps;
+
+    ConstExps(std::vector<std::unique_ptr<ConstExp>> const_exps);
+    void print(std::ostream &os) override;
+};
+using ConstInitVal = std::variant<ConstExp, ConstExps, StringConst>;
+
+//! 同理下面的结构体是一个数组包装
+struct Exps : public Node {
+    std::vector<std::unique_ptr<Exp>> exps;
+
+    Exps(std::vector<std::unique_ptr<Exp>> exps);
+    void print(std::ostream &os) override;
+};
+using InitVal = std::variant<Exp, Exps, StringConst>;
+
 struct AssignStmt;
 struct ExpStmt;
 struct IfStmt;
@@ -44,12 +63,9 @@ struct ReturnStmt;
 struct GetIntStmt;
 struct GetCharStmt;
 struct PrintfStmt;
-using Stmt = std::variant<std::unique_ptr<AssignStmt>, std::unique_ptr<ExpStmt>, Block,
-                        std::unique_ptr<IfStmt>, std::unique_ptr<ForStmt>, 
-                        std::unique_ptr<BreakStmt>, std::unique_ptr<ContinueStmt>, 
-                        std::unique_ptr<ReturnStmt>, std::unique_ptr<GetIntStmt>, 
-                        std::unique_ptr<GetCharStmt>, std::unique_ptr<PrintfStmt>>;
-using BlockItem = std::variant<std::unique_ptr<Decl>, std::unique_ptr<Stmt>>;
+using Stmt = std::variant<AssignStmt, ExpStmt, Block,IfStmt, ForStmt, BreakStmt, 
+                        ContinueStmt, ReturnStmt, GetIntStmt, GetCharStmt, PrintfStmt>;
+using BlockItem = std::variant<Decl, Stmt>;
 struct LVal;
 struct Cond;
 
@@ -278,7 +294,7 @@ struct FuncRParams : public Node {
     void print(std::ostream &os) override;
 };
 
-using PrimaryExp = std::variant<std::unique_ptr<Exp>, std::unique_ptr<LVal>, std::unique_ptr<Number>, std::unique_ptr<Character>>;
+using PrimaryExp = std::variant<Exp, LVal, Number, Character>;
 
 struct UnaryExp : public Node{
     // primary_exp | call_func | unary_op unary_exp

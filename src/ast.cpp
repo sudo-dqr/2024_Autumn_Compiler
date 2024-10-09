@@ -275,3 +275,13 @@ ConstExp::ConstExp(std::unique_ptr<AddExp> add_exp) {
 Cond::Cond(std::unique_ptr<LOrExp> lor_exp) {
     this->lor_exp = std::move(lor_exp);
 }
+
+//! constructor of ConstExps
+ConstExps::ConstExps(std::vector<std::unique_ptr<ConstExp>> const_exps) {
+    this->const_exps = std::move(const_exps);
+}
+
+//! constructor of Exps
+Exps::Exps(std::vector<std::unique_ptr<Exp>> exps) {
+    this->exps = std::move(exps);
+}

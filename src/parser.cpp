@@ -105,9 +105,9 @@ Parser::CompUnitType Parser::comp_unit_judge_next_type() {
 std::unique_ptr<Decl> Parser::parse_decl() {
     Token t = get_curtoken();
     if (t.get_type() == Token::CONSTTK) {
-        return std::make_unique<Decl>(parse_constdecl());
+        return std::make_unique<Decl>(*parse_constdecl());
     } else {
-        return std::make_unique<Decl>(parse_vardecl());
+        return std::make_unique<Decl>(*parse_vardecl());
     }
 }
 
@@ -202,7 +202,7 @@ std::unique_ptr<ConstExp> Parser::parse_constexp() {
 
 std::unique_ptr<ConstInitVal> Parser::parse_const_initval() {
     if (get_curtoken().get_type() == Token::STRCON) {
-        return std::make_unique<ConstInitVal>(std::move(parse_stringconst()));
+        return std::make_unique<ConstInitVal>(*parse_stringconst());
     } else if (get_curtoken().get_type() == Token::LBRACE) {
         auto vec = std::vector<std::unique_ptr<ConstExp>>();
         next_token(); // 跳过 {
@@ -214,15 +214,15 @@ std::unique_ptr<ConstInitVal> Parser::parse_const_initval() {
             }
         }
         next_token(); // 跳过 }
-        return std::make_unique<ConstInitVal>(std::move(vec));
+        return std::make_unique<ConstInitVal>(ConstExps(vec));
     } else {
-        return std::make_unique<ConstInitVal>(std::move(parse_constexp()));
+        return std::make_unique<ConstInitVal>(*parse_constexp());
     }
 }
 
 std::unique_ptr<InitVal> Parser::parse_initval() {
     if (get_curtoken().get_type() == Token::STRCON) {
-        return std::make_unique<InitVal>(std::move(parse_stringconst()));
+        return std::make_unique<InitVal>(*parse_stringconst());
     } else if (get_curtoken().get_type() == Token::LBRACE) {
         auto vec = std::vector<std::unique_ptr<Exp>>();
         next_token(); // 跳过 {
@@ -234,9 +234,9 @@ std::unique_ptr<InitVal> Parser::parse_initval() {
             }
         }
         next_token(); // 跳过 }
-        return std::make_unique<InitVal>(std::move(vec));
+        return std::make_unique<InitVal>(Exps(vec));
     } else {
-        return std::make_unique<InitVal>(std::move(parse_exp()));
+        return std::make_unique<InitVal>(*parse_exp());
     }
 }
 
@@ -337,27 +337,27 @@ std::unique_ptr<BlockItem> Parser::parse_blockitem() {
     if (get_curtoken().get_type() == Token::INTTK 
         || get_curtoken().get_type() == Token::CHARTK
         || get_curtoken().get_type() == Token::CONSTTK) {
-        return std::make_unique<BlockItem>(parse_decl());
+        return std::make_unique<BlockItem>(*parse_decl());
     } else {
-        return std::make_unique<BlockItem>(parse_stmt());
+        return std::make_unique<BlockItem>(*parse_stmt());
     }
 }
 
 std::unique_ptr<Stmt> Parser::parse_stmt() {
     if (get_curtoken().get_type() == Token::LBRACE) { // Block
-        return std::make_unique<Stmt>(parse_block());
+        return std::make_unique<Stmt>(*parse_block());
     } else if (get_curtoken().get_type() == Token::IFTK) { //IF
-        return std::make_unique<Stmt>(parse_ifstmt());
+        return std::make_unique<Stmt>(*parse_ifstmt());
     } else if (get_curtoken().get_type() == Token::FORTK) { //FOR
-        return std::make_unique<Stmt>(parse_forstmt());
+        return std::make_unique<Stmt>(*parse_forstmt());
     } else if (get_curtoken().get_type() == Token::BREAKTK) { //BREAK
-        return std::make_unique<Stmt>(parse_breakstmt());
+        return std::make_unique<Stmt>(*parse_breakstmt());
     } else if (get_curtoken().get_type() == Token::CONTINUETK) { // CONTINUE
-        return std::make_unique<Stmt>(parse_continuestmt());
+        return std::make_unique<Stmt>(*parse_continuestmt());
     } else if (get_curtoken().get_type() == Token::RETURNTK) { // RETURN 
-        return std::make_unique<Stmt>(parse_returnstmt());
+        return std::make_unique<Stmt>(*parse_returnstmt());
     } else if (get_curtoken().get_type() == Token::PRINTFTK) { // PRINTF
-        return std::make_unique<Stmt>(parse_printfstmt());
+        return std::make_unique<Stmt>(*parse_printfstmt());
     } else if (get_curtoken().get_type() == Token::LPARENT ||
                 get_curtoken().get_type() == Token::PLUS ||
                 get_curtoken().get_type() == Token::MINU || 
@@ -372,10 +372,10 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
             report_error(get_curtoken().get_line_number(), 'i');
             next_token();
         }
-        return std::make_unique<Stmt>(std::make_unique<ExpStmt>(std::move(exp)));
+        return std::make_unique<Stmt>(ExpStmt(std::move(exp)));
     } else if (get_curtoken().get_type() == Token::SEMICN) { // [EXP];(无exp)
         next_token();
-        return std::make_unique<Stmt>(std::make_unique<ExpStmt>(nullptr));
+        return std::make_unique<Stmt>(ExpStmt(nullptr));
     } else { // IDENTFR : may be rule 1,2,8,9
         Token t1 = get_curtoken();
         next_token();
@@ -391,7 +391,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                 report_error(get_curtoken().get_line_number(), 'i');
                 next_token();
             }
-            return std::make_unique<Stmt>(std::make_unique<ExpStmt>(std::move(exp)));
+            return std::make_unique<Stmt>(ExpStmt(std::move(exp)));
         } else { // 1,2,9,10
             // 2余下的情况中一定以LVal开头, 1,9,10一定以LVal开头
             start_recovery(); // 将LVal读到recoverybuf中
@@ -418,9 +418,9 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                         next_token();
                     }
                     if (get_curtoken().get_type() == Token::GETINTTK) {
-                        return std::make_unique<Stmt>(std::make_unique<GetIntStmt>(std::move(lval)));
+                        return std::make_unique<Stmt>(GetIntStmt(std::move(lval)));
                     } else {
-                        return std::make_unique<Stmt>(std::make_unique<GetCharStmt>(std::move(lval)));
+                        return std::make_unique<Stmt>(GetCharStmt(std::move(lval)));
                     }
                 } else { // rule 1
                     auto exp = parse_exp();
@@ -431,7 +431,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                         report_error(get_curtoken().get_line_number(), 'i');
                         next_token();
                     }
-                    return std::make_unique<Stmt>(std::make_unique<AssignStmt>(std::move(lval), std::move(exp)));
+                    return std::make_unique<Stmt>(AssignStmt(std::move(lval), std::move(exp)));
                 }
             } else { // rule 2
                 done_recovery(); // token恢复到backbuf中重新读取
@@ -443,7 +443,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                     report_error(get_curtoken().get_line_number(), 'i');
                     next_token();
                 }
-                return std::make_unique<Stmt>(std::make_unique<ExpStmt>(std::move(exp)));
+                return std::make_unique<Stmt>(ExpStmt(std::move(exp)));
             }
         }
     }
@@ -650,16 +650,16 @@ std::unique_ptr<PrimaryExp> Parser::parse_primaryexp() {
             report_error(get_curtoken().get_line_number(), 'j');
             next_token();
         }
-        return std::make_unique<PrimaryExp>(std::move(exp));
+        return std::make_unique<PrimaryExp>(*exp);
     } else if (get_curtoken().get_type() == Token::IDENFR) {
         auto lval = parse_lval();
-        return std::make_unique<PrimaryExp>(std::move(lval));
+        return std::make_unique<PrimaryExp>(*lval);
     } else if (get_curtoken().get_type() == Token::INTCON) {
         auto num = parse_number();
-        return std::make_unique<PrimaryExp>(std::move(num));
+        return std::make_unique<PrimaryExp>(*num);
     } else {
         auto ch = parse_character();
-        return std::make_unique<PrimaryExp>(std::move(ch));
+        return std::make_unique<PrimaryExp>(*ch);
     }
 }
 
