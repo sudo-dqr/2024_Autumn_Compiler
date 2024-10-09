@@ -276,52 +276,54 @@ struct MulExp : public Node {
     MulExp(std::unique_ptr<UnaryExp> unaryexp);
 };
 
-struct AddMulExp;
-using AddExp = std::variant<MulExp, AddMulExp>;
-struct AddMulExp : public Node {
-    std::unique_ptr<AddExp> add_exp;
-    char op;
-    std::unique_ptr<MulExp> mul_exp;
+struct AddExp : public Node {
+    std::unique_ptr<AddExp> addexp;
+    std::unique_ptr<Token> op;
+    std::unique_ptr<MulExp> mulexp;
 
     void print(std::ostream &os) override;
+    AddExp(std::unique_ptr<AddExp> addexp, std::unique_ptr<Token> op, std::unique_ptr<MulExp> mulexp);
+    AddExp(std::unique_ptr<MulExp> mulexp);
 };
 
-struct RelAddExp;
-using RelExp = std::variant<AddExp, RelAddExp>;
-struct RelAddExp : public Node {
-    std::unique_ptr<RelExp> rel_exp;
-    std::string op;
-    std::unique_ptr<AddExp> add_exp;
+struct RelExp : public Node {
+    std::unique_ptr<RelExp> relexp;
+    std::unique_ptr<Token> op;
+    std::unique_ptr<AddExp> addexp;
 
     void print(std::ostream &os) override;
+    RelExp(std::unique_ptr<RelExp> relexp, std::unique_ptr<Token> op, std::unique_ptr<AddExp> addexp);
+    RelExp(std::unique_ptr<AddExp> addexp);
 };
 
-struct EqRelExp;
-using EqExp = std::variant<RelExp, EqRelExp>;
-struct EqRelExp : public Node {
-    std::unique_ptr<EqExp> eq_exp;
-    std::string op;
-    std::unique_ptr<RelExp> rel_exp;
+struct EqExp : public Node {
+    std::unique_ptr<EqExp> eqexp;
+    std::unique_ptr<Token> op;
+    std::unique_ptr<RelExp> relexp;
 
     void print(std::ostream &os) override;
+    EqExp(std::unique_ptr<EqExp> eqexp, std::unique_ptr<Token> op, std::unique_ptr<RelExp> relexp);
+    EqExp(std::unique_ptr<RelExp> relexp);
 };
 
-struct LAndEqExp;
-using LAndExp = std::variant<EqExp, LAndEqExp>;
-struct LAndEqExp : public Node {
-    std::unique_ptr<LAndExp> land_exp;
-    std::unique_ptr<EqExp> eq_exp;
+struct LAndExp : public Node {
+    std::unique_ptr<LAndExp> landexp;
+    // op is &&
+    std::unique_ptr<EqExp> eqexp;
 
     void print(std::ostream &os) override;
+    LAndExp(std::unique_ptr<LAndExp> landexp, std::unique_ptr<EqExp> eqexp);
+    LAndExp(std::unique_ptr<EqExp> eqexp);
 };
 
-struct LOrLAndExp;
-using LOrExp = std::variant<LAndExp, LOrLAndExp>;
-struct LOrLAndExp : public Node {
-    std::unique_ptr<LOrExp> lor_exp;
-    std::unique_ptr<LAndExp> land_exp;
+struct LOrExp : public Node {
+    std::unique_ptr<LOrExp> lorexp;
+    // op is ||
+    std::unique_ptr<LAndExp> landexp;
 
     void print(std::ostream &os) override;
+    LOrExp(std::unique_ptr<LOrExp> lorexp, std::unique_ptr<LAndExp> landexp);
+    LOrExp(std::unique_ptr<LAndExp> landexp);
 };
 
 struct Exp : public Node {
