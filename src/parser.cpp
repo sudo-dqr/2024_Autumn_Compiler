@@ -681,28 +681,30 @@ std::unique_ptr<UnaryExp> Parser::parse_unaryexp() {
     if (get_curtoken().get_type() == Token::PLUS ||
         get_curtoken().get_type() == Token::MINU ||
         get_curtoken().get_type() == Token::NOT) {
-        return std::make_unique<UnaryExp>(parse_unaryop());
+        auto unary_op = parse_unaryop();
+        auto unary_exp = parse_unaryexp();
+        return std::make_unique<UnaryExp>(unary_op, unary_exp);
     } else {
         Token t1 = get_curtoken();
         next_token();
         Token t2 = get_curtoken();
         unget_token();
         if (t1.get_type() == Token::IDENFR && t2.get_type() == Token::LPARENT) {
-            return std::make_unique<UnaryExp>(parse_callfunc());
+            return parse_callfunc();
         } else {
             return std::make_unique<UnaryExp>(parse_primaryexp());
         }
     }
 }
 
-std::unique_ptr<CallFunc> Parser::parse_callfunc() {
-    auto res = std::make_unique<CallFunc>();
-    res->ident = parse_ident();
+std::unique_ptr<UnaryExp> Parser::parse_callfunc() {
+    auto ident = parse_ident();
+    auto func_rparams = std::make_unique<FuncRParams>();
     next_token(); // 跳过(
     if (get_curtoken().get_type() != Token::RPARENT) {
-        res->func_rparams = parse_funcrparams();
+        func_rparams = parse_funcrparams();
     } else {
-        res->func_rparams = nullptr;
+        func_rparams = nullptr;
     }
     if (get_curtoken().get_type() == Token::RPARENT) {
         next_token();
@@ -711,7 +713,7 @@ std::unique_ptr<CallFunc> Parser::parse_callfunc() {
         report_error(get_curtoken().get_line_number(), 'j');
         next_token();
     }
-    return res;
+    return std::make_unique<UnaryExp>(ident, func_rparams);
 }
 
 std::unique_ptr<FuncRParams> Parser::parse_funcrparams() {
@@ -723,4 +725,6 @@ std::unique_ptr<FuncRParams> Parser::parse_funcrparams() {
     }
     return res;
 }
+
+
 

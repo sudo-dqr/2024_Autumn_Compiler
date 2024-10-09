@@ -71,7 +71,7 @@ class Parser {
         std::unique_ptr<PrimaryExp> parse_primaryexp();
         std::unique_ptr<UnaryOp> parse_unaryop();
         std::unique_ptr<UnaryExp> parse_unaryexp();
-        std::unique_ptr<CallFunc> parse_callfunc();
+        std::unique_ptr<UnaryExp> parse_callfunc();
         std::unique_ptr<FuncRParams> parse_funcrparams();
 
 };

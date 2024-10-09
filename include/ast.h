@@ -250,20 +250,18 @@ struct FuncRParams : public Node {
 
 using PrimaryExp = std::variant<Exp, LVal, Number, Character>;
 
-struct CallFunc : public Node {
+struct UnaryExp : public Node{
+    // primary_exp | call_func | unary_op unary_exp
+    std::unique_ptr<PrimaryExp> primary_exp;
     std::unique_ptr<Ident> ident;
     std::unique_ptr<FuncRParams> func_rparams;
+    std::unique_ptr<UnaryOp> unary_op;
+    std::unique_ptr<UnaryExp> unary_exp;
 
     void print(std::ostream &os) override;
-};
-
-struct UnaryOpExp;
-using UnaryExp = std::variant<PrimaryExp, CallFunc, UnaryOpExp>;
-struct UnaryOpExp : public Node {
-    std::unique_ptr<UnaryOp>  op;
-    std::unique_ptr<UnaryExp> exp;
-
-    void print(std::ostream &os) override;
+    UnaryExp(std::unique_ptr<PrimaryExp> primary_exp);
+    UnaryExp(std::unique_ptr<Ident> ident, std::unique_ptr<FuncRParams> func_rparams);
+    UnaryExp(std::unique_ptr<UnaryOp> unary_op, std::unique_ptr<UnaryExp> unary_exp);
 };
 
 struct MulUnaryExp;
