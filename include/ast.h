@@ -53,17 +53,17 @@ struct LVal;
 struct Cond;
 
 struct Ident : public Node {
-    std::string ident;
+    Token ident;
 
     void print(std::ostream &os) override;
-    Ident(std::string ident) : ident(ident) {}
+    Ident(Token ident) : ident(ident) {}
 };
 
 struct StringConst : public Node {
-    std::string str;
+    Token str;
 
     void print(std::ostream &os) override;
-    StringConst(std::string str) : str(str) {}
+    StringConst(Token str) : str(str) {}
 };
 
 struct CompUnit : public Node {
@@ -97,16 +97,16 @@ struct ConstDecl : public Node {
 };
 
 struct BType : public Node {
-    std::string btype;
+    Token btype;
 
-    BType(std::string btype) : btype(btype) {}
+    BType(Token btype) : btype(btype) {}
     void print(std::ostream &os) override;
 };
 
 struct FuncType : public Node {
-    std::string func_type;
+    Token func_type;
 
-    FuncType(std::string func_type) : func_type(func_type) {}
+    FuncType(Token func_type) : func_type(func_type) {}
     void print(std::ostream &os) override;
 };
 
@@ -236,8 +236,9 @@ struct Character : public Node {
 };
 
 struct UnaryOp : public Node {
-    char op; // +/-/!
+    Token op; // +/-/!
 
+    UnaryOp(Token op) : op(op) {}
     void print(std::ostream &os) override;
 };
 

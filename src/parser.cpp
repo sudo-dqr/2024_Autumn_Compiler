@@ -146,8 +146,7 @@ std::unique_ptr<VarDecl> Parser::parse_vardecl() {
 }
 
 std::unique_ptr<BType> Parser::parse_btype() {
-    Token t = get_curtoken();
-    std::unique_ptr<BType> res = std::make_unique<BType>(t.get_token());
+    std::unique_ptr<BType> res = std::make_unique<BType>(get_curtoken());
     next_token();
     return res;
 }
@@ -263,22 +262,19 @@ std::unique_ptr<FuncDef> Parser::parse_funcdef() {
 }
 
 std::unique_ptr<FuncType> Parser::parse_functype() {
-    Token t = get_curtoken();
-    auto res = std::make_unique<FuncType>(t.get_token());
+    auto res = std::make_unique<FuncType>(get_curtoken());
     next_token();
     return res;
 }
 
 std::unique_ptr<Ident> Parser::parse_ident() {
-    Token t = get_curtoken();
-    auto res = std::make_unique<Ident>(t.get_token());
+    auto res = std::make_unique<Ident>(get_curtoken());
     next_token();
     return res;
 }
 
 std::unique_ptr<StringConst> Parser::parse_stringconst() {
-    Token t = get_curtoken();
-    auto res = std::make_unique<StringConst>(t.get_token());
+    auto res = std::make_unique<StringConst>(get_curtoken());
     next_token();
     return res;
 }
@@ -675,4 +671,56 @@ std::unique_ptr<PrimaryExp> Parser::parse_primaryexp() {
     }
 }
 
+std::unique_ptr<UnaryOp> Parser::parse_unaryop() {
+    auto res = std::make_unique<UnaryOp>(get_curtoken());
+    next_token();
+    return res;
+}
+
+std::unique_ptr<UnaryExp> Parser::parse_unaryexp() {
+    if (get_curtoken().get_type() == Token::PLUS ||
+        get_curtoken().get_type() == Token::MINU ||
+        get_curtoken().get_type() == Token::NOT) {
+        return std::make_unique<UnaryExp>(parse_unaryop());
+    } else {
+        Token t1 = get_curtoken();
+        next_token();
+        Token t2 = get_curtoken();
+        unget_token();
+        if (t1.get_type() == Token::IDENFR && t2.get_type() == Token::LPARENT) {
+            return std::make_unique<UnaryExp>(parse_callfunc());
+        } else {
+            return std::make_unique<UnaryExp>(parse_primaryexp());
+        }
+    }
+}
+
+std::unique_ptr<CallFunc> Parser::parse_callfunc() {
+    auto res = std::make_unique<CallFunc>();
+    res->ident = parse_ident();
+    next_token(); // 跳过(
+    if (get_curtoken().get_type() != Token::RPARENT) {
+        res->func_rparams = parse_funcrparams();
+    } else {
+        res->func_rparams = nullptr;
+    }
+    if (get_curtoken().get_type() == Token::RPARENT) {
+        next_token();
+    } else { // j error
+        unget_token();
+        report_error(get_curtoken().get_line_number(), 'j');
+        next_token();
+    }
+    return res;
+}
+
+std::unique_ptr<FuncRParams> Parser::parse_funcrparams() {
+    auto res = std::make_unique<FuncRParams>();
+    res->exps.push_back(parse_exp());
+    while (get_curtoken().get_type() == Token::COMMA) {
+        next_token();
+        res->exps.push_back(parse_exp());
+    }
+    return res;
+}
 
