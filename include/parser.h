@@ -66,6 +66,9 @@ class Parser {
         std::unique_ptr<PrintfStmt> parse_printfstmt();
         std::unique_ptr<LVal> parse_lval();
         std::unique_ptr<LOrExp> parse_lorexp();
+        std::unique_ptr<Number> parse_number();
+        std::unique_ptr<Character> parse_character();
+        std::unique_ptr<PrimaryExp> parse_primaryexp();
 
 };
 

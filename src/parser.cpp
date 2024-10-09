@@ -605,3 +605,74 @@ std::unique_ptr<PrintfStmt> Parser::parse_printfstmt() {
         next_token();
     }
 }
+
+std::unique_ptr<Exp> Parser::parse_exp() {
+    auto res = std::make_unique<Exp>();
+    res->add_exp = parse_addexp();
+    return res;
+}
+
+std::unique_ptr<AssignStmt> Parser::parse_assignstmt() {
+    auto res = std::make_unique<AssignStmt>();
+    res->lval = parse_lval();
+    next_token(); // 跳过=
+    res->exp = parse_exp();
+    return res;
+}
+
+std::unique_ptr<LVal> Parser::parse_lval() {
+    auto res = std::make_unique<LVal>();
+    res->ident = parse_ident();
+    next_token();
+    if (get_curtoken().get_type() == Token::LBRACK) {
+        res->exp = parse_exp();
+        if (get_curtoken().get_type() == Token::RBRACK) {
+            next_token();
+        } else { // k error
+            unget_token();
+            report_error(get_curtoken().get_line_number(), 'k');
+            next_token();
+        }
+    } else {
+        res->exp = nullptr;
+    }
+    return res;
+}
+
+std::unique_ptr<Number> Parser::parse_number() {
+    auto res = std::make_unique<Number>(get_curtoken());
+    next_token();
+    return res;
+}
+
+std::unique_ptr<Character> Parser::parse_character() {
+    auto res = std::make_unique<Character>(get_curtoken());
+    next_token();
+    return res;
+}
+
+std::unique_ptr<PrimaryExp> Parser::parse_primaryexp() {
+    if (get_curtoken().get_type() == Token::LPARENT) {
+        next_token(); // 跳过(
+        auto exp = parse_exp();
+        if (get_curtoken().get_type() == Token::RPARENT) {
+            next_token();
+        } else { // j error
+            unget_token();
+            report_error(get_curtoken().get_line_number(), 'j');
+            next_token();
+        }
+        return std::make_unique<PrimaryExp>(exp);
+    } else if (get_curtoken().get_type() == Token::IDENFR) {
+        auto lval = parse_lval();
+        return std::make_unique<PrimaryExp>(lval);
+    } else if (get_curtoken().get_type() == Token::INTCON) {
+        auto num = parse_number();
+        return std::make_unique<PrimaryExp>(num);
+    } else {
+        auto ch = parse_character();
+        return std::make_unique<PrimaryExp>(ch);
+    }
+}
+
+

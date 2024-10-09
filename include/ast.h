@@ -222,14 +222,16 @@ struct PrintfStmt : public Node {
 };
 
 struct Number : public Node {
-    int number;
+    Token number;
 
+    Number(Token number) : number(number) {}
     void print(std::ostream &os) override;
 };
 
 struct Character : public Node {
-    char ch;
+    Token ch;
 
+    Character(Token ch) : ch(ch) {}
     void print(std::ostream &os) override;
 };
 
