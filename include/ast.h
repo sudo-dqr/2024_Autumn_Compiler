@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <variant> // C++17
+#include "token.h""
 
 struct Node {
     int line_number;
@@ -256,7 +257,7 @@ struct UnaryExp : public Node{
     std::unique_ptr<Ident> ident;
     std::unique_ptr<FuncRParams> func_rparams;
     std::unique_ptr<UnaryOp> unary_op;
-    std::unique_ptr<UnaryExp> unary_exp;
+    std::unique_ptr<UnaryExp> unary_exp; //!需要使用指针来避免无限递归
 
     void print(std::ostream &os) override;
     UnaryExp(std::unique_ptr<PrimaryExp> primary_exp);
@@ -264,14 +265,15 @@ struct UnaryExp : public Node{
     UnaryExp(std::unique_ptr<UnaryOp> unary_op, std::unique_ptr<UnaryExp> unary_exp);
 };
 
-struct MulUnaryExp;
-using MulExp = std::variant<UnaryExp, MulUnaryExp>;
-struct MulUnaryExp : public Node {
-    std::unique_ptr<MulExp> mul_exp;
-    char op;
-    std::unique_ptr<UnaryExp> unary_exp;
+struct MulExp : public Node {
+    //  MulExp → UnaryExp | MulExp ('*' | '/' | '%') UnaryExp 
+    std::unique_ptr<MulExp> mulexp; //!需要使用指针来避免无限递归
+    std::unique_ptr<Token> op;
+    std::unique_ptr<UnaryExp> unaryexp;
 
     void print(std::ostream &os) override;
+    MulExp(std::unique_ptr<MulExp> mulexp, std::unique_ptr<Token> op, std::unique_ptr<UnaryExp> unaryexp);
+    MulExp(std::unique_ptr<UnaryExp> unaryexp);
 };
 
 struct AddMulExp;
