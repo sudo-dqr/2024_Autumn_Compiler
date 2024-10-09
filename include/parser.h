@@ -45,7 +45,6 @@ class Parser {
         std::unique_ptr<Exp> parse_exp();
         std::unique_ptr<ConstInitVal> parse_const_initval();
         std::unique_ptr<InitVal> parse_initval();
-        std::unique_ptr<AddExp> parse_addexp();
         std::unique_ptr<FuncDef> parse_funcdef();
         std::unique_ptr<FuncType> parse_functype();
         std::unique_ptr<Ident> parse_ident();
@@ -65,7 +64,6 @@ class Parser {
         std::unique_ptr<ReturnStmt> parse_returnstmt();
         std::unique_ptr<PrintfStmt> parse_printfstmt();
         std::unique_ptr<LVal> parse_lval();
-        std::unique_ptr<LOrExp> parse_lorexp();
         std::unique_ptr<Number> parse_number();
         std::unique_ptr<Character> parse_character();
         std::unique_ptr<PrimaryExp> parse_primaryexp();
@@ -73,6 +71,12 @@ class Parser {
         std::unique_ptr<UnaryExp> parse_unaryexp();
         std::unique_ptr<UnaryExp> parse_callfunc();
         std::unique_ptr<FuncRParams> parse_funcrparams();
+        std::unique_ptr<MulExp> parse_mulexp();
+        std::unique_ptr<AddExp> parse_addexp();
+        std::unique_ptr<RelExp> parse_relexp();
+        std::unique_ptr<EqExp> parse_eqexp();
+        std::unique_ptr<LAndExp> parse_landexp();
+        std::unique_ptr<LOrExp> parse_lorexp();
 
 };
 

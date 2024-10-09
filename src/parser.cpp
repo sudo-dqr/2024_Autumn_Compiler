@@ -718,5 +718,75 @@ std::unique_ptr<FuncRParams> Parser::parse_funcrparams() {
     return std::make_unique<FuncRParams>(std::move(exps));
 }
 
+std::unique_ptr<MulExp> Parser::parse_mulexp() {
+    std::unique_ptr<MulExp> mul_exp = std::make_unique<MulExp>(parse_unaryexp());
+    while (get_curtoken().get_type() == Token::MULT ||
+            get_curtoken().get_type() == Token::DIV ||
+            get_curtoken().get_type() == Token::MOD) {
+        Token op = get_curtoken();
+        next_token();
+        auto unaryexp = parse_unaryexp();
+        mul_exp = std::make_unique<MulExp>(std::move(mul_exp), std::make_unique<Token>(op),std::move(unaryexp));
+    }
+    return std::move(mul_exp);
+}
+
+std::unique_ptr<AddExp> Parser::parse_addexp() {
+    auto add_exp = std::make_unique<AddExp>(parse_mulexp());
+    while (get_curtoken().get_type() == Token::PLUS ||
+            get_curtoken().get_type() == Token::MINU ) {
+        Token op = get_curtoken();
+        next_token();
+        auto mul_exp = parse_mulexp();
+        add_exp = std::make_unique<AddExp>(std::move(add_exp), std::make_unique<Token>(op), std::move(mul_exp));            
+    }
+    return std::move(add_exp);
+}
+
+std::unique_ptr<RelExp> Parser::parse_relexp() {
+    auto rel_exp = std::make_unique<RelExp>(parse_addexp());
+    while (get_curtoken().get_type() == Token::GRE ||
+            get_curtoken().get_type() == Token::GEQ ||
+            get_curtoken().get_type() == Token::LEQ ||
+            get_curtoken().get_type() == Token::LSS ) {
+        Token op = get_curtoken();
+        next_token();
+        auto add_exp = parse_addexp();
+        rel_exp = std::make_unique<RelExp>(std::move(rel_exp), std::make_unique<Token>(op), std::move(add_exp));        
+    }
+    return std::move(rel_exp);
+}
+
+std::unique_ptr<EqExp> Parser::parse_eqexp() {
+    auto eq_exp = std::make_unique<EqExp>(parse_relexp());
+    while (get_curtoken().get_type() == Token::EQL ||
+            get_curtoken().get_type() == Token::NEQ ) {
+        Token op = get_curtoken();
+        next_token();
+        auto rel_exp = parse_relexp();
+        eq_exp = std::make_unique<EqExp>(std::move(eq_exp), std::make_unique<Token>(op), std::move(rel_exp));
+    }
+    return std::move(eq_exp);
+}
+
+std::unique_ptr<LAndExp> Parser::parse_landexp() {
+    auto land_exp = std::make_unique<LAndExp>(parse_eqexp());
+    while (get_curtoken().get_type() == Token::AND) {
+        next_token();
+        auto eq_exp = parse_eqexp();
+        land_exp = std::make_unique<LAndExp>(std::move(land_exp), std::move(eq_exp));
+    }
+    return std::move(land_exp);
+}
+
+std::unique_ptr<LOrExp> Parser::parse_lorexp() {
+    auto lor_exp = std::make_unique<LOrExp>(parse_landexp());
+    while (get_curtoken().get_type() == Token::OR) {
+        next_token();
+        auto land_exp = parse_landexp();
+        lor_exp = std::make_unique<LOrExp>(std::move(lor_exp), std::move(land_exp));
+    }
+    return std::move(lor_exp);
+}
 
 
