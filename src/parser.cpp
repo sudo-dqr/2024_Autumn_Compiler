@@ -1,7 +1,7 @@
 #include "parser.h"
 
 void Parser::next_token() {
-    auto buf = is_recovering ? recoverybuf : buffer;
+    auto& buf = is_recovering ? recoverybuf : buffer; //! 注意这里要引用 否则会创建副本
     if (!backbuf.empty()) { // 将预读的token从backbuf移回buffer
         buf.push_back(backbuf.back());
         backbuf.pop_back();
@@ -23,7 +23,7 @@ Token Parser::get_curtoken() {
 }
 
 void Parser::unget_token() { 
-    auto buf = is_recovering ? recoverybuf : buffer;
+    auto& buf = is_recovering ? recoverybuf : buffer;
     backbuf.push_back(buf.back());
     buf.pop_back();
 }
@@ -287,7 +287,7 @@ std::unique_ptr<StringConst> Parser::parse_stringconst() {
 }
 
 std::unique_ptr<MainFunc> Parser::parse_mainfunc() {
-    next_token(); // 跳过int
+    //std::cout << "MainFunc : curtoken is " << get_curtoken().get_token() << std::endl;
     next_token(); // 跳过main
     next_token(); // 跳过(
     if (get_curtoken().get_type() == Token::RPARENT) {
@@ -329,9 +329,11 @@ std::unique_ptr<FuncFParam> Parser::parse_funcfparam() {
 }
 
 std::unique_ptr<Block> Parser::parse_block() {
+    //std::cout << "Block : curtoken is " << get_curtoken().get_token() << "in line " << get_curtoken().get_line_number() <<std::endl;
     next_token(); // 跳过{
     auto block_items = std::vector<std::unique_ptr<BlockItem>>();
     while (get_curtoken().get_type() != Token::RBRACE) {
+        //std::cout << "NOT RBRACE : curtoken is " << get_curtoken().get_token() << "in line " << get_curtoken().get_line_number() <<std::endl;
         block_items.push_back(parse_blockitem());
     }
     next_token(); // 跳过}
@@ -476,9 +478,11 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
 //! 为什么不能接着用backbuf? 因为我们要回复的其实就是LVal的tokens, 需要有一个明确的起始点
 
 std::unique_ptr<IfStmt> Parser::parse_ifstmt() {
+    //std::cout << "IfStmt : curtoken is " << get_curtoken().get_token() << std::endl;
     next_token(); // 跳过if
     next_token(); // 跳过(
     auto condition = parse_cond();
+    //std::cout << "IfStmt : curtoken is " << get_curtoken().get_token() << std::endl;
     if (get_curtoken().get_type() == Token::RPARENT) {
         next_token();
     } else { // j error
@@ -742,6 +746,7 @@ std::unique_ptr<MulExp> Parser::parse_mulexp() {
         auto unaryexp = parse_unaryexp();
         mul_exp = std::make_unique<MulExp>(std::move(mul_exp), std::make_unique<Token>(op),std::move(unaryexp));
     }
+    next_token();
     return std::move(mul_exp);
 }
 
@@ -754,6 +759,7 @@ std::unique_ptr<AddExp> Parser::parse_addexp() {
         auto mul_exp = parse_mulexp();
         add_exp = std::make_unique<AddExp>(std::move(add_exp), std::make_unique<Token>(op), std::move(mul_exp));            
     }
+    next_token();
     return std::move(add_exp);
 }
 
@@ -768,6 +774,7 @@ std::unique_ptr<RelExp> Parser::parse_relexp() {
         auto add_exp = parse_addexp();
         rel_exp = std::make_unique<RelExp>(std::move(rel_exp), std::make_unique<Token>(op), std::move(add_exp));        
     }
+    next_token();
     return std::move(rel_exp);
 }
 
@@ -780,6 +787,7 @@ std::unique_ptr<EqExp> Parser::parse_eqexp() {
         auto rel_exp = parse_relexp();
         eq_exp = std::make_unique<EqExp>(std::move(eq_exp), std::make_unique<Token>(op), std::move(rel_exp));
     }
+    next_token();
     return std::move(eq_exp);
 }
 
@@ -790,6 +798,7 @@ std::unique_ptr<LAndExp> Parser::parse_landexp() {
         auto eq_exp = parse_eqexp();
         land_exp = std::make_unique<LAndExp>(std::move(land_exp), std::move(eq_exp));
     }
+    next_token();
     return std::move(land_exp);
 }
 
@@ -800,6 +809,7 @@ std::unique_ptr<LOrExp> Parser::parse_lorexp() {
         auto land_exp = parse_landexp();
         lor_exp = std::make_unique<LOrExp>(std::move(lor_exp), std::move(land_exp));
     }
+    next_token();
     return std::move(lor_exp);
 }
 

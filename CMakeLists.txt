@@ -11,3 +11,7 @@ include_directories(include)
 aux_source_directory(src src_path)
 
 add_executable(Compiler ${src_path})
+
+set(CMAKE_BUILD_TYPE Debug)
+
+# set(CMAKE_BUILD_TYPE Release)
