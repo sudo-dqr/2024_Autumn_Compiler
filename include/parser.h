@@ -45,14 +45,12 @@ class Parser {
         std::unique_ptr<Exp> parse_exp();
         std::unique_ptr<ConstInitVal> parse_const_initval();
         std::unique_ptr<InitVal> parse_initval();
-        std::unique_ptr<FuncDef> parse_funcdef();
         std::unique_ptr<FuncType> parse_functype();
         std::unique_ptr<Ident> parse_ident();
         std::unique_ptr<StringConst> parse_stringconst();
         std::unique_ptr<FuncFParams> parse_funcfparams();
         std::unique_ptr<Block> parse_block();
         std::unique_ptr<BlockItem> parse_blockitem();
-        std::unique_ptr<MainFunc> parse_mainfunc();
         std::unique_ptr<FuncFParam> parse_funcfparam();
         std::unique_ptr<Stmt> parse_stmt();
         std::unique_ptr<IfStmt> parse_ifstmt();
