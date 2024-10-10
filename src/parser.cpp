@@ -636,6 +636,7 @@ std::unique_ptr<LVal> Parser::parse_lval() {
     auto ident = parse_ident();
     std::unique_ptr<Exp> exp;
     if (get_curtoken().get_type() == Token::LBRACK) {
+        next_token();
         exp = parse_exp();
         if (get_curtoken().get_type() == Token::RBRACK) {
             next_token();

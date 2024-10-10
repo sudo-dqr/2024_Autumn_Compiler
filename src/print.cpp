@@ -75,12 +75,14 @@ void ConstExp::print(std::ostream &os) { // ConstExp → AddExp
 }
 
 void ConstExps::print(std::ostream &os) { // ConstExps → ConstExp { ',' ConstExp }
+    os << "LBRACE {" << std::endl;
     for (size_t i = 0; i < this->const_exps.size(); ++i) {
         this->const_exps[i]->print(os);
         if (i < this->const_exps.size() - 1) {
             os << "COMMA ," << std::endl;
         }
     }
+    os << "RBRACE }" << std::endl;
 }
 
 void VarDef::print(std::ostream &os) { //VarDef → Ident [ '[' ConstExp ']' ] | Ident [ '[' ConstExp ']' ] '='InitVal
@@ -109,12 +111,14 @@ void Exp::print(std::ostream &os) { // Exp → AddExp
 }
 
 void Exps::print(std::ostream &os) { // Exps → Exp { ',' Exp }
+    os << "LBRACE {" << std::endl;
     for (size_t i = 0; i < this->exps.size(); ++i) {
         this->exps[i]->print(os);
         if (i < this->exps.size() - 1) {
             os << "COMMA ," << std::endl;
         }
     }
+    os << "RBRACE }" << std::endl;
 }
 
 void StringConst::print(std::ostream &os) {
