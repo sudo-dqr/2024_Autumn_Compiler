@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include "lexer.h"
+#include "parser.h"
 using namespace std;
 
 int main() {
@@ -15,13 +16,9 @@ int main() {
     buffer << file.rdbuf();
     string text = buffer.str();
     Lexer lexer = Lexer(text);
-    // 输出到lexer.txt中
-    ofstream lexer_out("lexer.txt", std::ofstream::trunc);
-    while (lexer.has_next()) {
-        lexer_out << lexer.next().to_string() << endl;
-    }
-    lexer_out.close();
-
+    Parser parser = Parser(lexer);
+    auto comp_unit = parser.parse();
+    comp_unit->print(cout);
     return 0;
 }
 
