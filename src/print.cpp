@@ -15,7 +15,7 @@ void CompUnit::print(std::ostream &os) { // CompUnit → {Decl} {FuncDef} MainFu
         func_def->print(os);
     }
     main_func->print(os);
-    os << "<CompUnit>" << std::endl;
+    os << "<CompUnit>";
 }
 
 void ConstDecl::print(std::ostream &os) { // ConstDecl → 'const' BType ConstDef { ',' ConstDef } ';'
@@ -65,6 +65,7 @@ void ConstDef::print(std::ostream &os) { // ConstDef → Ident [ '[' ConstExp ']
         },
         (*const_init_val) //需要解引用, 从unique_ptr中取出元素
     );
+    os << "<ConstInitVal>" << std::endl;
     os << "<ConstDef>" << std::endl;
 }
 
@@ -144,9 +145,12 @@ void MainFunc::print(std::ostream &os) { //'int' 'main' '(' ')' Block
 void FuncType::print(std::ostream &os) {
     if (this->func_type->get_type() == Token::INTTK) {
         os << "INTTK int" << std::endl;
-    } else {
+    } else if (this->func_type->get_type() == Token::CHARTK) {
         os << "CHARTK char" << std::endl;
+    } else {
+        os << "VOIDTK void" << std::endl;
     }
+    os << "<FuncType>" << std::endl;
 }
 
 void Ident::print(std::ostream &os) {
@@ -160,6 +164,7 @@ void FuncFParams::print(std::ostream &os) { // FuncFParams → FuncFParam { ',' 
             os << "COMMA ," << std::endl;
         }
     }
+    os << "<FuncFParams>" << std::endl;
 }
 
 void FuncFParam::print(std::ostream &os) { //FuncFParam → BType Ident [ '[' ']' ]
@@ -239,7 +244,10 @@ void ForStmt::print(std::ostream &os) { // ForStmt → 'for' '(' [AssignStmt] ';
     os << "FORTK for" << std::endl;
     os << "LPARENT (" << std::endl;
     if (this->assign1) {
-        this->assign1->print(os);
+        this->assign1->lval->print(os);
+        os << "ASSIGN =" << std::endl;
+        this->assign1->exp->print(os);
+        os << "<ForStmt>" << std::endl;
     }
     os << "SEMICN ;" << std::endl;
     if (this->condition) {
@@ -247,7 +255,10 @@ void ForStmt::print(std::ostream &os) { // ForStmt → 'for' '(' [AssignStmt] ';
     }
     os << "SEMICN ;" << std::endl;
     if (this->assign2) {
-        this->assign2->print(os);
+        this->assign2->lval->print(os);
+        os << "ASSIGN =" << std::endl;
+        this->assign2->exp->print(os);
+        os << "<ForStmt>" << std::endl;
     }
     os << "RPARENT )" << std::endl;
     std::visit(

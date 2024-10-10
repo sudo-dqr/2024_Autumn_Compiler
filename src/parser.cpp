@@ -420,6 +420,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                 next_token(); // 跳过=
                 if (get_curtoken().get_type() == Token::GETINTTK ||
                     get_curtoken().get_type() == Token::GETCHARTK ) { // rule 9,10
+                    bool getint_flag = (get_curtoken().get_type() == Token::GETINTTK);
                     next_token(); // 跳过getint/getchar
                     next_token(); // 跳过(
                     if (get_curtoken().get_type() == Token::RPARENT) {
@@ -436,7 +437,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                         report_error(get_curtoken().get_line_number(), 'i');
                         next_token();
                     }
-                    if (get_curtoken().get_type() == Token::GETINTTK) {
+                    if (getint_flag) {
                         return std::make_unique<Stmt>(std::in_place_type<GetIntStmt>,GetIntStmt(std::move(lval)));
                     } else {
                         return std::make_unique<Stmt>(std::in_place_type<GetCharStmt>,GetCharStmt(std::move(lval)));
