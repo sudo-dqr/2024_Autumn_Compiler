@@ -53,8 +53,10 @@ struct Exps : public Node {
 };
 using InitVal = std::variant<Exp, Exps, StringConst>;
 
+//! 由于在语法树层级上, 需要输出一个<Stmt>, 所以只能将部分结构包装一下
 struct AssignStmt;
 struct ExpStmt;
+struct BlockStmt;
 struct IfStmt;
 struct ForStmt;
 struct BreakStmt;
@@ -63,7 +65,7 @@ struct ReturnStmt;
 struct GetIntStmt;
 struct GetCharStmt;
 struct PrintfStmt;
-using Stmt = std::variant<AssignStmt, ExpStmt, Block,IfStmt, ForStmt, BreakStmt, 
+using Stmt = std::variant<AssignStmt, ExpStmt, BlockStmt, IfStmt, ForStmt, BreakStmt, 
                         ContinueStmt, ReturnStmt, GetIntStmt, GetCharStmt, PrintfStmt>;
 using BlockItem = std::variant<Decl, Stmt>;
 struct LVal;
@@ -200,6 +202,13 @@ struct ExpStmt : public Node {
     std::unique_ptr<Exp> exp;
 
     ExpStmt(std::unique_ptr<Exp> exp);
+    void print(std::ostream &os) override;
+};
+
+struct BlockStmt : public Node {
+    std::unique_ptr<Block> block;
+
+    BlockStmt(std::unique_ptr<Block> block);
     void print(std::ostream &os) override;
 };
 

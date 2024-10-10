@@ -101,6 +101,11 @@ ExpStmt::ExpStmt(std::unique_ptr<Exp> exp) {
     this->exp = std::move(exp);
 }
 
+//! constructor of BlockStmt
+BlockStmt::BlockStmt(std::unique_ptr<Block> block) {
+    this->block = std::move(block);
+}
+
 //! constructor of IfStmt
 IfStmt::IfStmt(std::unique_ptr<Cond> condition, std::unique_ptr<Stmt> if_stmt, std::unique_ptr<Stmt> else_stmt) {
     this->condition = std::move(condition);

@@ -24,6 +24,7 @@ void ConstDecl::print(std::ostream &os) { // ConstDecl → 'const' BType ConstDe
     for (auto &const_def : this->const_defs) {
         const_def->print(os);
     }
+    os << "SEMICN ;" << std::endl;
     os << "<ConstDecl>" << std::endl;
 }
 
@@ -32,6 +33,7 @@ void VarDecl::print(std::ostream &os) { // VarDecl → BType VarDef { ',' VarDef
     for (auto &var_def : this->var_defs) {
         var_def->print(os);
     }
+    os << "SEMICN ;" << std::endl;
     os << "<VarDecl>" << std::endl;
 }
 
@@ -89,6 +91,7 @@ void VarDef::print(std::ostream &os) { //VarDef → Ident [ '[' ConstExp ']' ] |
             },
             (*init_val)
         );
+        os << "<InitVal>" << std::endl;
     }
     os << "<VarDef>" << std::endl;
 }
@@ -129,7 +132,7 @@ void MainFunc::print(std::ostream &os) { //'int' 'main' '(' ')' Block
     os << "LPARENT (" << std::endl;
     os << "RPARENT )" << std::endl;
     this->block->print(os);
-    os << "<MainFunc>" << std::endl;
+    os << "<MainFuncDef>" << std::endl;
 }
 
 void FuncType::print(std::ostream &os) {
@@ -195,6 +198,11 @@ void ExpStmt::print(std::ostream &os) { // [Exp] ';'
         this->exp->print(os);
     }
     os << "SEMICN ;" << std::endl;
+    os << "<Stmt>" << std::endl;
+}
+
+void BlockStmt::print(std::ostream &os) { // BlockStmt → Block
+    this->block->print(os);
     os << "<Stmt>" << std::endl;
 }
 
@@ -317,10 +325,12 @@ void LVal::print(std::ostream &os) { // LVal -> Ident [ '[' Exp ']' ]
 
 void Number::print(std::ostream &os) {
     os << "INTCON " << this->num->get_token() << std::endl;
+    os << "<Number>" << std::endl;
 }
 
 void Character::print(std::ostream &os) {
     os << "CHRCON " << this->ch->get_token() << std::endl;
+    os << "<Character>" << std::endl;
 }
 
 void UnaryOp::print(std::ostream &os) {
@@ -331,6 +341,7 @@ void UnaryOp::print(std::ostream &os) {
     } else {
         os << "NOT !" << std::endl;
     }
+    os << "<UnaryOp>" << std::endl;
 }
 
 void UnaryExp::print(std::ostream &os) { // UnaryExp → PrimaryExp | Ident '(' [FuncRParams] ')' | UnaryOp UnaryExp
