@@ -21,8 +21,11 @@ void CompUnit::print(std::ostream &os) { // CompUnit → {Decl} {FuncDef} MainFu
 void ConstDecl::print(std::ostream &os) { // ConstDecl → 'const' BType ConstDef { ',' ConstDef } ';'
     os << "CONSTTK const" << std::endl;
     this->btype->print(os);
-    for (auto &const_def : this->const_defs) {
-        const_def->print(os);
+    for (size_t i = 0; i < this->const_defs.size(); ++i) {
+        this->const_defs[i]->print(os);
+        if (i < this->const_defs.size() - 1) {
+            os << "COMMA ," << std::endl;
+        }
     }
     os << "SEMICN ;" << std::endl;
     os << "<ConstDecl>" << std::endl;
@@ -30,8 +33,11 @@ void ConstDecl::print(std::ostream &os) { // ConstDecl → 'const' BType ConstDe
 
 void VarDecl::print(std::ostream &os) { // VarDecl → BType VarDef { ',' VarDef } ';'
     this->btype->print(os);
-    for (auto &var_def : this->var_defs) {
-        var_def->print(os);
+    for (size_t i = 0; i < this->var_defs.size(); ++i) {
+        this->var_defs[i]->print(os);
+        if (i < this->var_defs.size() - 1) {
+            os << "COMMA ," << std::endl;
+        }
     }
     os << "SEMICN ;" << std::endl;
     os << "<VarDecl>" << std::endl;
