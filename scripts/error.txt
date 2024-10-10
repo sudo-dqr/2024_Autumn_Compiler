@@ -1,1 +1,1 @@
-build.sh: line 5: 24526 Segmentation fault      (core dumped) ./Compiler
+build.sh: line 5: 31576 Segmentation fault      (core dumped) ./Compiler
