@@ -80,21 +80,19 @@ Token Lexer::next() {
     } else if (ch == '&') {
         if (source[pos + 1] == '&') {
             pos += 2;
-            return Token{"&&", Token::AND, line_number};
         } else { // Error! type: a
             pos++;
             report_error(line_number, 'a');
-            return next();
         }
+        return Token{"&&", Token::AND, line_number};
     } else if (ch == '|') {
         if (source[pos + 1] == '|') {
             pos += 2;
-            return Token{"||", Token::OR, line_number};
         } else { // Error! type: a
             pos++;
             report_error(line_number, 'a');
-            return next();
         }
+        return Token{"||", Token::OR, line_number};
     } else if (ch == '+') {
         pos++;
         return Token{"+", Token::TokenType::PLUS, line_number};

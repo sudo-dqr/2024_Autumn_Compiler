@@ -12,6 +12,8 @@ int main() {
         cout << "testfile not found!" << endl;
         return 1;
     }
+    ofstream error_out("error.txt", ios::trunc);
+    error_out.close();
     stringstream buffer;
     buffer << file.rdbuf();
     string text = buffer.str();
