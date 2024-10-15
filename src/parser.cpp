@@ -250,15 +250,18 @@ std::unique_ptr<InitVal> Parser::parse_initval() {
 }
 
 std::unique_ptr<FuncDef> Parser::parse_funcdef() {
+    std::cout << "FuncDef : curtoken is " << get_curtoken().get_token() << std::endl;
     auto func_type = parse_functype();
     auto ident = parse_ident();
     std::unique_ptr<FuncFParams> func_fparams;
     std::unique_ptr<Block> block;
     next_token(); // 跳过 (
-    if (get_curtoken().get_type() == Token::RPARENT) {
+    if (get_curtoken().get_type() == Token::LBRACE) {
         func_fparams = nullptr;
+        unget_token();
+        report_error(get_curtoken().get_line_number(), 'j');
         next_token();
-    } else {
+    } else if (get_curtoken().get_type() != Token::RPARENT) {
         func_fparams = parse_funcfparams();
         if (get_curtoken().get_type() == Token::RPARENT) {
             next_token();
@@ -267,6 +270,9 @@ std::unique_ptr<FuncDef> Parser::parse_funcdef() {
             report_error(get_curtoken().get_line_number(), 'j');
             next_token();
         }
+    } else {
+        func_fparams = nullptr;
+        next_token();
     }
     block = parse_block();
     return std::make_unique<FuncDef>(std::move(func_type), std::move(ident), std::move(func_fparams), std::move(block));
@@ -548,7 +554,7 @@ std::unique_ptr<BreakStmt> Parser::parse_breakstmt() {
         next_token();
     } else { // l error
         unget_token();
-        report_error(get_curtoken().get_line_number(), 'l');
+        report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
     return std::make_unique<BreakStmt>(std::make_unique<Token>(break_token));
@@ -561,7 +567,7 @@ std::unique_ptr<ContinueStmt> Parser::parse_continuestmt() {
         next_token();
     } else { // l error
         unget_token();
-        report_error(get_curtoken().get_line_number(), 'l');
+        report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
     return std::make_unique<ContinueStmt>(std::make_unique<Token>(continue_token));
@@ -721,7 +727,13 @@ std::unique_ptr<UnaryExp> Parser::parse_callfunc() {
     auto ident = parse_ident();
     std::unique_ptr<FuncRParams> func_rparams;
     next_token(); // 跳过(
-    if (get_curtoken().get_type() != Token::RPARENT) {
+    if (get_curtoken().get_type() == Token::IDENFR ||
+        get_curtoken().get_type() == Token::LPARENT ||
+        get_curtoken().get_type() == Token::PLUS ||
+        get_curtoken().get_type() == Token::MINU ||
+        get_curtoken().get_type() == Token::NOT ||
+        get_curtoken().get_type() == Token::INTCON ||
+        get_curtoken().get_type() == Token::CHRCON) { // Exp的FIRST集
         func_rparams = parse_funcrparams();
     } else {
         func_rparams = nullptr;
