@@ -89,6 +89,7 @@ Parser::CompUnitType Parser::comp_unit_judge_next_type() {
     next_token();
     t = get_curtoken();
     if (t.get_type() == Token::MAINTK) {
+        unget_token();
         return CompUnitType::MAINFUNC;
     }
     next_token();
@@ -298,6 +299,7 @@ std::unique_ptr<StringConst> Parser::parse_stringconst() {
 
 std::unique_ptr<MainFunc> Parser::parse_mainfunc() {
     //std::cout << "MainFunc : curtoken is " << get_curtoken().get_token() << std::endl;
+    next_token(); // 跳过int
     next_token(); // 跳过main
     next_token(); // 跳过(
     if (get_curtoken().get_type() == Token::RPARENT) {
@@ -552,7 +554,7 @@ std::unique_ptr<BreakStmt> Parser::parse_breakstmt() {
     next_token(); // 跳过break
     if (get_curtoken().get_type() == Token::SEMICN) {
         next_token();
-    } else { // l error
+    } else { // i error
         unget_token();
         report_error(get_curtoken().get_line_number(), 'i');
         next_token();
@@ -565,7 +567,7 @@ std::unique_ptr<ContinueStmt> Parser::parse_continuestmt() {
     next_token(); // 跳过continue
     if (get_curtoken().get_type() == Token::SEMICN) {
         next_token();
-    } else { // l error
+    } else { // i error
         unget_token();
         report_error(get_curtoken().get_line_number(), 'i');
         next_token();
