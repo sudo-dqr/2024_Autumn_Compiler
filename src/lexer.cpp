@@ -40,7 +40,6 @@ bool Lexer::has_next() {
             if (source[pos + 1] == '/') { // single-line comment
                 skip_single_line_comment();
             } else if (source[pos + 1] == '*') { // multi-line comment
-                pos += 2;
                 skip_multi_line_comment();
             } else {
                 return true;
@@ -192,28 +191,21 @@ void Lexer::skip_single_line_comment() {
 }
 
 void Lexer::skip_multi_line_comment() {
-    State state = State::S1; // start state
+    pos += 2;
     while (pos < source.length()) {
-        switch (state) {
-            case State::S1:
-                if (source[pos] == '*')
-                    state = State::S2;
-                break;
-            case State::S2:
-                if (source[pos] == '/')
-                    state = State::S3;
-                else if (source[pos] == '*')
-                    state = State::S2;
-                else
-                    state = State::S1;
-                break;    
-            case State::S3:
-                break;
-            default:
-                break;
+        while (pos < source.length() && source[pos] != '*') {
+            if (source[pos] == '\n') {
+                line_number++;
+            }
+            pos++;
         }
-        pos++;
-        if (state == State::S3) break;
+        while (pos < source.length() && source[pos] == '*') {
+            pos++;
+        }
+        if (pos < source.length() && source[pos] == '/') {
+            pos++;
+            break;
+        }
     }
 }
 

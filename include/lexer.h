@@ -1,7 +1,6 @@
 #ifndef LEXER_H
 #define LEXER_H
 #include "token.h"
-#include "multi_line_comment_fsm.h"
 #include "error.h"
 #include <string>
 #include <vector>
