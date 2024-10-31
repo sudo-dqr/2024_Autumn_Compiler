@@ -11,6 +11,7 @@ public:
 private:
     std::shared_ptr<SymbolTable> cur_scope;
     int loop_cnt;
+    bool is_void_func;
     void visit_decl(const Decl &decl);
     void visit_func_def(const FuncDef &func_def);
     void visit_block(const Block &block);

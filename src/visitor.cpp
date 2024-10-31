@@ -4,6 +4,7 @@
 Visitor::Visitor() {
     this->cur_scope = std::make_shared<SymbolTable>();
     this->loop_cnt = 0;
+    this->is_void_func= false;
 }
 
 
@@ -82,6 +83,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
 
 void Visitor::visit_func_def(const FuncDef &func_def) {
     Token::TokenType func_type = func_def.func_type->func_type->get_type();
+    this->is_void_func = (func_type == Token::VOIDTK);
     int line_number = func_def.func_type->func_type->get_line_number();
     std::string ident = func_def.ident->ident->get_token();
     std::deque<SymbolType> params;
@@ -114,6 +116,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
 
 void Visitor::visit_main_func(const MainFunc &main_func) {
     Token::TokenType func_type = Token::INTTK;
+    this->is_void_func = false;
     std::string ident = "main";
     SymbolType type = SymbolType(func_type, std::deque<SymbolType>());
     auto symbol = std::make_shared<Symbol>(type, ident);
@@ -246,15 +249,23 @@ void Visitor::visit_for_stmt(const ForStmt &for_stmt) {
 }
 
 void Visitor::visit_break_stmt(const BreakStmt &break_stmt) {
-
+    if (this->loop_cnt == 0) {
+        report_error(break_stmt.break_token->get_line_number(), 'm');
+    }
 }
 
 void Visitor::visit_continue_stmt(const ContinueStmt &continue_stmt) {
-
+    if (this->loop_cnt == 0) {
+        report_error(continue_stmt.continue_token->get_line_number(), 'm');
+    }
 }
 
 void Visitor::visit_return_stmt(const ReturnStmt &return_stmt) {
-
+    if (return_stmt.return_exp) {
+        if(this->is_void_func) {
+            report_error(return_stmt.return_token->get_line_number(), 'f');
+        }
+    }
 }
 
 void Visitor::visit_get_int_stmt(const GetIntStmt &get_int_stmt) {
