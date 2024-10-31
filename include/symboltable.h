@@ -30,10 +30,9 @@ struct SymbolType {
 struct Symbol {
     SymbolType type;
     std::string name;
-    int line_number;
 
-    Symbol(SymbolType type, std::string name, int line_number)
-        : type(type), name(name), line_number(line_number) {}
+    Symbol(SymbolType type, std::string name)
+        : type(type), name(name) {}
 };
 
 class SymbolTable : public std::enable_shared_from_this<SymbolTable> {

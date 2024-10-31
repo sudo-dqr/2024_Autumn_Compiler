@@ -39,14 +39,14 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
     int line_number = const_def.ident->ident->get_line_number();
     if (!const_def.const_exp) { // constant
         SymbolType type = SymbolType(true, btype);
-        auto symbol = std::make_shared<Symbol>(type, ident, line_number);
+        auto symbol = std::make_shared<Symbol>(type, ident);
         if (!cur_scope->add_symbol(symbol)) { // b error : redefined identifier
             report_error(line_number, 'b');
         }
     } else { // array
         // 暂时忽略表示数组长度的exp
         SymbolType type = SymbolType(true, btype, 0);
-        auto symbol = std::make_shared<Symbol>(type, ident, line_number);
+        auto symbol = std::make_shared<Symbol>(type, ident);
         if (!cur_scope->add_symbol(symbol)) {
             report_error(line_number, 'b');
         }
@@ -65,14 +65,14 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
     int line_number = var_def.ident->ident->get_line_number();
     if (!var_def.const_exp) { // variant
         SymbolType type = SymbolType(false, btype);
-        auto symbol = std::make_shared<Symbol>(type, ident, line_number);
+        auto symbol = std::make_shared<Symbol>(type, ident);
         if (!cur_scope->add_symbol(symbol)) {
             report_error(line_number, 'b');
         }
     } else {
         // 暂时忽略表示数组长度的exp
         SymbolType type = SymbolType(false, btype, 0);
-        auto symbol = std::make_shared<Symbol>(type, ident, line_number);
+        auto symbol = std::make_shared<Symbol>(type, ident);
         if (!cur_scope->add_symbol(symbol)) {
             report_error(line_number, 'b');
         }
@@ -84,7 +84,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
     int line_number = func_def.func_type->func_type->get_line_number();
     std::string ident = func_def.ident->ident->get_token();
     std::deque<SymbolType> params;
-    auto new_scope = cur_scope->push_scope();
+    cur_scope = cur_scope->push_scope();
     if (func_def.func_fparams) {
         for (const auto &func_fparam : func_def.func_fparams->func_fparams) {
             Token::TokenType param_type = func_fparam->btype->btype->get_type();
@@ -100,7 +100,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
         }
     }
     SymbolType type = SymbolType(func_type, params);
-    auto symbol = std::make_shared<Symbol>(type, ident, line_number);
+    auto symbol = std::make_shared<Symbol>(type, ident);
     if (!cur_scope->add_symbol(symbol)) {
         report_error(line_number, 'b');
     }
@@ -108,6 +108,19 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
     bool has_ending_return = func_block_has_ending_return(*func_def.block);
     if ((func_type != Token::VOIDTK) &&  (!has_ending_return)) {
         report_error(func_def.block->ending_line, 'g');
+    }
+}
+
+void Visitor::visit_main_func(const MainFunc &main_func) {
+    Token::TokenType func_type = Token::INTTK;
+    std::string ident = "main";
+    SymbolType type = SymbolType(func_type, std::deque<SymbolType>());
+    auto symbol = std::make_shared<Symbol>(type, ident);
+    cur_scope->add_symbol(symbol); // main函数不会发生b错误
+    cur_scope = cur_scope->push_scope();
+    visit_block(*main_func.block);
+    if (!func_block_has_ending_return(*main_func.block)) {
+        report_error(main_func.block->ending_line, 'g');
     }
 }
 
