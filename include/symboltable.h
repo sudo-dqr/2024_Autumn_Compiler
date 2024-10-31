@@ -5,11 +5,26 @@
 #include <memory>
 #include <unordered_map>
 #include <deque>
+#include "token.h"
 
-enum SymbolType {
-    CHARFUNC, INTFUNC, VOIDFUNC,
-    CONSTCHAR, CONSTINT, CONSTINTARRAY, CONSTCHARARRAY,
-    CHAR, INT, CHARARRAY, INTARRAY
+enum Category {
+    BASIC, ARRAY, FUNC
+};
+
+struct SymbolType {
+    Category category;
+    Token::TokenType btype;
+    bool is_const;
+    bool is_array;
+    int array_size;
+    std::deque<SymbolType> params;
+
+    // BASIC
+    SymbolType(bool is_const, Token::TokenType type) : category(BASIC), btype(type), is_const(is_const), is_array(false), array_size(0) {}
+    // ARRAY
+    SymbolType(bool is_const, Token::TokenType type, int size) : category(ARRAY), btype(type), is_const(is_const), is_array(true), array_size(size) {}
+    // FUNC
+    SymbolType(Token::TokenType type, std::deque<SymbolType> params) : category(FUNC), btype(type), is_const(false), is_array(false), array_size(0), params(params) {}
 };
 
 struct Symbol {
@@ -19,67 +34,6 @@ struct Symbol {
 
     Symbol(SymbolType type, std::string name, int line_number)
         : type(type), name(name), line_number(line_number) {}
-};
-
-struct CharFuncSymbol : public Symbol {
-    std::deque<Symbol> params;
-
-    CharFuncSymbol(std::string name, int line_number, std::deque<Symbol>)
-        : Symbol(SymbolType::CHARFUNC, name, line_number) {}
-};
-
-struct IntFuncSymbol : public Symbol {
-    std::deque<Symbol> params;
-
-    IntFuncSymbol(std::string name, int line_number, std::deque<Symbol>)
-        : Symbol(SymbolType::INTFUNC, name, line_number) {}
-};
-
-struct VoidFuncSymbol : public Symbol {
-    std::deque<Symbol> params;
-
-    VoidFuncSymbol(std::string name, int line_numer, std::deque<Symbol>)
-        : Symbol(SymbolType::VOIDFUNC, name, line_numer) {}
-};
-
-struct ConstCharSymbol : public Symbol {
-    ConstCharSymbol(std::string name, int line_number)
-        : Symbol(SymbolType::CONSTCHAR, name, line_number) {}
-};
-
-struct ConstIntSymbol : public Symbol {
-    ConstIntSymbol(std::string name, int line_number)
-        : Symbol(SymbolType::CONSTINT, name, line_number) {}
-};
-
-struct ConstIntArraySymbol :public Symbol {
-    ConstIntArraySymbol(std::string name, int line_number)
-        : Symbol(SymbolType::CONSTINTARRAY, name, line_number) {}
-};
-
-struct ConstCharArraySymbol : public Symbol {
-    ConstCharArraySymbol(std::string name, int line_number)
-        : Symbol(SymbolType::CONSTCHARARRAY, name, line_number) {}
-};
-
-struct IntSymbol : public Symbol {
-    IntSymbol(std::string name, int line_number)
-        : Symbol(SymbolType::INT, name, line_number) {}
-};
-
-struct CharSymbol : public Symbol {
-    CharSymbol(std::string name, int line_number)
-        : Symbol(SymbolType::CHAR, name, line_number) {}
-};
-
-struct CharArraySymbol : public Symbol {
-    CharArraySymbol(std::string name, int line_number)
-        : Symbol(SymbolType::CHARARRAY, name, line_number) {}
-};
-
-struct IntArraySymbol : public Symbol {
-    IntArraySymbol(std::string name, int line_number)
-        : Symbol(SymbolType::INTARRAY, name, line_number) {}
 };
 
 class SymbolTable : public std::enable_shared_from_this<SymbolTable> {

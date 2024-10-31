@@ -177,8 +177,9 @@ struct FuncFParam : public Node {
 
 struct Block : public Node {
     std::vector<std::unique_ptr<BlockItem>> block_items;
+    int ending_line; // g error }所在行号
 
-    Block(std::vector<std::unique_ptr<BlockItem>> block_items);
+    Block(std::vector<std::unique_ptr<BlockItem>> block_items, int ending_line);
     void print(std::ostream &os) override;
 };
 

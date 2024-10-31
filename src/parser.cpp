@@ -347,8 +347,9 @@ std::unique_ptr<Block> Parser::parse_block() {
     while (get_curtoken().get_type() != Token::RBRACE) {
         block_items.push_back(parse_blockitem());
     }
+    int ending_line = get_curtoken().get_line_number(); // g error
     next_token(); // 跳过}
-    return std::make_unique<Block>(std::move(block_items));
+    return std::make_unique<Block>(std::move(block_items), ending_line);
 }
 
 std::unique_ptr<BlockItem> Parser::parse_blockitem() {

@@ -80,8 +80,9 @@ FuncFParam::FuncFParam(std::unique_ptr<BType> btype, std::unique_ptr<Ident> iden
 }
 
 //! constructor of Block
-Block::Block(std::vector<std::unique_ptr<BlockItem>> block_items) {
+Block::Block(std::vector<std::unique_ptr<BlockItem>> block_items, int ending_line) {
     this->block_items = std::move(block_items);
+    this->ending_line = ending_line;
 }
 
 //! constructor of LVal

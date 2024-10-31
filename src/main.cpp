@@ -4,6 +4,7 @@
 #include <string>
 #include "lexer.h"
 #include "parser.h"
+#include "visitor.h"
 using namespace std;
 
 int main() {
@@ -21,7 +22,9 @@ int main() {
     Parser parser = Parser(lexer);
     ofstream parser_out("parser.txt", ios::trunc);
     auto comp_unit = parser.parse();
-    comp_unit->print(parser_out);
+    // comp_unit->print(parser_out);
+    Visitor visitor = Visitor();
+    visitor.visit(*comp_unit);
     return 0;
 }
 
