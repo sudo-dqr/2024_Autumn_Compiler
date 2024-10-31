@@ -10,10 +10,11 @@ public:
 
 private:
     std::shared_ptr<SymbolTable> cur_scope;
+    int loop_cnt;
     void visit_decl(const Decl &decl);
     void visit_func_def(const FuncDef &func_def);
     void visit_block(const Block &block);
-    bool func_block_has_ending_return(const Block &block);
+    static bool func_block_has_ending_return(const Block &block);
     void visit_block_item(const BlockItem &block_item);
     // Stmt
     void visit_stmt(const Stmt &stmt);
@@ -22,6 +23,8 @@ private:
     void visit_block_stmt(const BlockStmt &block_stmt);
     void visit_if_stmt(const IfStmt &if_stmt);
     void visit_for_stmt(const ForStmt &for_stmt);
+    void visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt);
+    void visit_cond(const Cond &cond);
     void visit_break_stmt(const BreakStmt &break_stmt);
     void visit_continue_stmt(const ContinueStmt &continue_stmt);
     void visit_return_stmt(const ReturnStmt &return_stmt);
@@ -29,7 +32,7 @@ private:
     void visit_get_char_stmt(const GetCharStmt &get_char_stmt);
     void visit_printf_stmt(const PrintfStmt &printf_stmt);
     // Stmt finish
-    void visit_lval(const LVal &lval);
+    std::shared_ptr<Symbol> visit_lval(const LVal &lval);
     void visit_exp(const Exp &exp);
     void visit_main_func(const MainFunc &main_func);
     void visit_const_decl(const ConstDecl &const_decl);

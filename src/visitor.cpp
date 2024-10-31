@@ -3,6 +3,7 @@
 
 Visitor::Visitor() {
     this->cur_scope = std::make_shared<SymbolTable>();
+    this->loop_cnt = 0;
 }
 
 
@@ -128,7 +129,7 @@ bool Visitor::func_block_has_ending_return(const Block &block) {
     if (block.block_items.empty()) {
         return false;
     } else {
-        int last = block.block_items.size() - 1;
+        size_t last = block.block_items.size() - 1;
         if (auto stmt_ptr = std::get_if<Stmt>(&(*block.block_items[last]))) { // Stmt
             if (auto return_stmt_ptr = std::get_if<ReturnStmt>(stmt_ptr)) { // return
                 return true;
@@ -186,23 +187,62 @@ void Visitor::visit_stmt(const Stmt &stmt) {
 }
 
 void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
+    auto lval_symbol = visit_lval((*assign_stmt.lval));
+    if (lval_symbol) {
+        if (lval_symbol->type.is_const) {
+            report_error(assign_stmt.lval->ident->ident->get_line_number(), 'h');
+        } else {
+            visit_exp(*assign_stmt.exp);
+        }
+    }
+}
 
+void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
+    auto lval_symbol = visit_lval((*for_assign_stmt.lval));
+    if (lval_symbol) {
+        if (lval_symbol->type.is_const) {
+            report_error(for_assign_stmt.lval->ident->ident->get_line_number(), 'h');
+        } else {
+            visit_exp(*for_assign_stmt.exp);
+        }
+    }
 }
 
 void Visitor::visit_exp_stmt(const ExpStmt &exp) {
-
+    if (exp.exp)
+        visit_exp(*exp.exp);
 }
 
 void Visitor::visit_block_stmt(const BlockStmt &block_stmt) {
-
+    cur_scope = cur_scope->push_scope();
+    visit_block(*block_stmt.block);
 }
 
 void Visitor::visit_if_stmt(const IfStmt &if_stmt) {
+    visit_cond(*if_stmt.condition);
+    visit_stmt(*if_stmt.if_stmt);
+    if (if_stmt.else_stmt) {
+        visit_stmt(*if_stmt.else_stmt);
+    }
+}
+
+void Visitor::visit_cond(const Cond &cond) {
 
 }
 
 void Visitor::visit_for_stmt(const ForStmt &for_stmt) {
-
+    if (for_stmt.assign1) {
+        visit_for_assign_stmt(*for_stmt.assign1);
+    }
+    if (for_stmt.condition) {
+        visit_cond(*for_stmt.condition);
+    }
+    if (for_stmt.assign2) {
+        visit_for_assign_stmt(*for_stmt.assign2);
+    }
+    this->loop_cnt++;
+    visit_stmt(*for_stmt.stmt);
+    this->loop_cnt--;
 }
 
 void Visitor::visit_break_stmt(const BreakStmt &break_stmt) {
@@ -229,15 +269,17 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
 
 }
 
-void Visitor::visit_lval(const LVal &lval) {
+std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
     auto ident = lval.ident->ident->get_token();
     auto ident_symbol = cur_scope->get_symbol(ident);
     if (!ident_symbol) { // c error : undefined identifier
         report_error(lval.ident->ident->get_line_number(), 'c');
+        return nullptr;
     }
     if (lval.exp) {
         visit_exp(*lval.exp);
     }
+    return ident_symbol;
 }
 
 void Visitor::visit_exp(const Exp &exp) {
