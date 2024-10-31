@@ -25,7 +25,6 @@ private:
     void visit_if_stmt(const IfStmt &if_stmt);
     void visit_for_stmt(const ForStmt &for_stmt);
     void visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt);
-    void visit_cond(const Cond &cond);
     void visit_break_stmt(const BreakStmt &break_stmt);
     void visit_continue_stmt(const ContinueStmt &continue_stmt);
     void visit_return_stmt(const ReturnStmt &return_stmt);
@@ -35,15 +34,21 @@ private:
     int control_cnt(const std::string &str);
     // Stmt finish
     std::shared_ptr<Symbol> visit_lval(const LVal &lval);
-    void visit_exp(const Exp &exp);
     void visit_main_func(const MainFunc &main_func);
     void visit_const_decl(const ConstDecl &const_decl);
     void visit_const_def(const ConstDef &const_def, Token::TokenType type);
     void visit_var_decl(const VarDecl &var_decl);
     void visit_var_def(const VarDef &var_def, Token::TokenType type);
-    void visit_btype(const BType &btype);
-    void visit_const_init_val(const ConstInitVal &const_init_val);
-
+    void visit_exp(const Exp &exp);
+    void visit_add_exp(const AddExp &add_exp);
+    void visit_mul_exp(const MulExp &mul_exp);
+    void visit_unary_exp(const UnaryExp &unary_exp);
+    void visit_primary_exp(const PrimaryExp &primary_exp);
+    void visit_cond(const Cond &cond);
+    void visit_lor_exp(const LOrExp &lor_exp);
+    void visit_land_exp(const LAndExp &land_exp);
+    void visit_eq_exp(const EqExp &eq_exp);
+    void visit_rel_exp(const RelExp &rel_exp);
 };
 
 #endif //COMPILER_VISITOR_H

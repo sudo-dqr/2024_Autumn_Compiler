@@ -86,7 +86,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
     this->is_void_func = (func_type == Token::VOIDTK);
     int line_number = func_def.func_type->func_type->get_line_number();
     std::string ident = func_def.ident->ident->get_token();
-    std::deque<SymbolType> params;
+    std::deque<SymbolType> params; // 记录参数类型 e error
     cur_scope = cur_scope->push_scope();
     if (func_def.func_fparams) {
         for (const auto &func_fparam : func_def.func_fparams->func_fparams) {
@@ -229,10 +229,6 @@ void Visitor::visit_if_stmt(const IfStmt &if_stmt) {
     }
 }
 
-void Visitor::visit_cond(const Cond &cond) {
-
-}
-
 void Visitor::visit_for_stmt(const ForStmt &for_stmt) {
     if (for_stmt.assign1) {
         visit_for_assign_stmt(*for_stmt.assign1);
@@ -302,6 +298,7 @@ int Visitor::control_cnt(const std::string &str) { // %d | %c
             }
         }
     }
+    return cnt;
 }
 
 std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
@@ -318,5 +315,105 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
 }
 
 void Visitor::visit_exp(const Exp &exp) {
+    visit_add_exp(*exp.add_exp);
+}
 
+void Visitor::visit_add_exp(const AddExp &add_exp) {
+    if (!add_exp.op) { // Add -> Mul
+        visit_mul_exp(*add_exp.mulexp);
+    } else { // Add -> Mul {+/- Mul}
+        visit_add_exp(*add_exp.addexp);
+        visit_mul_exp(*add_exp.mulexp);
+    }
+}
+
+void Visitor::visit_mul_exp(const MulExp &mul_exp) {
+    if (!mul_exp.op) { // Mul -> Unary
+        visit_unary_exp(*mul_exp.unaryexp);
+    } else { // Mul -> Unary {*/% Unary}
+        visit_mul_exp(*mul_exp.mulexp);
+        visit_unary_exp(*mul_exp.unaryexp);
+    }
+}
+
+void Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
+    if (unary_exp.primary_exp) { // primary exp
+        visit_primary_exp(*unary_exp.primary_exp);
+    } else if (unary_exp.ident) { // ident()
+        std::string ident = unary_exp.ident->ident->get_token();
+        std::shared_ptr<Symbol> ident_symbol = cur_scope->get_symbol(ident);
+        if (!ident_symbol) { // c error : undefined identifier
+            report_error(unary_exp.ident->ident->get_line_number(), 'c');
+            return;
+        }
+        if (unary_exp.func_rparams) {
+            if (unary_exp.func_rparams->exps.size() != ident_symbol->type.params.size()) {
+                report_error(unary_exp.ident->ident->get_line_number(), 'd');
+            } else { // e problem : how to know real param type?
+                for (int i = 0; i < ident_symbol->type.params.size(); i++) {
+                    SymbolType fparam_type = ident_symbol->type.params[i];
+                    SymbolType rparam_type;
+                    if (fparam_type != rparam_type) {
+                        report_error(unary_exp.ident->ident->get_line_number(), 'e');
+                    }
+                }
+            }
+        } else {
+            if (!ident_symbol->type.params.empty()) {
+                report_error(unary_exp.ident->ident->get_line_number(), 'd');
+            }
+        }
+    } else {
+        visit_unary_exp(*unary_exp.unary_exp);
+    }
+}
+
+void Visitor::visit_primary_exp(const PrimaryExp &primary_exp) {
+    if (auto exp_ptr = std::get_if<Exp>(&primary_exp)) {
+        visit_exp(*exp_ptr);
+    } else if (auto num_ptr = std::get_if<Number>(&primary_exp)) {
+        //
+    } else if (auto char_ptr = std::get_if<Character>(&primary_exp)) {
+        //
+    } else if (auto lval_ptr = std::get_if<LVal>(&primary_exp)) {
+        visit_lval(*lval_ptr);
+    } else {
+        std::cout << "visit_primary_exp error" << std::endl;
+    }
+}
+
+void Visitor::visit_cond(const Cond &cond) {
+    visit_lor_exp(*cond.lor_exp);
+}
+
+void Visitor::visit_lor_exp(const LOrExp &lor_exp) {
+    if (lor_exp.lorexp) {
+        visit_lor_exp(*lor_exp.lorexp);
+    }
+    visit_land_exp(*lor_exp.landexp);
+}
+
+void Visitor::visit_land_exp(const LAndExp &land_exp) {
+    if (land_exp.landexp) {
+        visit_land_exp(*land_exp.landexp);
+    }
+    visit_eq_exp(*land_exp.eqexp);
+}
+
+void Visitor::visit_eq_exp(const EqExp &eq_exp) {
+    if (!eq_exp.op) {
+        visit_rel_exp(*eq_exp.relexp);
+    } else {
+        visit_eq_exp(*eq_exp.eqexp);
+        visit_rel_exp(*eq_exp.relexp);
+    }
+}
+
+void Visitor::visit_rel_exp(const RelExp &rel_exp) {
+    if (!rel_exp.op) {
+        visit_add_exp(*rel_exp.addexp);
+    } else {
+        visit_rel_exp(*rel_exp.relexp);
+        visit_add_exp(*rel_exp.addexp);
+    }
 }
