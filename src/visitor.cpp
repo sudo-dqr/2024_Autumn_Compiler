@@ -109,7 +109,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
     }
     visit_block(*func_def.block);
     bool has_ending_return = func_block_has_ending_return(*func_def.block);
-    if ((func_type != Token::VOIDTK) &&  (!has_ending_return)) {
+    if ((!is_void_func) &&  (!has_ending_return)) {
         report_error(func_def.block->ending_line, 'g');
     }
 }
@@ -269,15 +269,39 @@ void Visitor::visit_return_stmt(const ReturnStmt &return_stmt) {
 }
 
 void Visitor::visit_get_int_stmt(const GetIntStmt &get_int_stmt) {
-
+    auto lval_symbol = visit_lval(*get_int_stmt.lval);
+    if (lval_symbol) {
+        if (lval_symbol->type.is_const) {
+            report_error(get_int_stmt.lval->ident->ident->get_line_number(), 'h');
+        }
+    }
 }
 
 void Visitor::visit_get_char_stmt(const GetCharStmt &get_char_stmt) {
-
+    auto lval_symbol = visit_lval(*get_char_stmt.lval);
+    if (lval_symbol) {
+        if (lval_symbol->type.is_const) {
+            report_error(get_char_stmt.lval->ident->ident->get_line_number(), 'h');
+        }
+    }
 }
 
 void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
+    int cnt = control_cnt(printf_stmt.str->str->get_token());
+    if (cnt != printf_stmt.exps.size()) {
+        report_error(printf_stmt.str->str->get_line_number(), 'l');
+    }
+}
 
+int Visitor::control_cnt(const std::string &str) { // %d | %c
+    int cnt = 0;
+    for (int i = 0; i < str.length(); i++) {
+        if (str[i] == '%' && i + 1 < str.length()) {
+            if (str[i + 1] == 'd' || str[i + 1] == 'c') {
+                cnt++;
+            }
+        }
+    }
 }
 
 std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {

@@ -15,4 +15,5 @@ void report_error(int line_number, char type) {
  * c 使用了未定义标识符
  * d 函数调用语句中，参数个数与函数定义中的参数个数不匹配
  * e 函数参数类型不匹配
+ * l printf中格式字符与表达式个数不匹配
  */

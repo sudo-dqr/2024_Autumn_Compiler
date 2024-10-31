@@ -32,6 +32,7 @@ private:
     void visit_get_int_stmt(const GetIntStmt &get_int_stmt);
     void visit_get_char_stmt(const GetCharStmt &get_char_stmt);
     void visit_printf_stmt(const PrintfStmt &printf_stmt);
+    int control_cnt(const std::string &str);
     // Stmt finish
     std::shared_ptr<Symbol> visit_lval(const LVal &lval);
     void visit_exp(const Exp &exp);
