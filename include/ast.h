@@ -221,13 +221,21 @@ struct IfStmt : public Node {
     void print(std::ostream &os) override;
 };
 
+struct ForAssignStmt : public Node {
+    std::unique_ptr<LVal> lval;
+    std::unique_ptr<Exp> exp;
+
+    ForAssignStmt(std::unique_ptr<LVal> lval, std::unique_ptr<Exp> exp);
+    void print(std::ostream &os) override;
+};
+
 struct ForStmt : public Node {
-    std::unique_ptr<AssignStmt> assign1;
+    std::unique_ptr<ForAssignStmt> assign1;
     std::unique_ptr<Cond> condition;
-    std::unique_ptr<AssignStmt> assign2;
+    std::unique_ptr<ForAssignStmt> assign2;
     std::unique_ptr<Stmt> stmt;
 
-    ForStmt(std::unique_ptr<AssignStmt> assign1, std::unique_ptr<Cond> condition, std::unique_ptr<AssignStmt> assign2, std::unique_ptr<Stmt> stmt);
+    ForStmt(std::unique_ptr<ForAssignStmt> assign1, std::unique_ptr<Cond> condition, std::unique_ptr<ForAssignStmt> assign2, std::unique_ptr<Stmt> stmt);
     void print(std::ostream &os) override;
 };
 

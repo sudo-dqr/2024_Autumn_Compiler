@@ -113,8 +113,13 @@ IfStmt::IfStmt(std::unique_ptr<Cond> condition, std::unique_ptr<Stmt> if_stmt, s
     this->else_stmt = std::move(else_stmt);
 }
 
+ForAssignStmt::ForAssignStmt(std::unique_ptr<LVal> lval, std::unique_ptr<Exp> exp) {
+    this->lval = std::move(lval);
+    this->exp = std::move(exp);
+}
+
 //! constructor of ForStmt
-ForStmt::ForStmt(std::unique_ptr<AssignStmt> assign1, std::unique_ptr<Cond> condition, std::unique_ptr<AssignStmt> assign2, std::unique_ptr<Stmt> stmt) {
+ForStmt::ForStmt(std::unique_ptr<ForAssignStmt> assign1, std::unique_ptr<Cond> condition, std::unique_ptr<ForAssignStmt> assign2, std::unique_ptr<Stmt> stmt) {
     this->assign1 = std::move(assign1);
     this->condition = std::move(condition);
     this->assign2 = std::move(assign2);

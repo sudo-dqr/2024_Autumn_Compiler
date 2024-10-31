@@ -520,15 +520,15 @@ std::unique_ptr<Cond> Parser::parse_cond() {
 std::unique_ptr<ForStmt> Parser::parse_forstmt() {
     next_token(); // 跳过for
     next_token(); // 跳过(
-    std::unique_ptr<AssignStmt> assign1;
+    std::unique_ptr<ForAssignStmt> assign1;
     std::unique_ptr<Cond> condition;
-    std::unique_ptr<AssignStmt> assign2;
+    std::unique_ptr<ForAssignStmt> assign2;
     std::unique_ptr<Stmt> stmt;
     // 第一个子句
     if (get_curtoken().get_type() == Token::SEMICN) {
         assign1 = nullptr;
     } else {
-        assign1 = parse_assignstmt();
+        assign1 = parse_forassignstmt();
     }
     next_token(); // 跳过;
     // 第二个子句
@@ -542,7 +542,7 @@ std::unique_ptr<ForStmt> Parser::parse_forstmt() {
     if (get_curtoken().get_type() == Token::RPARENT) {
         assign2 = nullptr;
     } else {
-        assign2 = parse_assignstmt();
+        assign2 = parse_forassignstmt();
     }
     next_token(); // 跳过)
     stmt = parse_stmt();
@@ -637,6 +637,13 @@ std::unique_ptr<AssignStmt> Parser::parse_assignstmt() {
     next_token(); // 跳过=
     auto exp = parse_exp();
     return std::make_unique<AssignStmt>(std::move(lval), std::move(exp));
+}
+
+std::unique_ptr<ForAssignStmt> Parser::parse_forassignstmt() {
+    auto lval = parse_lval();
+    next_token();
+    auto exp = parse_exp();
+    return std::make_unique<ForAssignStmt>(std::move(lval), std::move(exp));
 }
 
 std::unique_ptr<LVal> Parser::parse_lval() {

@@ -244,14 +244,18 @@ void IfStmt::print(std::ostream &os) { // IfStmt → 'if' '(' Cond ')' Stmt [ 'e
     os << "<Stmt>" << std::endl;
 }
 
+void ForAssignStmt::print(std::ostream &os) {
+    this->lval->print(os);
+    os << "ASSIGN =" << std::endl;
+    this->exp->print(os);
+    os << "<ForStmt>" << std::endl;
+}
+
 void ForStmt::print(std::ostream &os) { // ForStmt → 'for' '(' [AssignStmt] ';' [Cond] ';' [AssignStmt] ')' Stmt
     os << "FORTK for" << std::endl;
     os << "LPARENT (" << std::endl;
     if (this->assign1) {
-        this->assign1->lval->print(os);
-        os << "ASSIGN =" << std::endl;
-        this->assign1->exp->print(os);
-        os << "<ForStmt>" << std::endl;
+        this->assign1->print(os);
     }
     os << "SEMICN ;" << std::endl;
     if (this->condition) {
@@ -259,10 +263,7 @@ void ForStmt::print(std::ostream &os) { // ForStmt → 'for' '(' [AssignStmt] ';
     }
     os << "SEMICN ;" << std::endl;
     if (this->assign2) {
-        this->assign2->lval->print(os);
-        os << "ASSIGN =" << std::endl;
-        this->assign2->exp->print(os);
-        os << "<ForStmt>" << std::endl;
+        this->assign2->print(os);
     }
     os << "RPARENT )" << std::endl;
     std::visit(

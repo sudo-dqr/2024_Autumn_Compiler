@@ -56,6 +56,7 @@ class Parser {
         std::unique_ptr<IfStmt> parse_ifstmt();
         std::unique_ptr<Cond> parse_cond();
         std::unique_ptr<ForStmt> parse_forstmt();
+        std::unique_ptr<ForAssignStmt> parse_forassignstmt();
         std::unique_ptr<AssignStmt> parse_assignstmt();
         std::unique_ptr<BreakStmt> parse_breakstmt();
         std::unique_ptr<ContinueStmt> parse_continuestmt();
