@@ -81,7 +81,7 @@ Token Lexer::next() {
             pos += 2;
         } else { // Error! type: a
             pos++;
-            report_error(line_number, 'a');
+            ErrorList::report_error(line_number, 'a');
         }
         return Token{"&&", Token::AND, line_number};
     } else if (ch == '|') {
@@ -89,7 +89,7 @@ Token Lexer::next() {
             pos += 2;
         } else { // Error! type: a
             pos++;
-            report_error(line_number, 'a');
+            ErrorList::report_error(line_number, 'a');
         }
         return Token{"||", Token::OR, line_number};
     } else if (ch == '+') {

@@ -127,7 +127,7 @@ std::unique_ptr<ConstDecl> Parser::parse_constdecl() {
         next_token();
     } else { // i error
         unget_token();
-        report_error(get_curtoken().get_line_number(), 'i');
+        ErrorList::report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
     return std::make_unique<ConstDecl>(std::move(btype), std::move(const_defs));
@@ -145,7 +145,7 @@ std::unique_ptr<VarDecl> Parser::parse_vardecl() {
         next_token();
     } else { // i error
         unget_token();
-        report_error(get_curtoken().get_line_number(), 'i');
+        ErrorList::report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
     return std::make_unique<VarDecl>(std::move(btype), std::move(var_defs));
@@ -168,7 +168,7 @@ std::unique_ptr<ConstDef> Parser::parse_constdef() {
             next_token();
         } else { // k  error
             unget_token();
-            report_error(get_curtoken().get_line_number(), 'k');
+            ErrorList::report_error(get_curtoken().get_line_number(), 'k');
             next_token();
         }
     }
@@ -188,7 +188,7 @@ std::unique_ptr<VarDef> Parser::parse_vardef() {
             next_token();
         } else { // k error
             unget_token();
-            report_error(get_curtoken().get_line_number(), 'k');
+            ErrorList::report_error(get_curtoken().get_line_number(), 'k');
             next_token();
         }
     }
@@ -260,7 +260,7 @@ std::unique_ptr<FuncDef> Parser::parse_funcdef() {
     if (get_curtoken().get_type() == Token::LBRACE) {
         func_fparams = nullptr;
         unget_token();
-        report_error(get_curtoken().get_line_number(), 'j');
+        ErrorList::report_error(get_curtoken().get_line_number(), 'j');
         next_token();
     } else if (get_curtoken().get_type() != Token::RPARENT) {
         func_fparams = parse_funcfparams();
@@ -268,7 +268,7 @@ std::unique_ptr<FuncDef> Parser::parse_funcdef() {
             next_token();
         } else { // j error
             unget_token();
-            report_error(get_curtoken().get_line_number(), 'j');
+            ErrorList::report_error(get_curtoken().get_line_number(), 'j');
             next_token();
         }
     } else {
@@ -306,7 +306,7 @@ std::unique_ptr<MainFunc> Parser::parse_mainfunc() {
         next_token();
     } else { // j error
         unget_token();
-        report_error(get_curtoken().get_line_number(), 'j');
+        ErrorList::report_error(get_curtoken().get_line_number(), 'j');
         next_token();
     }
     return std::make_unique<MainFunc>(parse_block());
@@ -332,7 +332,7 @@ std::unique_ptr<FuncFParam> Parser::parse_funcfparam() {
             next_token();
         } else { // k error
             unget_token();
-            report_error(get_curtoken().get_line_number(), 'k');
+            ErrorList::report_error(get_curtoken().get_line_number(), 'k');
             next_token();
         }
         is_array = true;
@@ -398,7 +398,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
             next_token();
         } else { // i error
             unget_token();
-            report_error(get_curtoken().get_line_number(), 'i');
+            ErrorList::report_error(get_curtoken().get_line_number(), 'i');
             next_token();
         }
         return std::make_unique<Stmt>(std::in_place_type<ExpStmt>,ExpStmt(std::move(exp)));
@@ -416,7 +416,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                 next_token(); // 读到LVal的起始token
             } else { // i error
                 unget_token();
-                report_error(get_curtoken().get_line_number(), 'i');
+                ErrorList::report_error(get_curtoken().get_line_number(), 'i');
                 next_token();
             }
             return std::make_unique<Stmt>(std::in_place_type<ExpStmt>,ExpStmt(std::move(exp)));
@@ -436,14 +436,14 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                         next_token();
                     } else { // j error
                         unget_token();
-                        report_error(get_curtoken().get_line_number(), 'j');
+                        ErrorList::report_error(get_curtoken().get_line_number(), 'j');
                         next_token();
                     }
                     if (get_curtoken().get_type() == Token::SEMICN) {
                         next_token();
                     } else { // i error
                         unget_token();
-                        report_error(get_curtoken().get_line_number(), 'i');
+                        ErrorList::report_error(get_curtoken().get_line_number(), 'i');
                         next_token();
                     }
                     if (getint_flag) {
@@ -457,7 +457,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                         next_token();
                     } else { // i error
                         unget_token();
-                        report_error(get_curtoken().get_line_number(), 'i');
+                        ErrorList::report_error(get_curtoken().get_line_number(), 'i');
                         next_token();
                     }
                     return std::make_unique<Stmt>(std::in_place_type<AssignStmt>,AssignStmt(std::move(lval), std::move(exp)));
@@ -469,7 +469,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                     next_token();
                 } else { // i error
                     unget_token();
-                    report_error(get_curtoken().get_line_number(), 'i');
+                    ErrorList::report_error(get_curtoken().get_line_number(), 'i');
                     next_token();
                 }
                 return std::make_unique<Stmt>(std::in_place_type<ExpStmt>,ExpStmt(std::move(exp)));
@@ -499,7 +499,7 @@ std::unique_ptr<IfStmt> Parser::parse_ifstmt() {
         next_token();
     } else { // j error
         unget_token();
-        report_error(get_curtoken().get_line_number(), 'j');
+        ErrorList::report_error(get_curtoken().get_line_number(), 'j');
         next_token();
     }
     auto if_stmt = parse_stmt();
@@ -557,7 +557,7 @@ std::unique_ptr<BreakStmt> Parser::parse_breakstmt() {
         next_token();
     } else { // i error
         unget_token();
-        report_error(get_curtoken().get_line_number(), 'i');
+        ErrorList::report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
     return std::make_unique<BreakStmt>(std::make_unique<Token>(break_token));
@@ -570,7 +570,7 @@ std::unique_ptr<ContinueStmt> Parser::parse_continuestmt() {
         next_token();
     } else { // i error
         unget_token();
-        report_error(get_curtoken().get_line_number(), 'i');
+        ErrorList::report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
     return std::make_unique<ContinueStmt>(std::make_unique<Token>(continue_token));
@@ -596,7 +596,7 @@ std::unique_ptr<ReturnStmt> Parser::parse_returnstmt() {
         next_token();
     } else { // i error
         unget_token();
-        report_error(get_curtoken().get_line_number(), 'i');
+        ErrorList::report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
     return std::make_unique<ReturnStmt>(std::make_unique<Token>(return_token), std::move(return_exp));
@@ -615,14 +615,14 @@ std::unique_ptr<PrintfStmt> Parser::parse_printfstmt() {
         next_token();
     } else { // j error
         unget_token();
-        report_error(get_curtoken().get_line_number(), 'j');
+        ErrorList::report_error(get_curtoken().get_line_number(), 'j');
         next_token();
     }
     if (get_curtoken().get_type() == Token::SEMICN) {
         next_token();
     } else { // i error
         unget_token();
-        report_error(get_curtoken().get_line_number(), 'i');
+        ErrorList::report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
     return std::make_unique<PrintfStmt>(std::move(str), std::move(exps));
@@ -658,7 +658,7 @@ std::unique_ptr<LVal> Parser::parse_lval() {
             next_token();
         } else { // k error
             unget_token();
-            report_error(get_curtoken().get_line_number(), 'k');
+            ErrorList::report_error(get_curtoken().get_line_number(), 'k');
             next_token();
         }
     } else {
@@ -690,7 +690,7 @@ std::unique_ptr<PrimaryExp> Parser::parse_primaryexp() {
             next_token();
         } else { // j error
             unget_token();
-            report_error(get_curtoken().get_line_number(), 'j');
+            ErrorList::report_error(get_curtoken().get_line_number(), 'j');
             next_token();
         }
         return std::make_unique<PrimaryExp>(std::in_place_type<Exp>,std::move(*exp));
@@ -752,7 +752,7 @@ std::unique_ptr<UnaryExp> Parser::parse_callfunc() {
         next_token();
     } else { // j error
         unget_token();
-        report_error(get_curtoken().get_line_number(), 'j');
+        ErrorList::report_error(get_curtoken().get_line_number(), 'j');
         next_token();
     }
     return std::make_unique<UnaryExp>(std::move(ident), std::move(func_rparams));

@@ -46,7 +46,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
         auto symbol = std::make_shared<Symbol>(type, ident, get_scope_cnt());
         symbol_list.push_back(*symbol);
         if (!cur_scope->add_symbol(symbol)) { // b error : redefined identifier
-            report_error(line_number, 'b');
+            ErrorList::report_error(line_number, 'b');
         }
     } else { // array
         // 暂时忽略表示数组长度的exp
@@ -54,7 +54,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
         auto symbol = std::make_shared<Symbol>(type, ident, get_scope_cnt());
         symbol_list.push_back(*symbol);
         if (!cur_scope->add_symbol(symbol)) {
-            report_error(line_number, 'b');
+            ErrorList::report_error(line_number, 'b');
         }
     }
 }
@@ -74,7 +74,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
         auto symbol = std::make_shared<Symbol>(type, ident, get_scope_cnt());
         symbol_list.push_back(*symbol);
         if (!cur_scope->add_symbol(symbol)) {
-            report_error(line_number, 'b');
+            ErrorList::report_error(line_number, 'b');
         }
     } else {
         // 暂时忽略表示数组长度的exp
@@ -82,7 +82,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
         auto symbol = std::make_shared<Symbol>(type, ident, get_scope_cnt());
         symbol_list.push_back(*symbol);
         if (!cur_scope->add_symbol(symbol)) {
-            report_error(line_number, 'b');
+            ErrorList::report_error(line_number, 'b');
         }
     }
 }
@@ -97,7 +97,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
     auto func_symbol = std::make_shared<Symbol>(type, ident, get_scope_cnt());
     symbol_list.push_back(*func_symbol);
     if (!cur_scope->add_symbol(func_symbol)) {
-        report_error(line_number, 'b');
+        ErrorList::report_error(line_number, 'b');
     }
     cur_scope = cur_scope->push_scope();
     scope_cnt++;
@@ -128,7 +128,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
     cur_scope = cur_scope->pop_scope();
     bool has_ending_return = func_block_has_ending_return(*func_def.block);
     if ((!is_void_func) &&  (!has_ending_return)) {
-        report_error(func_def.block->ending_line, 'g');
+        ErrorList::report_error(func_def.block->ending_line, 'g');
     }
 }
 
@@ -145,7 +145,7 @@ void Visitor::visit_main_func(const MainFunc &main_func) {
     visit_block(*main_func.block);
     cur_scope = cur_scope->pop_scope();
     if (!func_block_has_ending_return(*main_func.block)) {
-        report_error(main_func.block->ending_line, 'g');
+        ErrorList::report_error(main_func.block->ending_line, 'g');
     }
 }
 
@@ -214,7 +214,7 @@ void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
     auto lval_symbol = visit_lval((*assign_stmt.lval));
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
-            report_error(assign_stmt.lval->ident->ident->get_line_number(), 'h');
+            ErrorList::report_error(assign_stmt.lval->ident->ident->get_line_number(), 'h');
         } else {
             visit_exp(*assign_stmt.exp);
         }
@@ -225,7 +225,7 @@ void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
     auto lval_symbol = visit_lval((*for_assign_stmt.lval));
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
-            report_error(for_assign_stmt.lval->ident->ident->get_line_number(), 'h');
+            ErrorList::report_error(for_assign_stmt.lval->ident->ident->get_line_number(), 'h');
         } else {
             visit_exp(*for_assign_stmt.exp);
         }
@@ -269,20 +269,20 @@ void Visitor::visit_for_stmt(const ForStmt &for_stmt) {
 
 void Visitor::visit_break_stmt(const BreakStmt &break_stmt) {
     if (this->loop_cnt == 0) {
-        report_error(break_stmt.break_token->get_line_number(), 'm');
+        ErrorList::report_error(break_stmt.break_token->get_line_number(), 'm');
     }
 }
 
 void Visitor::visit_continue_stmt(const ContinueStmt &continue_stmt) {
     if (this->loop_cnt == 0) {
-        report_error(continue_stmt.continue_token->get_line_number(), 'm');
+        ErrorList::report_error(continue_stmt.continue_token->get_line_number(), 'm');
     }
 }
 
 void Visitor::visit_return_stmt(const ReturnStmt &return_stmt) {
     if (return_stmt.return_exp) {
         if(this->is_void_func) {
-            report_error(return_stmt.return_token->get_line_number(), 'f');
+            ErrorList::report_error(return_stmt.return_token->get_line_number(), 'f');
         }
     }
 }
@@ -291,7 +291,7 @@ void Visitor::visit_get_int_stmt(const GetIntStmt &get_int_stmt) {
     auto lval_symbol = visit_lval(*get_int_stmt.lval);
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
-            report_error(get_int_stmt.lval->ident->ident->get_line_number(), 'h');
+            ErrorList::report_error(get_int_stmt.lval->ident->ident->get_line_number(), 'h');
         }
     }
 }
@@ -300,7 +300,7 @@ void Visitor::visit_get_char_stmt(const GetCharStmt &get_char_stmt) {
     auto lval_symbol = visit_lval(*get_char_stmt.lval);
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
-            report_error(get_char_stmt.lval->ident->ident->get_line_number(), 'h');
+            ErrorList::report_error(get_char_stmt.lval->ident->ident->get_line_number(), 'h');
         }
     }
 }
@@ -308,7 +308,7 @@ void Visitor::visit_get_char_stmt(const GetCharStmt &get_char_stmt) {
 void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
     int cnt = control_cnt(printf_stmt.str->str->get_token());
     if (cnt != printf_stmt.exps.size()) {
-        report_error(printf_stmt.str->str->get_line_number(), 'l');
+        ErrorList::report_error(printf_stmt.str->str->get_line_number(), 'l');
     }
 }
 
@@ -328,7 +328,7 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
     auto ident = lval.ident->ident->get_token();
     auto ident_symbol = cur_scope->get_symbol(ident);
     if (!ident_symbol) { // c error : undefined identifier
-        report_error(lval.ident->ident->get_line_number(), 'c');
+        ErrorList::report_error(lval.ident->ident->get_line_number(), 'c');
         return nullptr;
     }
     if (lval.exp) {
@@ -368,12 +368,12 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
         std::string ident = unary_exp.ident->ident->get_token();
         std::shared_ptr<Symbol> ident_symbol = cur_scope->get_symbol(ident);
         if (!ident_symbol) { // c error : undefined identifier
-            report_error(unary_exp.ident->ident->get_line_number(), 'c');
+            ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'c');
             return {false, false, 0, Token::END};
         }
         if (unary_exp.func_rparams) {
             if (unary_exp.func_rparams->exps.size() != ident_symbol->type.params.size()) {
-                report_error(unary_exp.ident->ident->get_line_number(), 'd');
+                ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'd');
                 return {false, false, 0, Token::END};
             } else { // e problem : how to know real param type?
                 for (int i = 0; i < ident_symbol->type.params.size(); i++) {
@@ -385,14 +385,14 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
                     bool r_param_is_array = r_param_info.is_array;
                     if ((r_param_is_array && !f_param_is_array) || (!r_param_is_array && f_param_is_array)
                         || (r_param_is_array && f_param_is_array && (r_param_type != f_param_type))) {
-                        report_error(unary_exp.ident->ident->get_line_number(), 'e');
+                        ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'e');
                         return {false, false, 0, Token::END};
                     }
                 }
             }
         } else {
             if (!ident_symbol->type.params.empty()) {
-                report_error(unary_exp.ident->ident->get_line_number(), 'd');
+                ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'd');
                 return {false, false, 0, Token::END};
             }
         }

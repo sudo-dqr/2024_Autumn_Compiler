@@ -1,8 +1,19 @@
 #include "error.h"
 
-void report_error(int line_number, char type) {
-    std::ofstream error_out("error.txt", std::ofstream::app);
-    error_out << line_number << " " << type << std::endl;
+std::deque<Error> ErrorList::errors = std::deque<Error>();
+
+void ErrorList::report_error(int line_number, char type) {
+    errors.push_back({line_number, type});
+}
+
+void ErrorList::print_errors() {
+    sort(errors.begin(), errors.end(), [](const Error &a, const Error &b) {
+        return a.line_number < b.line_number;
+    });
+    std::ofstream error_out("error.txt");
+    for (const auto &error : errors) {
+        error_out << error.line_number << " " << error.type << std::endl;
+    }
     error_out.close();
 }
 
