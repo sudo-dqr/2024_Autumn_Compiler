@@ -1,5 +1,4 @@
 #include "visitor.h"
-#include "error.h"
 
 Visitor::Visitor() {
     this->cur_scope = std::make_shared<SymbolTable>();
@@ -314,71 +313,88 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
     return ident_symbol;
 }
 
-void Visitor::visit_exp(const Exp &exp) {
-    visit_add_exp(*exp.add_exp);
+ExpInfo Visitor::visit_exp(const Exp &exp) {
+    return visit_add_exp(*exp.add_exp);
 }
 
-void Visitor::visit_add_exp(const AddExp &add_exp) {
+ExpInfo Visitor::visit_add_exp(const AddExp &add_exp) {
     if (!add_exp.op) { // Add -> Mul
-        visit_mul_exp(*add_exp.mulexp);
+        return visit_mul_exp(*add_exp.mulexp);
     } else { // Add -> Mul {+/- Mul}
-        visit_add_exp(*add_exp.addexp);
-        visit_mul_exp(*add_exp.mulexp);
+        ExpInfo info1 = visit_add_exp(*add_exp.addexp);
+        ExpInfo info2 = visit_mul_exp(*add_exp.mulexp);
+        return {info1.is_const && info2.is_const, false, 0, Token::INTTK};
     }
 }
 
-void Visitor::visit_mul_exp(const MulExp &mul_exp) {
+ExpInfo Visitor::visit_mul_exp(const MulExp &mul_exp) {
     if (!mul_exp.op) { // Mul -> Unary
-        visit_unary_exp(*mul_exp.unaryexp);
+        return visit_unary_exp(*mul_exp.unaryexp);
     } else { // Mul -> Unary {*/% Unary}
-        visit_mul_exp(*mul_exp.mulexp);
-        visit_unary_exp(*mul_exp.unaryexp);
+        ExpInfo info1 = visit_mul_exp(*mul_exp.mulexp);
+        ExpInfo info2 = visit_unary_exp(*mul_exp.unaryexp);
+        return {info1.is_const && info2.is_const, false, 0, Token::INTTK};
     }
 }
 
-void Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
+ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
     if (unary_exp.primary_exp) { // primary exp
-        visit_primary_exp(*unary_exp.primary_exp);
+        return visit_primary_exp(*unary_exp.primary_exp);
     } else if (unary_exp.ident) { // ident()
         std::string ident = unary_exp.ident->ident->get_token();
         std::shared_ptr<Symbol> ident_symbol = cur_scope->get_symbol(ident);
         if (!ident_symbol) { // c error : undefined identifier
             report_error(unary_exp.ident->ident->get_line_number(), 'c');
-            return;
+            return {false, false, 0, Token::END};
         }
         if (unary_exp.func_rparams) {
             if (unary_exp.func_rparams->exps.size() != ident_symbol->type.params.size()) {
                 report_error(unary_exp.ident->ident->get_line_number(), 'd');
+                return {false, false, 0, Token::END};
             } else { // e problem : how to know real param type?
                 for (int i = 0; i < ident_symbol->type.params.size(); i++) {
-                    SymbolType fparam_type = ident_symbol->type.params[i];
-                    SymbolType rparam_type;
-                    if (fparam_type != rparam_type) {
+                    SymbolType type = ident_symbol->type.params[i];
+                    Token::TokenType f_param_type = type.btype;
+                    bool f_param_is_array = type.is_array;
+                    ExpInfo r_param_info = visit_exp(*unary_exp.func_rparams->exps[i]);
+                    Token::TokenType r_param_type = r_param_info.type;
+                    bool r_param_is_array = r_param_info.is_array;
+                    if ((r_param_is_array && !f_param_is_array) || (!r_param_is_array && f_param_is_array)
+                        || (r_param_is_array && f_param_is_array && (r_param_type != f_param_type))) {
                         report_error(unary_exp.ident->ident->get_line_number(), 'e');
+                        return {false, false, 0, Token::END};
                     }
                 }
             }
         } else {
             if (!ident_symbol->type.params.empty()) {
                 report_error(unary_exp.ident->ident->get_line_number(), 'd');
+                return {false, false, 0, Token::END};
             }
         }
+        return {ident_symbol->type.is_const, false, 0, ident_symbol->type.btype};
     } else {
-        visit_unary_exp(*unary_exp.unary_exp);
+        return visit_unary_exp(*unary_exp.unary_exp);
     }
 }
 
-void Visitor::visit_primary_exp(const PrimaryExp &primary_exp) {
+ExpInfo Visitor::visit_primary_exp(const PrimaryExp &primary_exp) {
     if (auto exp_ptr = std::get_if<Exp>(&primary_exp)) {
-        visit_exp(*exp_ptr);
+        return visit_exp(*exp_ptr);
     } else if (auto num_ptr = std::get_if<Number>(&primary_exp)) {
-        //
+        return {true, false, 0, Token::INTTK};
     } else if (auto char_ptr = std::get_if<Character>(&primary_exp)) {
-        //
+        return {false, false, 0, Token::CHARTK};
     } else if (auto lval_ptr = std::get_if<LVal>(&primary_exp)) {
-        visit_lval(*lval_ptr);
+        auto lval_symbol = visit_lval(*lval_ptr);
+        if (lval_symbol) {
+            return {lval_symbol->type.is_const, lval_symbol->type.is_array, lval_symbol->type.array_size, lval_symbol->type.btype};
+        } else {
+            return {false, false, 0, Token::END};
+        }
     } else {
         std::cout << "visit_primary_exp error" << std::endl;
+        return {false, false, 0, Token::END};
     }
 }
 

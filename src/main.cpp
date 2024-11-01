@@ -20,11 +20,10 @@ int main() {
     string text = buffer.str();
     Lexer lexer = Lexer(text);
     Parser parser = Parser(lexer);
-    ofstream parser_out("parser.txt", ios::trunc);
     auto comp_unit = parser.parse();
-    // comp_unit->print(parser_out);
     Visitor visitor = Visitor();
     visitor.visit(*comp_unit);
+    ofstream symbol_table_out("symboltable.txt", ios::trunc);
     return 0;
 }
 

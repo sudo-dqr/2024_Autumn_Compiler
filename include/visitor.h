@@ -2,6 +2,8 @@
 #define COMPILER_VISITOR_H
 #include "ast.h"
 #include "symboltable.h"
+#include "error.h"
+#include "expinfo.h"
 
 class Visitor {
 public:
@@ -39,11 +41,11 @@ private:
     void visit_const_def(const ConstDef &const_def, Token::TokenType type);
     void visit_var_decl(const VarDecl &var_decl);
     void visit_var_def(const VarDef &var_def, Token::TokenType type);
-    void visit_exp(const Exp &exp);
-    void visit_add_exp(const AddExp &add_exp);
-    void visit_mul_exp(const MulExp &mul_exp);
-    void visit_unary_exp(const UnaryExp &unary_exp);
-    void visit_primary_exp(const PrimaryExp &primary_exp);
+    ExpInfo visit_exp(const Exp &exp);
+    ExpInfo visit_add_exp(const AddExp &add_exp);
+    ExpInfo visit_mul_exp(const MulExp &mul_exp);
+    ExpInfo visit_unary_exp(const UnaryExp &unary_exp);
+    ExpInfo visit_primary_exp(const PrimaryExp &primary_exp);
     void visit_cond(const Cond &cond);
     void visit_lor_exp(const LOrExp &lor_exp);
     void visit_land_exp(const LAndExp &land_exp);
