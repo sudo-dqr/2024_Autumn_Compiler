@@ -9,11 +9,15 @@ class Visitor {
 public:
     Visitor();
     void visit(const CompUnit &comp_unit);
+    void print_symbol_list(std::ostream &os);
 
 private:
     std::shared_ptr<SymbolTable> cur_scope;
     int loop_cnt;
     bool is_void_func;
+    int scope_cnt;
+    std::deque<Symbol> symbol_list;
+    int get_scope_cnt();
     void visit_decl(const Decl &decl);
     void visit_func_def(const FuncDef &func_def);
     void visit_block(const Block &block);

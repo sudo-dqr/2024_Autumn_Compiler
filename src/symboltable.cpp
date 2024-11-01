@@ -32,3 +32,47 @@ std::shared_ptr<Symbol> SymbolTable::get_symbol(const std::string &name) {
     else
         return nullptr;
 }
+
+bool SymbolTable::is_in_global_scope() {
+    return father == nullptr;
+}
+
+std::string SymbolType::to_string() const {
+    if (category == Category::BASIC) {
+        if (is_const) {
+            if (btype == Token::INTTK) {
+                return "ConstInt";
+            } else {
+                return "ConstChar";
+            }
+        } else {
+            if (btype == Token::INTTK) {
+                return "Int";
+            } else {
+                return "Char";
+            }
+        }
+    } else if (category == Category::ARRAY) {
+        if (is_const) {
+            if (btype == Token::INTTK) {
+                return "ConstIntArray";
+            } else {
+                return "ConstCharArray";
+            }
+        } else {
+            if (btype == Token::INTTK) {
+                return "IntArray";
+            } else {
+                return "CharArray";
+            }
+        }
+    } else {
+        if (btype == Token::INTTK) {
+            return "IntFunc";
+        } else if (btype == Token::CHARTK) {
+            return "CharFunc";
+        } else {
+            return "VoidFunc";
+        }
+    }
+}

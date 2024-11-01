@@ -7,6 +7,8 @@
 #include <deque>
 #include "token.h"
 
+struct Symbol;
+
 enum Category {
     BASIC, ARRAY, FUNC
 };
@@ -17,22 +19,25 @@ struct SymbolType {
     bool is_const;
     bool is_array;
     int array_size;
-    std::deque<SymbolType> params;
+    std::deque<Symbol> params;
 
     // BASIC
     SymbolType(bool is_const, Token::TokenType type) : category(BASIC), btype(type), is_const(is_const), is_array(false), array_size(0) {}
     // ARRAY
     SymbolType(bool is_const, Token::TokenType type, int size) : category(ARRAY), btype(type), is_const(is_const), is_array(true), array_size(size) {}
     // FUNC
-    SymbolType(Token::TokenType type, std::deque<SymbolType> params) : category(FUNC), btype(type), is_const(false), is_array(false), array_size(0), params(params) {}
+    SymbolType(Token::TokenType type, std::deque<Symbol> params) : category(FUNC), btype(type), is_const(false), is_array(false), array_size(0), params(params) {}
+
+    std::string to_string() const;
 };
 
 struct Symbol {
     SymbolType type;
     std::string name;
+    int scope_cnt;
 
-    Symbol(SymbolType type, std::string name)
-        : type(type), name(name) {}
+    Symbol(SymbolType type, std::string name, int scope_cnt)
+        : type(type), name(name), scope_cnt(scope_cnt) {}
 };
 
 class SymbolTable : public std::enable_shared_from_this<SymbolTable> {
@@ -47,6 +52,7 @@ public:
     bool add_symbol(std::shared_ptr<Symbol> symbol);
     std::shared_ptr<SymbolTable> push_scope();
     std::shared_ptr<SymbolTable> pop_scope();
+    bool is_in_global_scope();
 };
 
 
