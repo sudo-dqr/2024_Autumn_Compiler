@@ -23,7 +23,7 @@ int main() {
     auto comp_unit = parser.parse();
     Visitor visitor = Visitor();
     visitor.visit(*comp_unit);
-    std::ofstream symbol_table_out("symboltable.txt", ios::trunc);
+    std::ofstream symbol_table_out("symbol.txt", ios::trunc);
     visitor.print_symbol_list(symbol_table_out);
     symbol_table_out.close();
     ErrorList::print_errors();
