@@ -111,7 +111,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
                 auto param_symbol = std::make_shared<Symbol>(param_symbol_type, param_ident, cur_scope->get_scope());
                 func_symbol->type.params.push_back(*param_symbol);
                 if (!cur_scope->add_symbol(param_symbol)) {
-                    std::cout << "Funcdef FParam Error" << std::endl;
+                    ErrorList::report_error(func_fparam->ident->ident->get_line_number(), 'b');
                 }
                 symbol_list.push_back(*param_symbol);
             } else {
@@ -119,7 +119,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
                 auto param_symbol = std::make_shared<Symbol>(param_symbol_type, param_ident, cur_scope->get_scope());
                 func_symbol->type.params.push_back(*param_symbol);
                 if (!cur_scope->add_symbol(param_symbol)) {
-                    std::cout << "Funcdef FParam Error" << std::endl;
+                    ErrorList::report_error(func_fparam->ident->ident->get_line_number(), 'b');
                 }
                 symbol_list.push_back(*param_symbol);
             }
