@@ -107,6 +107,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
         report_error(line_number, 'b');
     }
     visit_block(*func_def.block);
+    cur_scope = cur_scope->pop_scope();
     bool has_ending_return = func_block_has_ending_return(*func_def.block);
     if ((!is_void_func) &&  (!has_ending_return)) {
         report_error(func_def.block->ending_line, 'g');
@@ -122,6 +123,7 @@ void Visitor::visit_main_func(const MainFunc &main_func) {
     cur_scope->add_symbol(symbol); // main函数不会发生b错误
     cur_scope = cur_scope->push_scope();
     visit_block(*main_func.block);
+    cur_scope = cur_scope->pop_scope();
     if (!func_block_has_ending_return(*main_func.block)) {
         report_error(main_func.block->ending_line, 'g');
     }
@@ -218,6 +220,7 @@ void Visitor::visit_exp_stmt(const ExpStmt &exp) {
 void Visitor::visit_block_stmt(const BlockStmt &block_stmt) {
     cur_scope = cur_scope->push_scope();
     visit_block(*block_stmt.block);
+    cur_scope = cur_scope->pop_scope();
 }
 
 void Visitor::visit_if_stmt(const IfStmt &if_stmt) {
