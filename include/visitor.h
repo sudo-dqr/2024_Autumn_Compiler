@@ -17,7 +17,6 @@ private:
     bool is_void_func;
     int scope_cnt;
     std::deque<Symbol> symbol_list;
-    int get_scope_cnt();
     void visit_decl(const Decl &decl);
     void visit_func_def(const FuncDef &func_def);
     void visit_block(const Block &block);

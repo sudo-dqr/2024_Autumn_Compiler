@@ -44,15 +44,18 @@ class SymbolTable : public std::enable_shared_from_this<SymbolTable> {
 private:
     std::unordered_map<std::string, std::shared_ptr<Symbol>> symbols;
     std::shared_ptr<SymbolTable> father;
+    int scope = 1;
 
 public:
-    SymbolTable() : father(nullptr) {}
+    SymbolTable() : father(nullptr), scope(1) {}
     std::shared_ptr<Symbol> get_symbol(const std::string &name);
     bool exist_in_scope(const std::string &name);
     bool add_symbol(std::shared_ptr<Symbol> symbol);
     std::shared_ptr<SymbolTable> push_scope();
     std::shared_ptr<SymbolTable> pop_scope();
     bool is_in_global_scope();
+    void set_scope(int scope) { this->scope = scope; }
+    int get_scope() { return scope; }
 };
 
 

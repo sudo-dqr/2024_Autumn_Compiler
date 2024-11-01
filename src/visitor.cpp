@@ -43,7 +43,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
     int line_number = const_def.ident->ident->get_line_number();
     if (!const_def.const_exp) { // constant
         SymbolType type = SymbolType(true, btype);
-        auto symbol = std::make_shared<Symbol>(type, ident, get_scope_cnt());
+        auto symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         symbol_list.push_back(*symbol);
         if (!cur_scope->add_symbol(symbol)) { // b error : redefined identifier
             ErrorList::report_error(line_number, 'b');
@@ -51,7 +51,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
     } else { // array
         // 暂时忽略表示数组长度的exp
         SymbolType type = SymbolType(true, btype, 0);
-        auto symbol = std::make_shared<Symbol>(type, ident, get_scope_cnt());
+        auto symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         symbol_list.push_back(*symbol);
         if (!cur_scope->add_symbol(symbol)) {
             ErrorList::report_error(line_number, 'b');
@@ -71,7 +71,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
     int line_number = var_def.ident->ident->get_line_number();
     if (!var_def.const_exp) { // variant
         SymbolType type = SymbolType(false, btype);
-        auto symbol = std::make_shared<Symbol>(type, ident, get_scope_cnt());
+        auto symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         symbol_list.push_back(*symbol);
         if (!cur_scope->add_symbol(symbol)) {
             ErrorList::report_error(line_number, 'b');
@@ -79,7 +79,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
     } else {
         // 暂时忽略表示数组长度的exp
         SymbolType type = SymbolType(false, btype, 0);
-        auto symbol = std::make_shared<Symbol>(type, ident, get_scope_cnt());
+        auto symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         symbol_list.push_back(*symbol);
         if (!cur_scope->add_symbol(symbol)) {
             ErrorList::report_error(line_number, 'b');
@@ -94,20 +94,21 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
     std::string ident = func_def.ident->ident->get_token();
     std::deque<Symbol> params; // 记录参数类型 e error
     SymbolType type = SymbolType(func_type, params);
-    auto func_symbol = std::make_shared<Symbol>(type, ident, get_scope_cnt());
+    auto func_symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
     symbol_list.push_back(*func_symbol);
     if (!cur_scope->add_symbol(func_symbol)) {
         ErrorList::report_error(line_number, 'b');
     }
     cur_scope = cur_scope->push_scope();
     scope_cnt++;
+    cur_scope->set_scope(scope_cnt);
     if (func_def.func_fparams) {
         for (const auto &func_fparam : func_def.func_fparams->func_fparams) {
             Token::TokenType param_type = func_fparam->btype->btype->get_type();
             std::string param_ident = func_fparam->ident->ident->get_token();
             if (func_fparam->is_array) {
                 SymbolType param_symbol_type = SymbolType(false, param_type, 0);
-                auto param_symbol = std::make_shared<Symbol>(param_symbol_type, param_ident, get_scope_cnt());
+                auto param_symbol = std::make_shared<Symbol>(param_symbol_type, param_ident, cur_scope->get_scope());
                 func_symbol->type.params.push_back(*param_symbol);
                 if (!cur_scope->add_symbol(param_symbol)) {
                     std::cout << "Funcdef FParam Error" << std::endl;
@@ -115,7 +116,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
                 symbol_list.push_back(*param_symbol);
             } else {
                 SymbolType param_symbol_type = SymbolType(false, param_type);
-                auto param_symbol = std::make_shared<Symbol>(param_symbol_type, param_ident, get_scope_cnt());
+                auto param_symbol = std::make_shared<Symbol>(param_symbol_type, param_ident, cur_scope->get_scope());
                 func_symbol->type.params.push_back(*param_symbol);
                 if (!cur_scope->add_symbol(param_symbol)) {
                     std::cout << "Funcdef FParam Error" << std::endl;
@@ -137,11 +138,12 @@ void Visitor::visit_main_func(const MainFunc &main_func) {
     this->is_void_func = false;
     std::string ident = "main";
     SymbolType type = SymbolType(func_type, std::deque<Symbol>());
-    auto func_symbol = std::make_shared<Symbol>(type, ident, get_scope_cnt());
+    auto func_symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
     // symbol_list.push_back(*func_symbol);
     cur_scope->add_symbol(func_symbol); // main函数不会发生b错误
     cur_scope = cur_scope->push_scope();
     this->scope_cnt++;
+    cur_scope->set_scope(scope_cnt);
     visit_block(*main_func.block);
     cur_scope = cur_scope->pop_scope();
     if (!func_block_has_ending_return(*main_func.block)) {
@@ -240,6 +242,7 @@ void Visitor::visit_exp_stmt(const ExpStmt &exp) {
 void Visitor::visit_block_stmt(const BlockStmt &block_stmt) {
     cur_scope = cur_scope->push_scope();
     this->scope_cnt++;
+    cur_scope->set_scope(scope_cnt);
     visit_block(*block_stmt.block);
     cur_scope = cur_scope->pop_scope();
 }
@@ -456,11 +459,6 @@ void Visitor::visit_rel_exp(const RelExp &rel_exp) {
         visit_rel_exp(*rel_exp.relexp);
         visit_add_exp(*rel_exp.addexp);
     }
-}
-
-int Visitor::get_scope_cnt() {
-    if (cur_scope->is_in_global_scope()) return 1;
-    else return scope_cnt;
 }
 
 void Visitor::print_symbol_list(std::ostream &os) {
