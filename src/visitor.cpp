@@ -11,10 +11,10 @@ Visitor::Visitor() {
 
 
 void Visitor::visit(const CompUnit &comp_unit) {
-    for (const auto &decl : comp_unit.decls) {
+    for (const auto & decl : comp_unit.decls) {
         visit_decl(*decl);
     }
-    for (const auto &func_def : comp_unit.func_defs) {
+    for (const auto & func_def : comp_unit.func_defs) {
         visit_func_def(*func_def);
     }
     visit_main_func(*comp_unit.main_func);
@@ -138,7 +138,7 @@ void Visitor::visit_main_func(const MainFunc &main_func) {
     std::string ident = "main";
     SymbolType type = SymbolType(func_type, std::deque<Symbol>());
     auto func_symbol = std::make_shared<Symbol>(type, ident, get_scope_cnt());
-    symbol_list.push_back(*func_symbol);
+    // symbol_list.push_back(*func_symbol);
     cur_scope->add_symbol(func_symbol); // main函数不会发生b错误
     cur_scope = cur_scope->push_scope();
     this->scope_cnt++;
@@ -464,9 +464,14 @@ int Visitor::get_scope_cnt() {
 }
 
 void Visitor::print_symbol_list(std::ostream &os) {
-    std::sort(symbol_list.begin(), symbol_list.end(), [](const Symbol &a, const Symbol &b) {
-        return a.scope_cnt < b.scope_cnt;
-    });
+    // bubble_sort by scope_cnt
+    for (int i = 0; i < symbol_list.size(); i++) {
+        for (int j = 0; j < symbol_list.size() - i - 1; j++) {
+            if (symbol_list[j].scope_cnt > symbol_list[j + 1].scope_cnt) {
+                std::swap(symbol_list[j], symbol_list[j + 1]);
+            }
+        }
+    }
     for (const auto &symbol : symbol_list) {
         os << symbol.scope_cnt << " " << symbol.name << " " << symbol.type.to_string() << std::endl;
     }
