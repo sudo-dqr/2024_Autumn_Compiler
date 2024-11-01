@@ -42,9 +42,12 @@ private:
     void visit_main_func(const MainFunc &main_func);
     void visit_const_decl(const ConstDecl &const_decl);
     void visit_const_def(const ConstDef &const_def, Token::TokenType type);
+    void visit_const_init_val(const ConstInitVal &const_init_val);
     void visit_var_decl(const VarDecl &var_decl);
+    void visit_init_val(const InitVal &init_val);
     void visit_var_def(const VarDef &var_def, Token::TokenType type);
     ExpInfo visit_exp(const Exp &exp);
+    ExpInfo visit_constexp(const ConstExp &const_exp);
     ExpInfo visit_add_exp(const AddExp &add_exp);
     ExpInfo visit_mul_exp(const MulExp &mul_exp);
     ExpInfo visit_unary_exp(const UnaryExp &unary_exp);

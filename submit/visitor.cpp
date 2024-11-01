@@ -49,12 +49,23 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
             ErrorList::report_error(line_number, 'b');
         }
     } else { // array
-        // 暂时忽略表示数组长度的exp
+        visit_constexp(*const_def.const_exp);
         SymbolType type = SymbolType(true, btype, 0);
         auto symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         symbol_list.push_back(*symbol);
         if (!cur_scope->add_symbol(symbol)) {
             ErrorList::report_error(line_number, 'b');
+        }
+    }
+    visit_const_init_val(*const_def.const_init_val);
+}
+
+void Visitor::visit_const_init_val(const ConstInitVal &const_init_val) {
+    if (auto exp_ptr = std::get_if<ConstExp>(&const_init_val)) {
+        visit_constexp(*exp_ptr);
+    } else if (auto exps_ptr = std::get_if<ConstExps>(&const_init_val)) {
+        for (const auto &exp : exps_ptr->const_exps) {
+            visit_constexp(*exp);
         }
     }
 }
@@ -77,12 +88,25 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
             ErrorList::report_error(line_number, 'b');
         }
     } else {
-        // 暂时忽略表示数组长度的exp
+        visit_constexp(*var_def.const_exp);
         SymbolType type = SymbolType(false, btype, 0);
         auto symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         symbol_list.push_back(*symbol);
         if (!cur_scope->add_symbol(symbol)) {
             ErrorList::report_error(line_number, 'b');
+        }
+    }
+    if (var_def.init_val) {
+        visit_init_val(*var_def.init_val);
+    }
+}
+
+void Visitor::visit_init_val(const InitVal &init_val) {
+    if (auto exp_ptr = std::get_if<Exp>(&init_val)) {
+        visit_exp(*exp_ptr);
+    } else if (auto exps_ptr = std::get_if<Exps>(&init_val)) {
+        for (const auto &exp : exps_ptr->exps) {
+            visit_exp(*exp);
         }
     }
 }
@@ -214,22 +238,20 @@ void Visitor::visit_stmt(const Stmt &stmt) {
 
 void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
     auto lval_symbol = visit_lval((*assign_stmt.lval));
+    visit_exp(*assign_stmt.exp);
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
             ErrorList::report_error(assign_stmt.lval->ident->ident->get_line_number(), 'h');
-        } else {
-            visit_exp(*assign_stmt.exp);
         }
     }
 }
 
 void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
     auto lval_symbol = visit_lval((*for_assign_stmt.lval));
+    visit_exp(*for_assign_stmt.exp);
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
             ErrorList::report_error(for_assign_stmt.lval->ident->ident->get_line_number(), 'h');
-        } else {
-            visit_exp(*for_assign_stmt.exp);
         }
     }
 }
@@ -287,6 +309,7 @@ void Visitor::visit_return_stmt(const ReturnStmt &return_stmt) {
         if(this->is_void_func) {
             ErrorList::report_error(return_stmt.return_token->get_line_number(), 'f');
         }
+        visit_exp(*return_stmt.return_exp);
     }
 }
 
@@ -313,6 +336,9 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
     if (cnt != printf_stmt.exps.size()) {
         ErrorList::report_error(printf_stmt.str->str->get_line_number(), 'l');
     }
+    for (const auto &exp : printf_stmt.exps) {
+        visit_exp(*exp);
+    }
 }
 
 int Visitor::control_cnt(const std::string &str) { // %d | %c
@@ -336,12 +362,19 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
     }
     if (lval.exp) {
         visit_exp(*lval.exp);
+        SymbolType type = SymbolType(ident_symbol->type.is_const, ident_symbol->type.btype);
+        return std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
+    } else {
+        return ident_symbol;
     }
-    return ident_symbol;
 }
 
 ExpInfo Visitor::visit_exp(const Exp &exp) {
     return visit_add_exp(*exp.add_exp);
+}
+
+ExpInfo Visitor::visit_constexp(const ConstExp &const_exp) {
+    return visit_add_exp(*const_exp.add_exp);
 }
 
 ExpInfo Visitor::visit_add_exp(const AddExp &add_exp) {
