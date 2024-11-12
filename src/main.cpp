@@ -5,25 +5,24 @@
 #include "lexer.h"
 #include "parser.h"
 #include "visitor.h"
-using namespace std;
 
 int main() {
-    ifstream file("testfile.txt");
+    std::ifstream file("testfile.txt");
     if (!file) {
-        cout << "testfile not found!" << endl;
+        std::cout << "testfile not found!" << std::endl;
         return 1;
     }
-    ofstream error_out("error.txt", ios::trunc);
+    std::ofstream error_out("error.txt", std::ios::trunc);
     error_out.close();
-    stringstream buffer;
+    std::stringstream buffer;
     buffer << file.rdbuf();
-    string text = buffer.str();
+    std::string text = buffer.str();
     Lexer lexer = Lexer(text);
     Parser parser = Parser(lexer);
     auto comp_unit = parser.parse();
     Visitor visitor = Visitor();
     visitor.visit(*comp_unit);
-    std::ofstream symbol_table_out("symbol.txt", ios::trunc);
+    std::ofstream symbol_table_out("symbol.txt", std::ios::trunc);
     visitor.print_symbol_list(symbol_table_out);
     symbol_table_out.close();
     ErrorList::print_errors();
