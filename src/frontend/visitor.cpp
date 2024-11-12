@@ -1,5 +1,7 @@
 #include <algorithm>
 #include "visitor.h"
+#include "type.h"
+#include "value.h"
 
 Visitor::Visitor() {
     this->cur_scope = std::make_shared<SymbolTable>();

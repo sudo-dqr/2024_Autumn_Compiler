@@ -3,7 +3,7 @@
 
 void ArrayType::print(std::ostream &os) const {
     os << '[' << this->size << " x ";
-    this->element_type.print(os);
+    this->element_type->print(os);
     os << ']'; 
 }
 
@@ -28,7 +28,7 @@ void LabelType::print(std::ostream &os) const {
 }
 
 void PointerType::print(std::ostream &os) const {
-    this->referenced_type.print(os);
+    this->referenced_type->print(os);
     os << '*';
 }
 

@@ -2,76 +2,75 @@
 #define IR_TYPE_H
 
 #include "ir_printable.h"
+#include <vector>
+#include <memory>
 
-struct ValueType {
-    virtual ~ValueType() = default;
+struct ValueType : public IRPrintable { // abstract class as a implement
+    virtual void print(std::ostream &os) const = 0;
 };
 
-struct ArrayType : public ValueType, public IRPrintable {
+struct ArrayType : public ValueType {
     private :
-        ValueType element_type;
+        std::unique_ptr<ValueType> element_type;
         int size;
 
     public :
-        ArrayType(ValueType element_type, int size) : element_type(element_type), size(size) {}
-        ValueType get_element_type() { return element_type; }
+        ArrayType(std::unique_ptr<ValueType> element_type, int size) : element_type(std::move(element_type)), size(size) {}
+        std::unique_ptr<ValueType> get_element_type() { return std::move(element_type); }
         int get_size() { return size; }
         void print(std::ostream &os) const override;   
 };
 
-struct FunctionType : public ValueType, public IRPrintable {
+struct FunctionType : public ValueType {
     private :
-        ValueType return_type;
-        std::vector<ValueType> arg_types;
+        std::unique_ptr<ValueType> return_type;
+        std::vector<std::unique_ptr<ValueType>> arg_types;
 
     public :
-        FunctionType(ValueType return_type, std::vector<ValueType> arg_types) : return_type(return_type), arg_types(arg_types) {}
-        ValueType get_return_type() { return return_type; }
-        std::vector<ValueType> get_arg_types() { return arg_types; }
+        FunctionType(std::unique_ptr<ValueType> return_type, std::vector<std::unique_ptr<ValueType>> arg_types) : 
+                        return_type(std::move(return_type)), arg_types(std::move(arg_types)) {}
+        std::unique_ptr<ValueType> get_return_type() { return std::move(return_type); }
+        std::vector<std::unique_ptr<ValueType>> get_arg_types() { return std::move(arg_types); }
         void print(std::ostream &os) const override;
 };
 
-struct IntType : public ValueType, public IRPrintable {
-    static IntType INT = IntType(false);
-    static IntType BOOL = IntType(true);
-
+struct IntType : public ValueType {
     private :
         bool is_logical; // int1 -> bool
-        IntType(bool is_logical) : is_logical(is_logical) {}
 
     public :
+        IntType(bool is_logical) : is_logical(is_logical) {}
         void print(std::ostream &os) const override;  
 };
+static IntType INT = IntType(false);
+static IntType BOOL = IntType(true);
 
-struct CharType : public ValueType, public IRPrintable {
-    static CharType CHAR = CharType();
-
+struct CharType : public ValueType {
     public :
         void print(std::ostream &os) const override;
 };
+static CharType CHAR = CharType();
 
-struct LabelType : public ValueType, public IRPrintable {
-    static LabelType LABEL = LabelType();
-
+struct LabelType : public ValueType {
     public :
         void print(std::ostream &os) const override;
 };
+static LabelType LABEL = LabelType();
 
-struct PointerType : public ValueType, public IRPrintable {
+struct PointerType : public ValueType {
     private :
-        ValueType referenced_type;
+        std::unique_ptr<ValueType> referenced_type;
 
     public :
-        PointerType(ValueType referenced_type) : referenced_type(referenced_type) {}
-        ValueType get_referenced_type() { return referenced_type; }
+        PointerType(std::unique_ptr<ValueType> referenced_type) : referenced_type(std::move(referenced_type)) {}
+        std::unique_ptr<ValueType> get_referenced_type() { return std::move(referenced_type); }
         void print(std::ostream &os) const override;    
 };
 
-struct VoidType : public ValueType, public IRPrintable {
-    static VoidType VOID = VoidType();
-
+struct VoidType : public ValueType {
     public :
         void print(std::ostream &os) const override;
 };
+static VoidType VOID = VoidType();
 
 #endif // IR_TYPE_H
