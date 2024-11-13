@@ -9,7 +9,8 @@ struct ExpInfo {
     bool is_bool; // i1 type
     int array_size;
     Token::TokenType type;
-    int value;
+    int int_value;
+    char char_value;
     std::unique_ptr<Value> ir_value;
 
     ExpInfo(bool is_const, bool is_array, int array_size, Token::TokenType type)

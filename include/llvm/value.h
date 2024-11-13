@@ -40,14 +40,17 @@ struct GlobalVariable : public Value {
         int init_value; // 普通变量 
         std::vector<int> int_array_init_values; // int array
         std::vector<char> char_array_init_values; // char array
+        std::string char_array_init_string; // string const
 
     public :
-        GlobalVariable(std::string name, std::unique_ptr<ValueType> type, int id, int init_value) 
-        : Value(name, std::move(type), id), init_value(init_value) {}
-        GlobalVariable(std::string name, std::unique_ptr<ValueType> type, int id, std::vector<int> int_array_init_values) 
-        : Value(name, std::move(type), id), int_array_init_values(int_array_init_values) {}
-        GlobalVariable(std::string name, std::unique_ptr<ValueType> type, int id, std::vector<char> char_array_init_values) 
-        : Value(name, std::move(type), id), char_array_init_values(char_array_init_values) {}
+        GlobalVariable(std::string name, std::unique_ptr<ValueType> type, int init_value) 
+        : Value(name, std::move(type)), init_value(init_value) {}
+        GlobalVariable(std::string name, std::unique_ptr<ValueType> type, std::vector<int> int_array_init_values) 
+        : Value(name, std::move(type)), int_array_init_values(int_array_init_values) {}
+        GlobalVariable(std::string name, std::unique_ptr<ValueType> type, std::vector<char> char_array_init_values) 
+        : Value(name, std::move(type)), char_array_init_values(char_array_init_values) {}
+        GlobalVariable(std::string name, std::unique_ptr<ValueType> type, std::string str) 
+        : Value(name, std::move(type)), char_array_init_string(str) {}
         int get_init_value() { return init_value; }
         std::vector<int> get_int_array_init_values() { return int_array_init_values; }
         std::vector<char> get_char_array_init_values() { return char_array_init_values; }
@@ -89,12 +92,15 @@ struct Module : public IRPrintable {
         std::vector<std::unique_ptr<Function>> functions;
 
     public :
-        Module(std::vector<std::unique_ptr<GlobalVariable>> global_variables, std::vector<std::unique_ptr<Function>> functions) 
-        : global_variables(std::move(global_variables)), functions(std::move(functions)) {}
+        Module() {}
+        void append_global_variable(std::unique_ptr<GlobalVariable> global_variable) { global_variables.push_back(std::move(global_variable)); }
+        void append_function(std::unique_ptr<Function> function) { functions.push_back(std::move(function)); }
         std::vector<std::unique_ptr<GlobalVariable>> get_global_variables() { return std::move(global_variables); }
         std::vector<std::unique_ptr<Function>> get_functions() { return std::move(functions); }
         void print(std::ostream &os) const override;
 };
+
+Module module_instance;
 
 
 #endif // IR_VALUE_H

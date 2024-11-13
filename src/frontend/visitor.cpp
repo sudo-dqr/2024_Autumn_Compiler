@@ -49,14 +49,52 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
         }
         ExpInfo exp_info = visit_const_init_val(*const_def.const_init_val);
         if (btype == Token::CHARTK) {
-            symbol->char_value = exp_info.value;
+            symbol->char_value = exp_info.char_value;
         } else if (btype == Token::INTTK) {
-            symbol->int_value = exp_info.value;
+            symbol->int_value = exp_info.int_value;
         }
     } else { // array
-        visit_constexp(*const_def.const_exp);
-        SymbolType type = SymbolType(true, btype, 0);
+        ExpInfo exp_info = visit_constexp(*const_def.const_exp); // array size
+        int array_size = exp_info.int_value;
+        SymbolType type = SymbolType(true, btype, array_size);
         auto symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
+        std::unique_ptr<ValueType> ir_element_type; // base is valuetype; base pointer to son
+        if (btype == Token::CHARTK)
+            ir_element_type = std::make_unique<CharType>();
+        else if (btype == Token::INTTK)
+            ir_element_type = std::make_unique<IntType>(false);
+        auto ir_type = std::make_unique<ArrayType>(std::move(ir_element_type), array_size);
+        if (this->cur_scope->is_in_global_scope()) {
+            // ConstInitVal → ConstExp | '{' [ ConstExp { ',' ConstExp } ] '}' | StringConst
+            if (auto const_exps_ptr = std::get_if<ConstExps>(&(*const_def.const_init_val))) {
+                if (btype == Token::CHARTK) {
+                    for (const auto &const_exp : const_exps_ptr->const_exps) {
+                        ExpInfo exp_info = visit_constexp(*const_exp);
+                        symbol->char_values.push_back(exp_info.char_value);
+                    }
+                    auto global_variable = GlobalVariable(ident, std::move(ir_type), symbol->char_values);
+                    symbol->ir_value = std::make_unique<GlobalVariable>(global_variable);
+                    module_instance.append_global_variable(std::make_unique<GlobalVariable>(global_variable));
+                } else {
+                    for (const auto &const_exp : const_exps_ptr->const_exps) {
+                        ExpInfo exp_info = visit_constexp(*const_exp);
+                        symbol->int_values.push_back(exp_info.int_value);
+                    }
+                    GlobalVariable global_variable(ident, std::move(ir_type), symbol->int_values);
+                    symbol->ir_value = std::make_unique<GlobalVariable>(global_variable);
+                    module_instance.append_global_variable(std::make_unique<GlobalVariable>(global_variable));
+                }
+            } else if (auto string_const_ptr = std::get_if<StringConst>(&(*const_def.const_init_val))) {
+                symbol->string_value = string_const_ptr->str->get_token();
+                GlobalVariable global_variable(ident, std::move(ir_type), symbol->string_value);
+                symbol->ir_value = std::make_unique<GlobalVariable>(global_variable);
+                module_instance.append_global_variable(std::make_unique<GlobalVariable>(global_variable));
+            } else {
+                std::cout << "Invalid Const Array Initval!" << std::endl;
+            }
+        } else {
+
+        }
         symbol_list.push_back(*symbol);
         if (!cur_scope->add_symbol(symbol)) {
             ErrorList::report_error(line_number, 'b');
