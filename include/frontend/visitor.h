@@ -4,6 +4,11 @@
 #include "symboltable.h"
 #include "error.h"
 #include "expinfo.h"
+#include <algorithm>
+#include "visitor.h"
+#include "type.h"
+#include "value.h"
+#include "instr.h"
 
 class Visitor {
 public:
@@ -42,9 +47,7 @@ private:
     void visit_main_func(const MainFunc &main_func);
     void visit_const_decl(const ConstDecl &const_decl);
     void visit_const_def(const ConstDef &const_def, Token::TokenType type);
-    void visit_const_init_val(const ConstInitVal &const_init_val);
     void visit_var_decl(const VarDecl &var_decl);
-    void visit_init_val(const InitVal &init_val);
     void visit_var_def(const VarDef &var_def, Token::TokenType type);
     ExpInfo visit_exp(const Exp &exp);
     ExpInfo visit_constexp(const ConstExp &const_exp);
@@ -52,6 +55,8 @@ private:
     ExpInfo visit_mul_exp(const MulExp &mul_exp);
     ExpInfo visit_unary_exp(const UnaryExp &unary_exp);
     ExpInfo visit_primary_exp(const PrimaryExp &primary_exp);
+    ExpInfo visit_init_val(const InitVal &init_val);
+    ExpInfo visit_const_init_val(const ConstInitVal &const_init_val);
     void visit_cond(const Cond &cond);
     void visit_lor_exp(const LOrExp &lor_exp);
     void visit_land_exp(const LAndExp &land_exp);

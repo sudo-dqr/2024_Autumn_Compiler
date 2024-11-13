@@ -6,6 +6,9 @@
 #include "ir_printable.h"
 #include <memory>
 
+// 前向声明 Instruction 类 头文件需要另外包含在.cpp文件中
+struct Instruction;
+
 struct Value : public IRPrintable {
     protected :
         std::string name;
@@ -25,6 +28,8 @@ struct Value : public IRPrintable {
 struct User : public Value {
     protected :
         User(std::string name, std::unique_ptr<ValueType> type, int id) : Value(name, std::move(type), id) {}
+        User(std::string name, std::unique_ptr<ValueType> type) : Value(name, std::move(type)) {}
+        User(int id, std::unique_ptr<ValueType> type) : Value(id, std::move(type)) {}
 
     public :
         void print(std::ostream &os) const override;
@@ -56,6 +61,15 @@ struct FParam : public Value { // LLVM IR中形参保存在虚拟寄存器上 �
 };
 
 struct BasicBlock : public Value {
+    private :
+        std::vector<std::unique_ptr<Instruction>> instrs;
+
+    public :
+        BasicBlock(int id);
+        void append_instr(std::unique_ptr<Instruction> instr) { instrs.push_back(std::move(instr)); }
+        std::vector<std::unique_ptr<Instruction>> get_instrs() { return std::move(instrs); }
+        bool is_empty() { return instrs.empty(); }
+        void print(std::ostream &os) const override;
 
 };
 
@@ -63,6 +77,10 @@ struct Function : public Value {
     private :
         std::vector<std::unique_ptr<FParam>> fparams;
         std::vector<std::unique_ptr<BasicBlock>> basic_blocks;
+
+    public :
+        std::vector<std::unique_ptr<FParam>> get_fparams() { return std::move(fparams); }
+        std::vector<std::unique_ptr<BasicBlock>> get_basic_blocks() { return std::move(basic_blocks); }
 };
 
 struct Module : public IRPrintable {

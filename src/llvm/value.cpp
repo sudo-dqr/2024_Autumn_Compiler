@@ -1,5 +1,6 @@
 #include "value.h"
 #include "type.h"
+#include "instr.h"
 
 void GlobalVariable::print(std::ostream &os) const {
     os << "@" << name << " = dso_local global ";
@@ -29,6 +30,14 @@ void GlobalVariable::print(std::ostream &os) const {
 
 void FParam::print(std::ostream &os) const {
     // 形参保存在虚拟寄存器上不输出 进入函数第一步将形参保存到栈上
+}
+
+void BasicBlock::print(std::ostream &os) const {
+    if (instrs.empty()) return;
+    for (auto &instr : instrs) {
+        instr->print(os);
+        os << "\n";
+    }
 }
 
 void Module::print(std::ostream &os) const {

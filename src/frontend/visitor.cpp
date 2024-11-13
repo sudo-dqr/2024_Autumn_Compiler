@@ -1,7 +1,4 @@
-#include <algorithm>
 #include "visitor.h"
-#include "type.h"
-#include "value.h"
 
 Visitor::Visitor() {
     this->cur_scope = std::make_shared<SymbolTable>();
@@ -50,6 +47,12 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
         if (!cur_scope->add_symbol(symbol)) { // b error : redefined identifier
             ErrorList::report_error(line_number, 'b');
         }
+        ExpInfo exp_info = visit_const_init_val(*const_def.const_init_val);
+        if (btype == Token::CHARTK) {
+            symbol->char_value = exp_info.value;
+        } else if (btype == Token::INTTK) {
+            symbol->int_value = exp_info.value;
+        }
     } else { // array
         visit_constexp(*const_def.const_exp);
         SymbolType type = SymbolType(true, btype, 0);
@@ -58,13 +61,13 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
         if (!cur_scope->add_symbol(symbol)) {
             ErrorList::report_error(line_number, 'b');
         }
+        ExpInfo exp_info = visit_const_init_val(*const_def.const_init_val);
     }
-    visit_const_init_val(*const_def.const_init_val);
 }
 
-void Visitor::visit_const_init_val(const ConstInitVal &const_init_val) {
+ExpInfo Visitor::visit_const_init_val(const ConstInitVal &const_init_val) {
     if (auto exp_ptr = std::get_if<ConstExp>(&const_init_val)) {
-        visit_constexp(*exp_ptr);
+        return visit_constexp(*exp_ptr);
     } else if (auto exps_ptr = std::get_if<ConstExps>(&const_init_val)) {
         for (const auto &exp : exps_ptr->const_exps) {
             visit_constexp(*exp);
@@ -103,7 +106,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
     }
 }
 
-void Visitor::visit_init_val(const InitVal &init_val) {
+ExpInfo Visitor::visit_init_val(const InitVal &init_val) {
     if (auto exp_ptr = std::get_if<Exp>(&init_val)) {
         visit_exp(*exp_ptr);
     } else if (auto exps_ptr = std::get_if<Exps>(&init_val)) {

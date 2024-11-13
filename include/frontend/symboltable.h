@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <deque>
 #include "token.h"
+#include <vector>
 
 struct Symbol;
 
@@ -35,6 +36,11 @@ struct Symbol {
     SymbolType type;
     std::string name;
     int scope_cnt;
+    int int_value;
+    char char_value;
+    std::vector<int> int_values;
+    std::vector<char> char_values;
+    
 
     Symbol(SymbolType type, std::string name, int scope_cnt)
         : type(type), name(name), scope_cnt(scope_cnt) {}
