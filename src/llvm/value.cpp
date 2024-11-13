@@ -65,3 +65,7 @@ void Value::print(std::ostream &os) const {
 void User::print(std::ostream &os) const {
     os << "<Abstract User to string not supported>";
 }
+
+void IntConst::print(std::ostream &os) const {
+    os << this->value;
+}

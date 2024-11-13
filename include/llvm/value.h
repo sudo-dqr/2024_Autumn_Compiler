@@ -14,22 +14,26 @@ struct Value : public IRPrintable {
         std::string name;
         ValueType* type;
         int id; // 虚拟寄存器号
+        Value() = default;
         Value(std::string name, ValueType* type, int id) : name(name), type(type), id(id) {}
         Value(std::string name, ValueType* type) : name(name), type(type), id(-1) {}
         Value(int id, ValueType* type) : name("v" + id), type(type), id(id) {}
+        Value(ValueType* type) : name(""), type(type), id(-1) {}
     
     public :
-        std::string get_name() { return name; }
-        ValueType* get_type() { return type; }
-        int get_id() { return id; }
+        std::string get_name() const { return name; }
+        ValueType* get_type() const { return type; }
+        int get_id() const { return id; } //const function是不会修改对象状态的方法
         void print(std::ostream &os) const override;
 };
 
 struct User : public Value {
     protected :
+        User() = default;
         User(std::string name, ValueType* type, int id) : Value(name, type, id) {}
         User(std::string name, ValueType* type) : Value(name, type) {}
         User(int id, ValueType* type) : Value(id, type) {}
+        User(ValueType* type) : Value(type) {}
 
     public :
         void print(std::ostream &os) const override;
@@ -43,6 +47,7 @@ struct GlobalVariable : public Value {
         std::string char_array_init_string; // string const
 
     public :
+        GlobalVariable() = default;
         GlobalVariable(std::string name, ValueType* type, int init_value) 
         : Value(name, type), init_value(init_value) {}
         GlobalVariable(std::string name, ValueType* type, std::vector<int> int_array_init_values) 
@@ -51,6 +56,7 @@ struct GlobalVariable : public Value {
         : Value(name, type), char_array_init_values(char_array_init_values) {}
         GlobalVariable(std::string name, ValueType* type, std::string str) 
         : Value(name, type), char_array_init_string(str) {}
+
         int get_init_value() { return init_value; }
         std::vector<int> get_int_array_init_values() { return int_array_init_values; }
         std::vector<char> get_char_array_init_values() { return char_array_init_values; }
@@ -68,7 +74,9 @@ struct BasicBlock : public Value {
         std::vector<Instruction*> instrs;
 
     public :
-        BasicBlock(int id);
+        BasicBlock() = default;
+        BasicBlock(int id) : Value("basicblock" + id, &IR_LABEL) {}
+
         void append_instr(Instruction* instr) { instrs.push_back(instr); }
         std::vector<Instruction*> get_instrs() { return instrs; }
         bool is_empty() { return instrs.empty(); }
@@ -82,6 +90,7 @@ struct Function : public Value {
         std::vector<BasicBlock*> basic_blocks;
 
     public :
+        Function() = default;
         std::vector<FParam*> get_fparams() { return fparams; }
         std::vector<BasicBlock*> get_basic_blocks() { return basic_blocks; }
 };
@@ -103,6 +112,13 @@ struct Module : public IRPrintable {
             static Module instance;
             return instance;
         }
+};
+
+struct IntConst : public Value {
+    int value;
+
+    IntConst(int value) : Value(&IR_INT), value(value) {}
+    void print(std::ostream &os) const override;
 };
 
 #endif // IR_VALUE_H
