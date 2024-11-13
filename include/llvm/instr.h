@@ -74,7 +74,13 @@ struct CallInstr : public Instruction { // void / int/char
 };
 
 struct GetelementptrInstr : public Instruction {
+    Value* array;
+    Value* index;
 
+    GetelementptrInstr(int id, ValueType* type, Value* array, Value* index)
+    : Instruction(id, type), array(array), index(index) {}
+
+    void print(std::ostream &os) const override;
 };
 
 struct IcmpInstr : public Instruction {

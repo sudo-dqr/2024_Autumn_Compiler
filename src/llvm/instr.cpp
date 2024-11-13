@@ -96,3 +96,21 @@ void CallInstr::print(std::ostream &os) const {
     }
     os << ")";
 }
+
+
+// %ptr = getelementptr T, T* %baseptr, V %idx1, V idx2, ...
+void GetelementptrInstr::print(std::ostream &os) const {
+    Instruction::print(os);
+    os << "%" << get_id() << " = getelementptr ";
+    get_type()->print(os);
+    os << ", ";
+    auto array_ptr = (PointerType*)get_type(); // i32 -> i32*
+    array_ptr->print(os);
+    if (auto global_ptr = dynamic_cast<GlobalVariable*>(array)) os << "@" << get_name();
+    else os << "%" << get_id();
+    os << ", i32 "; // index : i32
+    if (auto intconst_ptr = dynamic_cast<IntConst*>(index)) intconst_ptr->print(os);
+    else {
+        os << "%" << index->get_id();
+    }
+}
