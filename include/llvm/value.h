@@ -12,24 +12,24 @@ struct Instruction;
 struct Value : public IRPrintable {
     protected :
         std::string name;
-        std::unique_ptr<ValueType> type;
+        ValueType* type;
         int id; // 虚拟寄存器号
-        Value(std::string name, std::unique_ptr<ValueType> type, int id) : name(name), type(std::move(type)), id(id) {}
-        Value(std::string name, std::unique_ptr<ValueType> type) : name(name), type(std::move(type)), id(-1) {}
-        Value(int id, std::unique_ptr<ValueType> type) : name("v" + id), type(std::move(type)), id(id) {}
+        Value(std::string name, ValueType* type, int id) : name(name), type(type), id(id) {}
+        Value(std::string name, ValueType* type) : name(name), type(type), id(-1) {}
+        Value(int id, ValueType* type) : name("v" + id), type(type), id(id) {}
     
     public :
         std::string get_name() { return name; }
-        std::unique_ptr<ValueType> get_type() { return std::move(type); }
+        ValueType* get_type() { return type; }
         int get_id() { return id; }
         void print(std::ostream &os) const override;
 };
 
 struct User : public Value {
     protected :
-        User(std::string name, std::unique_ptr<ValueType> type, int id) : Value(name, std::move(type), id) {}
-        User(std::string name, std::unique_ptr<ValueType> type) : Value(name, std::move(type)) {}
-        User(int id, std::unique_ptr<ValueType> type) : Value(id, std::move(type)) {}
+        User(std::string name, ValueType* type, int id) : Value(name, type, id) {}
+        User(std::string name, ValueType* type) : Value(name, type) {}
+        User(int id, ValueType* type) : Value(id, type) {}
 
     public :
         void print(std::ostream &os) const override;
@@ -43,14 +43,14 @@ struct GlobalVariable : public Value {
         std::string char_array_init_string; // string const
 
     public :
-        GlobalVariable(std::string name, std::unique_ptr<ValueType> type, int init_value) 
-        : Value(name, std::move(type)), init_value(init_value) {}
-        GlobalVariable(std::string name, std::unique_ptr<ValueType> type, std::vector<int> int_array_init_values) 
-        : Value(name, std::move(type)), int_array_init_values(int_array_init_values) {}
-        GlobalVariable(std::string name, std::unique_ptr<ValueType> type, std::vector<char> char_array_init_values) 
-        : Value(name, std::move(type)), char_array_init_values(char_array_init_values) {}
-        GlobalVariable(std::string name, std::unique_ptr<ValueType> type, std::string str) 
-        : Value(name, std::move(type)), char_array_init_string(str) {}
+        GlobalVariable(std::string name, ValueType* type, int init_value) 
+        : Value(name, type), init_value(init_value) {}
+        GlobalVariable(std::string name, ValueType* type, std::vector<int> int_array_init_values) 
+        : Value(name, type), int_array_init_values(int_array_init_values) {}
+        GlobalVariable(std::string name, ValueType* type, std::vector<char> char_array_init_values) 
+        : Value(name, type), char_array_init_values(char_array_init_values) {}
+        GlobalVariable(std::string name, ValueType* type, std::string str) 
+        : Value(name, type), char_array_init_string(str) {}
         int get_init_value() { return init_value; }
         std::vector<int> get_int_array_init_values() { return int_array_init_values; }
         std::vector<char> get_char_array_init_values() { return char_array_init_values; }
@@ -59,18 +59,18 @@ struct GlobalVariable : public Value {
 
 struct FParam : public Value { // LLVM IR中形参保存在虚拟寄存器上 首先需要将形参保存到栈上
     public :
-        FParam(int id, std::unique_ptr<ValueType> type) : Value("FP" + id, std::move(type), id) {}
+        FParam(int id, ValueType* type) : Value("FP" + id, type, id) {}
         void print(std::ostream &os) const override;
 };
 
 struct BasicBlock : public Value {
     private :
-        std::vector<std::unique_ptr<Instruction>> instrs;
+        std::vector<Instruction*> instrs;
 
     public :
         BasicBlock(int id);
-        void append_instr(std::unique_ptr<Instruction> instr) { instrs.push_back(std::move(instr)); }
-        std::vector<std::unique_ptr<Instruction>> get_instrs() { return std::move(instrs); }
+        void append_instr(Instruction* instr) { instrs.push_back(instr); }
+        std::vector<Instruction*> get_instrs() { return instrs; }
         bool is_empty() { return instrs.empty(); }
         void print(std::ostream &os) const override;
 
@@ -78,29 +78,31 @@ struct BasicBlock : public Value {
 
 struct Function : public Value {
     private :
-        std::vector<std::unique_ptr<FParam>> fparams;
-        std::vector<std::unique_ptr<BasicBlock>> basic_blocks;
+        std::vector<FParam*> fparams;
+        std::vector<BasicBlock*> basic_blocks;
 
     public :
-        std::vector<std::unique_ptr<FParam>> get_fparams() { return std::move(fparams); }
-        std::vector<std::unique_ptr<BasicBlock>> get_basic_blocks() { return std::move(basic_blocks); }
+        std::vector<FParam*> get_fparams() { return fparams; }
+        std::vector<BasicBlock*> get_basic_blocks() { return basic_blocks; }
 };
 
 struct Module : public IRPrintable {
     private :
-        std::vector<std::unique_ptr<GlobalVariable>> global_variables;
-        std::vector<std::unique_ptr<Function>> functions;
+        Module() {}
+        ~Module() {}
+        std::vector<GlobalVariable*> global_variables;
+        std::vector<Function*> functions;
 
     public :
-        Module() {}
-        void append_global_variable(std::unique_ptr<GlobalVariable> global_variable) { global_variables.push_back(std::move(global_variable)); }
-        void append_function(std::unique_ptr<Function> function) { functions.push_back(std::move(function)); }
-        std::vector<std::unique_ptr<GlobalVariable>> get_global_variables() { return std::move(global_variables); }
-        std::vector<std::unique_ptr<Function>> get_functions() { return std::move(functions); }
+        void append_global_variable(GlobalVariable* global_variable) { global_variables.push_back(global_variable); }
+        void append_function(Function* function) { functions.push_back(function); }
+        std::vector<GlobalVariable*> get_global_variables() { return global_variables; }
+        std::vector<Function*> get_functions() { return functions; }
         void print(std::ostream &os) const override;
+        static Module& get_instance() {
+            static Module instance;
+            return instance;
+        }
 };
-
-Module module_instance;
-
 
 #endif // IR_VALUE_H

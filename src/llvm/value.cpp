@@ -6,11 +6,11 @@ void GlobalVariable::print(std::ostream &os) const {
     os << "@" << name << " = dso_local global ";
     type->print(os);
     os << " ";
-    if (auto int_type = dynamic_cast<IntType*>(type.get())) {
+    if (auto int_type = dynamic_cast<IntType*>(type)) {
         os << init_value;
-    } else if (auto char_type = dynamic_cast<CharType*>(type.get())) {
+    } else if (auto char_type = dynamic_cast<CharType*>(type)) {
         os << init_value;
-    } else if (auto array_type = dynamic_cast<ArrayType*>(type.get())) {
+    } else if (auto array_type = dynamic_cast<ArrayType*>(type)) {
         if (int_array_init_values.size() == 0) {
             os << "zeroinitializer";
         } else {

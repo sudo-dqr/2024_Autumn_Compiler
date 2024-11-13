@@ -5,7 +5,6 @@
 #include "error.h"
 #include "expinfo.h"
 #include <algorithm>
-#include "visitor.h"
 #include "type.h"
 #include "value.h"
 #include "instr.h"

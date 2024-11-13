@@ -7,6 +7,7 @@
 #include <deque>
 #include "token.h"
 #include <vector>
+#include "value.h"
 
 struct Symbol;
 
@@ -38,12 +39,11 @@ struct Symbol {
     int scope_cnt;
     int int_value;
     char char_value;
-    std::unique_ptr<Value> ir_value;
+    Value* ir_value;
     std::vector<int> int_values;
     std::vector<char> char_values;
     std::string string_value;
     
-
     Symbol(SymbolType type, std::string name, int scope_cnt)
         : type(type), name(name), scope_cnt(scope_cnt) {}
 };

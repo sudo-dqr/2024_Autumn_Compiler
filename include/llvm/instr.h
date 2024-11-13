@@ -5,9 +5,9 @@
 
 struct Instruction : public User {
     protected :
-        Instruction(std::string name, std::unique_ptr<ValueType> type, int id) : User(name, std::move(type), id) {}
-        Instruction(std::string name, std::unique_ptr<ValueType> type) : User(name, std::move(type)) {}
-        Instruction(int id, std::unique_ptr<ValueType> type) : User(id, std::move(type)) {}
+        Instruction(std::string name, ValueType* type, int id) : User(name, type, id) {}
+        Instruction(std::string name, ValueType* type) : User(name, type) {}
+        Instruction(int id, ValueType* type) : User(id, type) {}
 
     public : 
         void print(std::ostream &os) const override;  

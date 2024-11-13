@@ -13,6 +13,7 @@ struct ExpInfo {
     char char_value;
     std::unique_ptr<Value> ir_value;
 
+    ExpInfo() = default;
     ExpInfo(bool is_const, bool is_array, int array_size, Token::TokenType type)
         : is_const(is_const), is_array(is_array), array_size(array_size), type(type) {}
 };
