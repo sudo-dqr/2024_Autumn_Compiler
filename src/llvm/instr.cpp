@@ -7,14 +7,14 @@ void Instruction::print(std::ostream &os) const {
 // %xxx = alloca T
 void AllocaInstr::print(std::ostream &os) const {
     Instruction::print(os);
-    os << "%" << get_id() << " = alloca ";
+    os << "%" << id << " = alloca ";
     type->print(os);
 }
 
 // %xxx = <op> T %yyy, %zzz
 void ArithmeticInstr::print(std::ostream &os) const {
     Instruction::print(os);
-    os << "%" << get_id() << " = ";
+    os << "%" << id << " = ";
     switch (arith_type) {
         case ADD:
             os << "add ";
@@ -35,10 +35,10 @@ void ArithmeticInstr::print(std::ostream &os) const {
     type->print(os); // 这里应该只有int char类型在运算前会先转成int
     IntConst* intconst_ptr = nullptr;
     if (intconst_ptr = dynamic_cast<IntConst*>(op1)) intconst_ptr->print(os);
-    else os << "%" << op1->get_id();
+    else os << "%" << op1->id;
     os << ", ";
     if (intconst_ptr = dynamic_cast<IntConst*>(op2)) intconst_ptr->print(os);
-    else os << "%" << op2->get_id();
+    else os << "%" << op2->id;
 }
 
 
@@ -48,11 +48,11 @@ void BrInstr::print(std::ostream &os) const {
     Instruction::print(os);
     os << "br ";
     if (condition)
-        os << "i1 %" << condition->get_id() 
-        << ", label %" << true_block->get_id() 
-        << ", label %" << false_block->get_id(); 
+        os << "i1 %" << condition->id 
+        << ", label %" << true_block->id 
+        << ", label %" << false_block->id; 
     else
-        os << "label %" << true_block->get_id();
+        os << "label %" << true_block->id;
 }
 
 // ret void
@@ -62,10 +62,10 @@ void RetInstr::print(std::ostream &os) const {
     Instruction::print(os);
     os << "ret ";
     if (return_value) {
-        return_value->get_type()->print(os);
+        return_value->type->print(os);
         os << " ";
         if (auto intconst_ptr = dynamic_cast<IntConst*>(return_value)) intconst_ptr->print(os);
-        else os << "%" << return_value->get_id();
+        else os << "%" << return_value->id;
     }
     else os << "void";
 }
@@ -78,18 +78,18 @@ void CallInstr::print(std::ostream &os) const {
     if (auto void_ptr = dynamic_cast<VoidType*>(type)) {
         os << "call void @";
     } else {
-        os << "%" << get_id() << "call ";
-        get_type()->print(os);
+        os << "%" << id << "call ";
+        type->print(os);
         os << " @";
     }
-    os << get_name() << "(";
+    os << name << "(";
     for (int i = 0; i < args.size(); i++) {
         if (auto constexp_ptr = dynamic_cast<IntConst*>(args[i])) {
             os << "i32 ";
             constexp_ptr->print(os);
         } else {
-            args[i]->get_type()->print(os);
-            os << " %" << args[i]->get_id();
+            args[i]->type->print(os);
+            os << " %" << args[i]->id;
         }
         if (i != args.size() - 1) 
             os << ", ";
@@ -101,24 +101,24 @@ void CallInstr::print(std::ostream &os) const {
 // %ptr = getelementptr T, T* %baseptr, V %idx1, V idx2, ...
 void GetelementptrInstr::print(std::ostream &os) const {
     Instruction::print(os);
-    os << "%" << get_id() << " = getelementptr ";
-    get_type()->print(os);
+    os << "%" << id << " = getelementptr ";
+    type->print(os);
     os << ", ";
-    auto array_ptr = (PointerType*)get_type(); // i32 -> i32*
+    auto array_ptr = (PointerType*)type; // i32 -> i32*
     array_ptr->print(os);
-    if (auto global_ptr = dynamic_cast<GlobalVariable*>(array)) os << "@" << get_name();
-    else os << "%" << get_id();
+    if (auto global_ptr = dynamic_cast<GlobalVariable*>(array)) os << "@" << name;
+    else os << "%" << id;
     os << ", i32 "; // index : i32
     if (auto intconst_ptr = dynamic_cast<IntConst*>(index)) intconst_ptr->print(os);
     else {
-        os << "%" << index->get_id();
+        os << "%" << index->id;
     }
 }
 
 // <result> = icmp eq i32 4, 5
 void IcmpInstr::print(std::ostream &os) const {
     Instruction::print(os);
-    os << "%" << get_id() << " = icmp ";
+    os << "%" << id << " = icmp ";
     switch (compare_type)
     {
         case EQ:
@@ -137,26 +137,57 @@ void IcmpInstr::print(std::ostream &os) const {
         default:
             break;
     }
-    op1->get_type()->print(os);
+    op1->type->print(os);
     os << " ";
     IntConst* intconst_ptr = nullptr;
     if (intconst_ptr = dynamic_cast<IntConst*>(op1)) intconst_ptr->print(os);
-    else os << "%" << op1->get_id();
+    else os << "%" << op1->id;
     if (intconst_ptr = dynamic_cast<IntConst*>(op2)) intconst_ptr->print(os);
-    else os << "%" << op2->get_id();
+    else os << "%" << op2->id;
 }
 
 // store T %val, P %ptr
 void StoreInstr::print(std::ostream &os) const {
     Instruction::print(os);
     os << "store ";
-    store_value->get_type()->print(os);
+    store_value->type->print(os);
     os << " ";
     IntConst* intconst_ptr = nullptr;
-    if (intconst_ptr = dynamic_cast<IntConst*>(store_value->get_type())) intconst_ptr->print(os);
-    else os << "%" << store_value->get_id();
+    if (intconst_ptr = dynamic_cast<IntConst*>(store_value->type)) intconst_ptr->print(os);
+    else os << "%" << store_value->id;
     os << ", ";
     GlobalVariable* global_ptr = nullptr;
-    if (global_ptr = dynamic_cast<GlobalVariable*>(dst_ptr)) os << "@" << dst_ptr->get_name();
-    else os << "%" << dst_ptr->get_id();
+    if (global_ptr = dynamic_cast<GlobalVariable*>(dst_ptr)) os << "@" << dst_ptr->name;
+    else os << "%" << dst_ptr->id;
+}
+
+// %val = load T, P %ptr
+void LoadInstr::print(std::ostream &os) const {
+    os << "%" << id << " = load ";
+    type->print(os);
+    os << ", ";
+    src_ptr->type->print(os);
+    os << " ";
+    GlobalVariable* global_ptr = nullptr;
+    if (global_ptr = dynamic_cast<GlobalVariable*>(src_ptr)) os << "@" << src_ptr->name;
+    else os << "%" << src_ptr->id;
+}
+
+// %X = zext i32 257 to i64
+void ZextInstr::print(std::ostream &os) const {
+    Instruction::print(os);
+    os << "%" << id << " = zext ";
+    operand->type->print(os);
+    os << " ";
+    os << "%" << operand->type << " to ";
+    type->print(os);
+}
+
+void TruncInstr::print(std::ostream &os) const {
+    Instruction::print(os);
+    os << "%" << id << " = trunc ";
+    operand->type->print(os);
+    os << " ";
+    os << "%" << operand->id << " to ";
+    type->print(os);
 }

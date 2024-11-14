@@ -53,7 +53,6 @@ struct PointerType : public ValueType {
     ValueType* referenced_type;
 
     PointerType(ValueType* referenced_type) : referenced_type(referenced_type) {}
-    ValueType* get_referenced_type() { return referenced_type; }
     void print(std::ostream &os) const override;    
 };
 

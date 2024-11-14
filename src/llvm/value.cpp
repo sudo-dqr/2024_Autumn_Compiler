@@ -40,6 +40,10 @@ void BasicBlock::print(std::ostream &os) const {
     }
 }
 
+void Function::print(std::ostream &os) const {
+    os << "define dso_local ";
+}
+
 void Module::print(std::ostream &os) const {
     os << "declare i32 @getchar()\n"
        << "declare i32 @getint()\n"

@@ -5,9 +5,9 @@
 
 struct Instruction : public User {
     protected :
-        Instruction(std::string name, ValueType* type, int id) : User(name, type, id) {}
+        Instruction(std::string name, ValueType* type, int dst_id) : User(name, type, dst_id) {}
         Instruction(std::string name, ValueType* type) : User(name, type) {}
-        Instruction(int id, ValueType* type) : User(id, type) {}
+        Instruction(int dst_id, ValueType* type) : User(dst_id, type) {}
         Instruction(ValueType* type) : User(type) {}
 
     public : 
@@ -17,9 +17,9 @@ struct Instruction : public User {
 struct AllocaInstr : public Instruction {
     int elements_num;
 
-    AllocaInstr(int id, ValueType* type) : Instruction("pointer" + id, type, id), elements_num(1) {}
-    AllocaInstr(int id, ValueType* type, int elements_num) : Instruction("pointer" + id, type, id), elements_num(elements_num) {}
-    void print(std::ostream &os) const;
+    AllocaInstr(int dst_id, ValueType* type) : Instruction("pointer" + dst_id, type, dst_id), elements_num(1) {}
+    AllocaInstr(int dst_id, ValueType* type, int elements_num) : Instruction("pointer" + dst_id, type, dst_id), elements_num(elements_num) {}
+    void print(std::ostream &os) const override;
 };
 
 struct ArithmeticInstr : public Instruction {
@@ -31,10 +31,10 @@ struct ArithmeticInstr : public Instruction {
     Value* op1;
     Value* op2;
 
-    ArithmeticInstr(int id, AriType arith_type, Value* op1, Value* op2) : // char类型运算时先转int
-        Instruction("arith" + id, &IR_INT, id), arith_type(arith_type), op1(op1), op2(op2) {}
+    ArithmeticInstr(int dst_id, AriType arith_type, Value* op1, Value* op2) : // char类型运算时先转int
+        Instruction("arith" + dst_id, &IR_INT, dst_id), arith_type(arith_type), op1(op1), op2(op2) {}
 
-    void print(std::ostream &os) const;
+    void print(std::ostream &os) const override;
 };
 
 struct BrInstr : public Instruction {
@@ -64,8 +64,8 @@ struct CallInstr : public Instruction { // void / int/char
     Function* function;
     std::vector<Value*> args;
 
-    CallInstr(int id, ValueType* return_value_type, Function* function, std::vector<Value*> args) // int / char
-    : Instruction("T" + id, return_value_type, id), function(function), args(args) {} 
+    CallInstr(int dst_id, ValueType* return_value_type, Function* function, std::vector<Value*> args) // int / char
+    : Instruction("T" + dst_id, return_value_type, dst_id), function(function), args(args) {} 
 
     CallInstr(Function* function, std::vector<Value*> args) // void
     : Instruction(&IR_VOID), function(function), args(args) {}
@@ -77,8 +77,8 @@ struct GetelementptrInstr : public Instruction {
     Value* array;
     Value* index;
 
-    GetelementptrInstr(int id, ValueType* type, Value* array, Value* index)
-    : Instruction(id, type), array(array), index(index) {}
+    GetelementptrInstr(int dst_id, ValueType* type, Value* array, Value* index)
+    : Instruction(dst_id, type), array(array), index(index) {}
 
     void print(std::ostream &os) const override;
 };
@@ -92,8 +92,8 @@ struct IcmpInstr : public Instruction {
     Value* op1;
     Value* op2;
 
-    IcmpInstr(int id, CmpType compare_type, Value* op1, Value* op2) 
-    : Instruction("T" + id, &IR_BOOL, id), compare_type(compare_type), op1(op1), op2(op2) {}
+    IcmpInstr(int dst_id, CmpType compare_type, Value* op1, Value* op2) 
+    : Instruction("T" + dst_id, &IR_BOOL, dst_id), compare_type(compare_type), op1(op1), op2(op2) {}
 
     void print(std::ostream &os) const override;
 };
@@ -109,15 +109,30 @@ struct StoreInstr : public Instruction {
 };
 
 struct LoadInstr : public Instruction {
+    Value* src_ptr;
 
+    LoadInstr(int dst_id, Value* src_ptr) : 
+    Instruction("T" + dst_id, ((PointerType*)src_ptr)->referenced_type, dst_id), src_ptr(src_ptr) {}
+    
+    void print(std::ostream &os) const override;
 };
 
 struct ZextInstr : public Instruction {
+    Value* operand;
 
+    ZextInstr(int dst_id, Value* operand, ValueType* to_type) :
+    Instruction("T" + dst_id, to_type, dst_id) , operand(operand) {}
+
+    void print(std::ostream &os) const override;
 };
 
 struct TruncInstr : public Instruction {
+    Value* operand;
 
+    TruncInstr(int dst_id, Value* operand, ValueType* to_type) :
+    Instruction("T" + dst_id, to_type, dst_id) , operand(operand) {}
+
+    void print(std::ostream &os) const override;
 };
 
 

@@ -76,7 +76,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                     }
                     auto global_variable = GlobalVariable(ident, std::move(ir_type), symbol->char_values);
                     symbol->ir_value = &global_variable;
-                    Module::get_instance().append_global_variable(&global_variable);
+                    Module::get_instance().global_variables.push_back(&global_variable);
                 } else {
                     for (const auto &const_exp : const_exps_ptr->const_exps) {
                         exp_info = visit_constexp(*const_exp);
@@ -84,13 +84,13 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                     }
                     GlobalVariable global_variable(ident, std::move(ir_type), symbol->int_values);
                     symbol->ir_value = &global_variable;
-                    Module::get_instance().append_global_variable(&global_variable);
+                    Module::get_instance().global_variables.push_back(&global_variable);
                 }
             } else if (auto string_const_ptr = std::get_if<StringConst>(&(*const_def.const_init_val))) {
                 symbol->string_value = string_const_ptr->str->get_token();
                 GlobalVariable global_variable(ident, std::move(ir_type), symbol->string_value);
                 symbol->ir_value = &global_variable;
-                Module::get_instance().append_global_variable(&global_variable);
+                Module::get_instance().global_variables.push_back(&global_variable);
             } else {
                 std::cout << "Invalid Const Array Initval!" << std::endl;
             }
