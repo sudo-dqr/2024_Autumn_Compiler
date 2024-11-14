@@ -1,9 +1,14 @@
 #ifndef IR_TYPE_H
 #define IR_TYPE_H
 
-#include "ir_printable.h"
 #include <vector>
 #include <memory>
+#include <iostream>
+
+struct IRPrintable {
+    virtual void print(std::ostream &os) const = 0;
+    virtual ~IRPrintable() = default;
+};
 
 struct ValueType : public IRPrintable { // abstract class as a implement
     virtual void print(std::ostream &os) const = 0;

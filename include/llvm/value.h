@@ -3,7 +3,6 @@
 //! This file is the definition of Value and other subclasses of Value in LLVM IR.
 
 #include "type.h"
-#include "ir_printable.h"
 #include <memory>
 
 // 前向声明 Instruction 类 头文件需要另外包含在.cpp文件中
