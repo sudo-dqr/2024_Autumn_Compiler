@@ -6,6 +6,8 @@ Visitor::Visitor() {
     this->is_void_func= false;
     this->scope_cnt = 1; // global
     this->symbol_list = std::deque<Symbol>();
+    this->cur_ir_function = nullptr;
+    this->cur_ir_basic_block = nullptr;
 }
 
 
@@ -208,7 +210,7 @@ void Visitor::visit_main_func(const MainFunc &main_func) {
     std::string ident = "main";
     SymbolType type = SymbolType(func_type, std::deque<Symbol>());
     auto func_symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
-    // symbol_list.push_back(*func_symbol);
+    symbol_list.push_back(*func_symbol);
     cur_scope->add_symbol(func_symbol); // main函数不会发生b错误
     cur_scope = cur_scope->push_scope();
     this->scope_cnt++;
