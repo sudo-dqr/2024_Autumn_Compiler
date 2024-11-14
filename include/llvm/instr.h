@@ -84,11 +84,28 @@ struct GetelementptrInstr : public Instruction {
 };
 
 struct IcmpInstr : public Instruction {
+    enum CmpType {
+        EQ, NE, SGT, SGE, SLT, SLE
+    };
 
+    CmpType compare_type;
+    Value* op1;
+    Value* op2;
+
+    IcmpInstr(int id, CmpType compare_type, Value* op1, Value* op2) 
+    : Instruction("T" + id, &IR_BOOL, id), compare_type(compare_type), op1(op1), op2(op2) {}
+
+    void print(std::ostream &os) const override;
 };
 
 struct StoreInstr : public Instruction {
+    Value* store_value;
+    Value* dst_ptr;
 
+    StoreInstr(Value* store_value, Value* dst_ptr) : 
+    Instruction(&IR_VOID), store_value(store_value), dst_ptr(dst_ptr) {}
+
+    void print(std::ostream &os) const override;
 };
 
 struct LoadInstr : public Instruction {

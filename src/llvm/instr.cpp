@@ -114,3 +114,49 @@ void GetelementptrInstr::print(std::ostream &os) const {
         os << "%" << index->get_id();
     }
 }
+
+// <result> = icmp eq i32 4, 5
+void IcmpInstr::print(std::ostream &os) const {
+    Instruction::print(os);
+    os << "%" << get_id() << " = icmp ";
+    switch (compare_type)
+    {
+        case EQ:
+            os << "eq ";
+            break;
+        case NE:
+            os << "ne ";
+        case SGT:
+            os << "sgt ";
+        case SGE:
+            os << "sge ";
+        case SLT:
+            os << "slt ";
+        case SLE:
+            os << "sle ";
+        default:
+            break;
+    }
+    op1->get_type()->print(os);
+    os << " ";
+    IntConst* intconst_ptr = nullptr;
+    if (intconst_ptr = dynamic_cast<IntConst*>(op1)) intconst_ptr->print(os);
+    else os << "%" << op1->get_id();
+    if (intconst_ptr = dynamic_cast<IntConst*>(op2)) intconst_ptr->print(os);
+    else os << "%" << op2->get_id();
+}
+
+// store T %val, P %ptr
+void StoreInstr::print(std::ostream &os) const {
+    Instruction::print(os);
+    os << "store ";
+    store_value->get_type()->print(os);
+    os << " ";
+    IntConst* intconst_ptr = nullptr;
+    if (intconst_ptr = dynamic_cast<IntConst*>(store_value->get_type())) intconst_ptr->print(os);
+    else os << "%" << store_value->get_id();
+    os << ", ";
+    GlobalVariable* global_ptr = nullptr;
+    if (global_ptr = dynamic_cast<GlobalVariable*>(dst_ptr)) os << "@" << dst_ptr->get_name();
+    else os << "%" << dst_ptr->get_id();
+}
