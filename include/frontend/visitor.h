@@ -28,6 +28,7 @@ private:
     std::deque<BasicBlock*> for_stack;
     void visit_decl(const Decl &decl);
     void visit_func_def(const FuncDef &func_def);
+    void prepare_ir_funcparam_stack(const FuncFParams &func_fparams);
     void visit_block(const Block &block);
     static bool func_block_has_ending_return(const Block &block);
     void visit_block_item(const BlockItem &block_item);

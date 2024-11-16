@@ -63,7 +63,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
     } else { // array
         exp_info = visit_constexp(*const_def.const_exp); // array size
         int array_size = exp_info.int_value;
-        SymbolType type = SymbolType(true, btype, int_value);
+        SymbolType type = SymbolType(true, btype, array_size);
         symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         ValueType* ir_element_type; // base is valuetype; base pointer to son
         if (btype == Token::CHARTK) ir_element_type = &IR_CHAR;
@@ -191,9 +191,9 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
         //'{' [ Exp { ',' Exp } ] '}' | StringConst
         exp_info = visit_constexp(*var_def.const_exp);
         int array_size = exp_info.int_value;
-        SymbolType type = SymbolType(false, btype, int_value);
+        SymbolType type = SymbolType(false, btype, array_size);
         symbol  = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
-        auto ir_element_type = null;
+        ValueType* ir_element_type = nullptr;
         if (btype == Token::CHARTK) ir_element_type = &IR_CHAR;
         else if (btype == Token::INTTK) ir_element_type = &IR_INT;
         auto array_type = new ArrayType(ir_element_type, array_size);
@@ -212,11 +212,13 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                             symbol->int_values.push_back(exp_info.int_value);
                         }
                     }
-                    global_variable = new GlobalVariable(ident, array_type, (btype == Token::CHARTK) ? symbol->char_values : symbol->int_values);
+                    if (btype == Token::CHARTK) global_variable = new GlobalVariable(ident, array_type, symbol->char_values);
+                    else global_variable = new GlobalVariable(ident, array_type, symbol->int_values);
                     symbol->ir_value = global_variable;
                     Module::get_instance().global_variables.push_back(global_variable);
                 } else {
-                    global_variable = new GlobalVariable(ident, array_type, var_def.init_val->str->get_token());
+                    auto string_const_ptr = std::get_if<StringConst>(&(*var_def.init_val));
+                    global_variable = new GlobalVariable(ident, array_type, string_const_ptr->str->get_token());
                     symbol->ir_value = global_variable;
                     Module::get_instance().global_variables.push_back(global_variable);
                 }
@@ -274,34 +276,69 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
     cur_scope = cur_scope->push_scope();
     scope_cnt++;
     cur_scope->set_scope(scope_cnt);
+    Utils::reset_counter(); // 进入新的函数作用域，重置计数器，从0开始编号虚拟寄存器
+    std::vector<ValueType*> ir_param_types = std::vector<ValueType*>();
     if (func_def.func_fparams) {
         for (const auto &func_fparam : func_def.func_fparams->func_fparams) {
             Token::TokenType param_type = func_fparam->btype->btype->get_type();
             std::string param_ident = func_fparam->ident->ident->get_token();
+            ValueType* ir_param_type = nullptr;
+            SymbolType param_symbol_type = SymbolType();
             if (func_fparam->is_array) {
-                SymbolType param_symbol_type = SymbolType(false, param_type, 0);
-                auto param_symbol = std::make_shared<Symbol>(param_symbol_type, param_ident, cur_scope->get_scope());
-                func_symbol->type.params.push_back(*param_symbol);
-                if (!cur_scope->add_symbol(param_symbol)) {
-                    ErrorList::report_error(func_fparam->ident->ident->get_line_number(), 'b');
-                }
-                symbol_list.push_back(*param_symbol);
+                param_symbol_type = SymbolType(false, param_type, 0); // 形参不必解析数组大小
+                if (param_type == Token::CHARTK) ir_param_type = new PointerType(&IR_CHAR);
+                else ir_param_type = new PointerType(&IR_INT);
             } else {
-                SymbolType param_symbol_type = SymbolType(false, param_type);
-                auto param_symbol = std::make_shared<Symbol>(param_symbol_type, param_ident, cur_scope->get_scope());
+                param_symbol_type = SymbolType(false, param_type);
+                if (param_type == Token::CHARTK) ir_param_type = &IR_CHAR;
+                else ir_param_type = &IR_INT;
+            }
+            auto param_symbol = std::make_shared<Symbol>(param_symbol_type, param_ident, cur_scope->get_scope());
+            if (!cur_scope->add_symbol(param_symbol)) {
+                ErrorList::report_error(func_fparam->ident->ident->get_line_number(), 'b');
+            } else {
                 func_symbol->type.params.push_back(*param_symbol);
-                if (!cur_scope->add_symbol(param_symbol)) {
-                    ErrorList::report_error(func_fparam->ident->ident->get_line_number(), 'b');
-                }
+                ir_param_types.push_back(ir_param_type);
                 symbol_list.push_back(*param_symbol);
             }
         }
+    }
+    ValueType* ir_return_type = nullptr;
+    if (func_type == Token::VOIDTK) ir_return_type = &IR_VOID;
+    else if (func_type == Token::CHARTK) ir_return_type = &IR_CHAR;
+    else if (func_type == Token::INTTK) ir_return_type = &IR_INT;
+    FunctionType* ir_func_type = new FunctionType(ir_return_type, ir_param_types);
+    cur_ir_function = new Function(func_symbol->name, ir_func_type);
+    func_symbol->ir_value = cur_ir_function;
+    cur_ir_basic_block = new BasicBlock(Utils::get_next_counter());
+    if (func_def.func_fparams) {
+        prepare_ir_funcparam_stack(*func_def.func_fparams);
     }
     visit_block(*func_def.block);
     cur_scope = cur_scope->pop_scope();
     bool has_ending_return = func_block_has_ending_return(*func_def.block);
     if ((!is_void_func) &&  (!has_ending_return)) {
         ErrorList::report_error(func_def.block->ending_line, 'g');
+    } else if (is_void_func && (!has_ending_return)) { // 没有return语句的void函数，自动添加return
+        cur_ir_basic_block->instrs.push_back(new RetInstr());
+    }
+    Module::get_instance().functions.push_back(cur_ir_function);
+}
+
+// 函数参数压栈
+void Visitor::prepare_ir_funcparam_stack(const FuncFParams &funcfparams) { 
+    auto ir_params = cur_ir_function->fparams;
+    std::vector<Instruction*> instr_alloc_stack = std::vector<Instruction*>(); // 记录alloca指令 用于后续store
+    for (int i = 0; i < funcfparams.func_fparams.size(); i++) {
+        auto alloc_instr = new AllocaInstr(Utils::get_next_counter(), ir_params[i]->type);
+        cur_scope->get_symbol(funcfparams.func_fparams[i]->ident->ident->get_token())->ir_value = alloc_instr;
+        cur_ir_basic_block->instrs.push_back(alloc_instr);
+        instr_alloc_stack.push_back(alloc_instr);
+    }
+
+    for (int i = 0; i < ir_params.size(); i++) {
+        auto store_instr = new StoreInstr(ir_params[i], instr_alloc_stack[i]);
+        cur_ir_basic_block->instrs.push_back(store_instr);
     }
 }
 

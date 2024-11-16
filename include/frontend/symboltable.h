@@ -23,6 +23,7 @@ struct SymbolType {
     int array_size;
     std::deque<Symbol> params;
 
+    SymbolType() = default;
     // BASIC
     SymbolType(bool is_const, Token::TokenType type) : category(BASIC), btype(type), is_const(is_const), is_array(false), array_size(0) {}
     // ARRAY
