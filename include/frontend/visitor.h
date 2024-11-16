@@ -24,6 +24,7 @@ private:
     std::deque<Symbol> symbol_list;
     Function* cur_ir_function;
     BasicBlock* cur_ir_basic_block;
+    Value* cur_ir_lval; // lval = exp
     std::deque<BasicBlock*> if_stack;
     std::deque<BasicBlock*> for_stack;
     void visit_decl(const Decl &decl);

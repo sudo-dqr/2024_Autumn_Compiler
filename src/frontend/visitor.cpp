@@ -9,6 +9,7 @@ Visitor::Visitor() {
     this->symbol_list = std::deque<Symbol>();
     this->cur_ir_function = nullptr;
     this->cur_ir_basic_block = nullptr;
+    this->cur_ir_lval = nullptr;
     this->if_stack = std::deque<BasicBlock*>();
     this->for_stack = std::deque<BasicBlock*>();
 }
@@ -429,13 +430,16 @@ void Visitor::visit_stmt(const Stmt &stmt) {
 }
 
 void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
+    ExpInfo exp_info;
     auto lval_symbol = visit_lval((*assign_stmt.lval));
-    visit_exp(*assign_stmt.exp);
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
             ErrorList::report_error(assign_stmt.lval->ident->ident->get_line_number(), 'h');
+        } else {
+
         }
     }
+    visit_exp(*assign_stmt.exp);
 }
 
 void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
@@ -550,7 +554,21 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
     auto ident_symbol = cur_scope->get_symbol(ident);
     if (!ident_symbol) { // c error : undefined identifier
         ErrorList::report_error(lval.ident->ident->get_line_number(), 'c');
+        cur_ir_lval = nullptr;
         return nullptr;
+    }
+    if (ident_symbol->type.is_array) {
+        
+    } else {
+        if (ident_symbol->type.is_const) {
+            if (ident_symbol->type.btype == Token::CHARTK) {
+                cur_ir_lval = new CharConst(ident_symbol->char_value);
+            } else if (ident_symbol->type.btype == Token::INTTK) {
+                cur_ir_lval = new IntConst(ident_symbol->int_value);
+            }
+        } else {
+            cur_ir_lval = ident_symbol->ir_value;
+        }
     }
     if (lval.exp) {
         visit_exp(*lval.exp);
@@ -559,6 +577,7 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
     } else {
         return ident_symbol;
     }
+
 }
 
 ExpInfo Visitor::visit_exp(const Exp &exp) {
