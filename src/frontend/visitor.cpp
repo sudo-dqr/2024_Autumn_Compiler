@@ -61,7 +61,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
         }
     } else { // array
         exp_info = visit_constexp(*const_def.const_exp); // array size
-        int array_size = exp_info.int_value;
+        int array_size = exp_info.array_size;
         SymbolType type = SymbolType(true, btype, array_size);
         auto symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         ValueType* ir_element_type; // base is valuetype; base pointer to son
@@ -115,10 +115,22 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                         tmp = PointerType(&IR_INT);
                     }
                     pointer_type = &tmp;
+                    // 这里在堆上分配内存
                     auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, &index);
                     cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                     ExpInfo exp_info = visit_constexp(*const_exps_ptr->const_exps[i]);
                     auto store_instr = new StoreInstr(exp_info.ir_value, getelementptr_instr);
+                    cur_ir_basic_block->instrs.push_back(store_instr);
+                }
+            } else { //局部字符数组则也需要通过 alloca 指令分配内存空间，逐个元素初始化
+                auto string_const_ptr = std::get_if<StringConst>(&(*const_def.const_init_val));
+                auto string_const = string_const_ptr->str->get_token();
+                for (int i = 0; i < string_const.length(); i++) { 
+                    auto pointer_type = PointerType(&IR_CHAR);
+                    auto index = IntConst(i);
+                    auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), &pointer_type, alloc_instr, &index);
+                    cur_ir_basic_block->instrs.push_back(getelementptr_instr);
+                    auto store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
                     cur_ir_basic_block->instrs.push_back(store_instr);
                 }
             }
@@ -127,7 +139,6 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
         if (!cur_scope->add_symbol(symbol)) {
             ErrorList::report_error(line_number, 'b');
         }
-        ExpInfo exp_info = visit_const_init_val(*const_def.const_init_val);
     }
 }
 

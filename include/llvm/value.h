@@ -103,4 +103,11 @@ struct IntConst : public Value {
     void print(std::ostream &os) const override;
 };
 
+struct CharConst : public Value {
+    char value;
+
+    CharConst(char value) : Value(&IR_CHAR), value(value) {}
+    void print(std::ostream &os) const override;
+};
+
 #endif // IR_VALUE_H

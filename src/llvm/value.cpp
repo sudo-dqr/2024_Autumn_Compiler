@@ -73,3 +73,7 @@ void User::print(std::ostream &os) const {
 void IntConst::print(std::ostream &os) const {
     os << this->value;
 }
+
+void CharConst::print(std::ostream &os) const {
+    os << this->value;
+}
