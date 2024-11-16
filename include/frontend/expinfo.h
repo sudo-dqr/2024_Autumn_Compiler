@@ -7,7 +7,6 @@ struct ExpInfo {
     bool is_const;
     bool is_array;
     bool is_bool; // i1 type
-    int array_size;
     Token::TokenType type;
     int int_value;
     char char_value;

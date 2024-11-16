@@ -32,14 +32,17 @@ struct User : public Value {
 };
 
 struct GlobalVariable : public Value {
-    int init_value; // 普通变量 
+    int int_value;
+    char char_value;
     std::vector<int> int_array_init_values; // int array
     std::vector<char> char_array_init_values; // char array
-    std::string char_array_init_string; // string const
+    std::string char_array_init_string; // string const 全局变量可以使用字符串常量直接初始化，局部变量不可以
 
     GlobalVariable() = default;
-    GlobalVariable(std::string name, ValueType* type, int init_value) 
-    : Value(name, type), init_value(init_value) {}
+    GlobalVariable(std::string name, ValueType* type, int int_value) 
+    : Value(name, type), int_value(int_value) {}
+    GlobalVariable(std::string name, ValueType* type, char char_value)
+    : Value(name, type), char_value(char_value) {}
     GlobalVariable(std::string name, ValueType* type, std::vector<int> int_array_init_values) 
     : Value(name, type), int_array_init_values(int_array_init_values) {}
     GlobalVariable(std::string name, ValueType* type, std::vector<char> char_array_init_values) 

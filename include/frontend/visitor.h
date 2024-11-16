@@ -59,8 +59,6 @@ private:
     ExpInfo visit_mul_exp(const MulExp &mul_exp);
     ExpInfo visit_unary_exp(const UnaryExp &unary_exp);
     ExpInfo visit_primary_exp(const PrimaryExp &primary_exp);
-    ExpInfo visit_init_val(const InitVal &init_val);
-    ExpInfo visit_const_init_val(const ConstInitVal &const_init_val);
     void visit_cond(const Cond &cond);
     void visit_lor_exp(const LOrExp &lor_exp);
     void visit_land_exp(const LAndExp &land_exp);

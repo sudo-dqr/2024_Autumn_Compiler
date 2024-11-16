@@ -46,77 +46,69 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
     auto ident = const_def.ident->ident->get_token();
     int line_number = const_def.ident->ident->get_line_number();
     ExpInfo exp_info;
+    std::shared_ptr<Symbol> symbol = nullptr;
     if (!const_def.const_exp) { // constant
         SymbolType type = SymbolType(true, btype);
-        auto symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
-        symbol_list.push_back(*symbol);
-        if (!cur_scope->add_symbol(symbol)) { // b error : redefined identifier
-            ErrorList::report_error(line_number, 'b');
-        }
-        exp_info = visit_const_init_val(*const_def.const_init_val);
-        if (btype == Token::CHARTK) {
-            symbol->char_value = exp_info.char_value;
-        } else if (btype == Token::INTTK) {
-            symbol->int_value = exp_info.int_value;
+        symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
+        if (auto constant = std::get_if<ConstExp>(&(*const_def.const_init_val))) {
+            exp_info = visit_constexp(*constant);
+            if (btype == Token::CHARTK) {
+                symbol->char_value = exp_info.char_value;
+            } else if (btype == Token::INTTK) {
+                symbol->int_value = exp_info.int_value;
+            }
+        } else {
+            std::cout << "Invalid Const Initval!" << std::endl;
         }
     } else { // array
         exp_info = visit_constexp(*const_def.const_exp); // array size
-        int array_size = exp_info.array_size;
-        SymbolType type = SymbolType(true, btype, array_size);
-        auto symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
+        int array_size = exp_info.int_value;
+        SymbolType type = SymbolType(true, btype, int_value);
+        symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         ValueType* ir_element_type; // base is valuetype; base pointer to son
-        if (btype == Token::CHARTK)
-            ir_element_type = &IR_CHAR;
-        else if (btype == Token::INTTK)
-            ir_element_type = &IR_INT;
-        ArrayType array_type(ir_element_type, array_size);
-        auto ir_type = &array_type;
+        if (btype == Token::CHARTK) ir_element_type = &IR_CHAR;
+        else if (btype == Token::INTTK) ir_element_type = &IR_INT;
+        auto array_type = new ArrayType(ir_element_type, array_size);
         if (this->cur_scope->is_in_global_scope()) {
             // '{' [ ConstExp { ',' ConstExp } ] '}' | StringConst
+            GlobalVariable* global_variable = nullptr;
             if (auto const_exps_ptr = std::get_if<ConstExps>(&(*const_def.const_init_val))) {
                 if (btype == Token::CHARTK) {
                     for (const auto &const_exp : const_exps_ptr->const_exps) {
                         exp_info = visit_constexp(*const_exp);
                         symbol->char_values.push_back(exp_info.char_value);
                     }
-                    auto global_variable = GlobalVariable(ident, std::move(ir_type), symbol->char_values);
-                    symbol->ir_value = &global_variable;
-                    Module::get_instance().global_variables.push_back(&global_variable);
+                    global_variable = new GlobalVariable(ident, array_type, symbol->char_values);
+                    symbol->ir_value = global_variable;
+                    Module::get_instance().global_variables.push_back(global_variable);
                 } else {
                     for (const auto &const_exp : const_exps_ptr->const_exps) {
                         exp_info = visit_constexp(*const_exp);
                         symbol->int_values.push_back(exp_info.int_value);
                     }
-                    GlobalVariable global_variable(ident, std::move(ir_type), symbol->int_values);
-                    symbol->ir_value = &global_variable;
-                    Module::get_instance().global_variables.push_back(&global_variable);
+                    global_variable = new GlobalVariable(ident, array_type, symbol->int_values);
+                    symbol->ir_value = global_variable;
+                    Module::get_instance().global_variables.push_back(global_variable);
                 }
             } else if (auto string_const_ptr = std::get_if<StringConst>(&(*const_def.const_init_val))) {
                 symbol->string_value = string_const_ptr->str->get_token();
-                GlobalVariable global_variable(ident, std::move(ir_type), symbol->string_value);
-                symbol->ir_value = &global_variable;
-                Module::get_instance().global_variables.push_back(&global_variable);
+                global_variable = new GlobalVariable(ident, array_type, symbol->string_value);
+                symbol->ir_value = global_variable;
+                Module::get_instance().global_variables.push_back(global_variable);
             } else {
                 std::cout << "Invalid Const Array Initval!" << std::endl;
             }
         } else {
-            auto alloc = AllocaInstr(Utils::get_next_counter(), ir_type);
-            auto alloc_instr = &alloc;
+            auto alloc_instr = new AllocaInstr(Utils::get_next_counter(), array_type);
             symbol->ir_value = alloc_instr;
             cur_ir_basic_block->instrs.push_back(alloc_instr);
             if (auto const_exps_ptr = std::get_if<ConstExps>(&(*const_def.const_init_val))) {
                 for (int i = 0; i < const_exps_ptr->const_exps.size(); i++) {
-                    auto index = IntConst(i);
-                    PointerType* pointer_type;
-                    PointerType tmp;
-                    if (btype == Token::CHARTK) {
-                        tmp = PointerType(&IR_CHAR);
-                    } else {
-                        tmp = PointerType(&IR_INT);
-                    }
-                    pointer_type = &tmp;
-                    // 这里在堆上分配内存
-                    auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, &index);
+                    auto index = new IntConst(i);
+                    PointerType* pointer_type = nullptr;
+                    if (btype == Token::CHARTK) pointer_type = new PointerType(&IR_CHAR);
+                    else pointer_type = new PointerType(&IR_INT);
+                    auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
                     cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                     ExpInfo exp_info = visit_constexp(*const_exps_ptr->const_exps[i]);
                     auto store_instr = new StoreInstr(exp_info.ir_value, getelementptr_instr);
@@ -127,28 +119,18 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                 auto string_const = string_const_ptr->str->get_token();
                 for (int i = 0; i < string_const.length(); i++) { 
                     auto pointer_type = PointerType(&IR_CHAR);
-                    auto index = IntConst(i);
-                    auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), &pointer_type, alloc_instr, &index);
+                    auto index = new IntConst(i);
+                    auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), &pointer_type, alloc_instr, index);
                     cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                     auto store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
                     cur_ir_basic_block->instrs.push_back(store_instr);
                 }
             }
         }
-        symbol_list.push_back(*symbol);
-        if (!cur_scope->add_symbol(symbol)) {
-            ErrorList::report_error(line_number, 'b');
-        }
     }
-}
-
-ExpInfo Visitor::visit_const_init_val(const ConstInitVal &const_init_val) {
-    if (auto exp_ptr = std::get_if<ConstExp>(&const_init_val)) {
-        return visit_constexp(*exp_ptr);
-    } else if (auto exps_ptr = std::get_if<ConstExps>(&const_init_val)) {
-        for (const auto &exp : exps_ptr->const_exps) {
-            visit_constexp(*exp);
-        }
+    symbol_list.push_back(*symbol);
+    if (!cur_scope->add_symbol(symbol)) { // b error : redefined identifier
+        ErrorList::report_error(line_number, 'b');
     }
 }
 
@@ -162,34 +144,118 @@ void Visitor::visit_var_decl(const VarDecl &var_decl) {
 void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
     auto ident = var_def.ident->ident->get_token();
     int line_number = var_def.ident->ident->get_line_number();
+    ExpInfo exp_info;
+    std::shared_ptr<Symbol> symbol = nullptr;
     if (!var_def.const_exp) { // variant
         SymbolType type = SymbolType(false, btype);
-        auto symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
-        symbol_list.push_back(*symbol);
-        if (!cur_scope->add_symbol(symbol)) {
-            ErrorList::report_error(line_number, 'b');
+        symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
+        if (cur_scope->is_in_global_scope()) {
+            if (var_def.init_val) {
+                if (auto exp_ptr = std::get_if<Exp>(&(*var_def.init_val))) {
+                    exp_info = visit_exp(*exp_ptr);
+                    if (btype == Token::CHARTK) {
+                        symbol->char_value = exp_info.char_value;
+                    } else if (btype == Token::INTTK) {
+                        symbol->int_value = exp_info.int_value;
+                    }
+                } else {
+                    std::cout << "Invalid Variable Initval!" << std::endl;
+                }
+            } // else 全局变量未初始化默认为0
+            GlobalVariable* global_variable = nullptr;
+            if (btype == Token::CHARTK) {
+                global_variable = new GlobalVariable(ident, &IR_CHAR, (var_def.init_val) ? symbol->char_value : 0);
+            } else if (btype == Token::INTTK) {
+                global_variable = new GlobalVariable(ident, &IR_INT, (var_def.init_val) ? symbol->int_value : 0);
+            }
+            symbol->ir_value = global_variable;
+            Module::get_instance().global_variables.push_back(global_variable);
+        } else { // 局部变量未初始化就是不store
+            ValueType* type = nullptr;
+            if (btype == Token::CHARTK) type = &IR_CHAR;
+            else if (btype == Token::INTTK) type = &IR_INT;
+            auto alloc_instr = new AllocaInstr(Utils::get_next_counter(), type);
+            symbol->ir_value = alloc_instr;
+            cur_ir_basic_block->instrs.push_back(alloc_instr);
+            if (var_def.init_val) {
+                if (auto exp_ptr = std::get_if<Exp>(&(*var_def.init_val))) {
+                    exp_info = visit_exp(*exp_ptr);
+                    auto store_instr = new StoreInstr(exp_info.ir_value, alloc_instr);
+                    cur_ir_basic_block->instrs.push_back(store_instr);
+                } else {
+                    std::cout << "Invalid Variable Initval!" << std::endl;
+                }
+            }
         }
-    } else {
-        visit_constexp(*var_def.const_exp);
-        SymbolType type = SymbolType(false, btype, 0);
-        auto symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
-        symbol_list.push_back(*symbol);
-        if (!cur_scope->add_symbol(symbol)) {
-            ErrorList::report_error(line_number, 'b');
+    } else { // array
+        //'{' [ Exp { ',' Exp } ] '}' | StringConst
+        exp_info = visit_constexp(*var_def.const_exp);
+        int array_size = exp_info.int_value;
+        SymbolType type = SymbolType(false, btype, int_value);
+        symbol  = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
+        auto ir_element_type = null;
+        if (btype == Token::CHARTK) ir_element_type = &IR_CHAR;
+        else if (btype == Token::INTTK) ir_element_type = &IR_INT;
+        auto array_type = new ArrayType(ir_element_type, array_size);
+        if (cur_scope->is_in_global_scope()) {
+            GlobalVariable* global_variable = nullptr;
+            if (var_def.init_val) {
+                if (auto exps_ptr = std::get_if<Exps>(&(*var_def.init_val))) {
+                    if (btype == Token::CHARTK) {
+                        for (const auto &exp : exps_ptr->exps) {
+                            exp_info = visit_exp(*exp);
+                            symbol->char_values.push_back(exp_info.char_value);
+                        }
+                    } else if (btype == Token::INTTK) {
+                        for (const auto &exp : exps_ptr->exps) {
+                            exp_info = visit_exp(*exp);
+                            symbol->int_values.push_back(exp_info.int_value);
+                        }
+                    }
+                    global_variable = new GlobalVariable(ident, array_type, (btype == Token::CHARTK) ? symbol->char_values : symbol->int_values);
+                    symbol->ir_value = global_variable;
+                    Module::get_instance().global_variables.push_back(global_variable);
+                } else {
+                    global_variable = new GlobalVariable(ident, array_type, var_def.init_val->str->get_token());
+                    symbol->ir_value = global_variable;
+                    Module::get_instance().global_variables.push_back(global_variable);
+                }
+            } // else 全局字符数组未初始化默认为"", 全局整型数组默认为0
+        } else {
+            auto alloc_instr = new AllocaInstr(Utils::get_next_counter(), array_type);
+            symbol->ir_value = alloc_instr;
+            cur_ir_basic_block->instrs.push_back(alloc_instr);
+            if (var_def.init_val) {
+                if (auto exps_ptr = std::get_if<Exps>(&(*var_def.init_val))) {
+                    for (int i = 0; i < exps_ptr->exps.size(); i++) {
+                        auto index = new IntConst(i);
+                        PointerType* pointer_type = nullptr;
+                        if (btype == Token::CHARTK) pointer_type = new PointerType(&IR_CHAR);
+                        else pointer_type = new PointerType(&IR_INT);
+                        auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
+                        cur_ir_basic_block->instrs.push_back(getelementptr_instr);
+                        exp_info = visit_exp(*exps_ptr->exps[i]);
+                        auto store_instr = new StoreInstr(exp_info.ir_value, getelementptr_instr);
+                        cur_ir_basic_block->instrs.push_back(store_instr);
+                    }
+                } else { // stringconst
+                    auto string_const_ptr = std::get_if<StringConst>(&(*var_def.init_val));
+                    auto string_const = string_const_ptr->str->get_token();
+                    for (int i = 0; i < string_const.length(); i++) {
+                        auto pointer_type = new PointerType(&IR_CHAR);
+                        auto index = new IntConst(i);
+                        auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
+                        cur_ir_basic_block->instrs.push_back(getelementptr_instr);
+                        auto store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
+                        cur_ir_basic_block->instrs.push_back(store_instr);
+                    }
+                }
+            } // else 没有初始化则不store
         }
     }
-    if (var_def.init_val) {
-        visit_init_val(*var_def.init_val);
-    }
-}
-
-ExpInfo Visitor::visit_init_val(const InitVal &init_val) {
-    if (auto exp_ptr = std::get_if<Exp>(&init_val)) {
-        visit_exp(*exp_ptr);
-    } else if (auto exps_ptr = std::get_if<Exps>(&init_val)) {
-        for (const auto &exp : exps_ptr->exps) {
-            visit_exp(*exp);
-        }
+    symbol_list.push_back(*symbol);
+    if (!cur_scope->add_symbol(symbol)) {
+        ErrorList::report_error(line_number, 'b');
     }
 }
 
