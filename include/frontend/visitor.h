@@ -4,10 +4,11 @@
 #include "symboltable.h"
 #include "error.h"
 #include "expinfo.h"
-#include <algorithm>
 #include "type.h"
 #include "value.h"
 #include "instr.h"
+#include <algorithm>
+#include <deque>
 
 class Visitor {
 public:
@@ -23,6 +24,8 @@ private:
     std::deque<Symbol> symbol_list;
     Function* cur_ir_function;
     BasicBlock* cur_ir_basic_block;
+    std::deque<BasicBlock*> if_stack;
+    std::deque<BasicBlock*> for_stack;
     void visit_decl(const Decl &decl);
     void visit_func_def(const FuncDef &func_def);
     void visit_block(const Block &block);

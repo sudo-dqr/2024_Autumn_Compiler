@@ -1,4 +1,5 @@
 #include "visitor.h"
+#include "utils.h"
 
 Visitor::Visitor() {
     this->cur_scope = std::make_shared<SymbolTable>();
@@ -8,6 +9,8 @@ Visitor::Visitor() {
     this->symbol_list = std::deque<Symbol>();
     this->cur_ir_function = nullptr;
     this->cur_ir_basic_block = nullptr;
+    this->if_stack = std::deque<BasicBlock*>();
+    this->for_stack = std::deque<BasicBlock*>();
 }
 
 
@@ -69,7 +72,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
         ArrayType array_type(ir_element_type, array_size);
         auto ir_type = &array_type;
         if (this->cur_scope->is_in_global_scope()) {
-            // ConstInitVal → ConstExp | '{' [ ConstExp { ',' ConstExp } ] '}' | StringConst
+            // '{' [ ConstExp { ',' ConstExp } ] '}' | StringConst
             if (auto const_exps_ptr = std::get_if<ConstExps>(&(*const_def.const_init_val))) {
                 if (btype == Token::CHARTK) {
                     for (const auto &const_exp : const_exps_ptr->const_exps) {
@@ -97,7 +100,28 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                 std::cout << "Invalid Const Array Initval!" << std::endl;
             }
         } else {
-
+            auto alloc = AllocaInstr(Utils::get_next_counter(), ir_type);
+            auto alloc_instr = &alloc;
+            symbol->ir_value = alloc_instr;
+            cur_ir_basic_block->instrs.push_back(alloc_instr);
+            if (auto const_exps_ptr = std::get_if<ConstExps>(&(*const_def.const_init_val))) {
+                for (int i = 0; i < const_exps_ptr->const_exps.size(); i++) {
+                    auto index = IntConst(i);
+                    PointerType* pointer_type;
+                    PointerType tmp;
+                    if (btype == Token::CHARTK) {
+                        tmp = PointerType(&IR_CHAR);
+                    } else {
+                        tmp = PointerType(&IR_INT);
+                    }
+                    pointer_type = &tmp;
+                    auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, &index);
+                    cur_ir_basic_block->instrs.push_back(getelementptr_instr);
+                    ExpInfo exp_info = visit_constexp(*const_exps_ptr->const_exps[i]);
+                    auto store_instr = new StoreInstr(exp_info.ir_value, getelementptr_instr);
+                    cur_ir_basic_block->instrs.push_back(store_instr);
+                }
+            }
         }
         symbol_list.push_back(*symbol);
         if (!cur_scope->add_symbol(symbol)) {

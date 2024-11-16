@@ -57,6 +57,7 @@ static LabelType IR_LABEL = LabelType();
 struct PointerType : public ValueType {
     ValueType* referenced_type;
 
+    PointerType() : referenced_type(nullptr) {}
     PointerType(ValueType* referenced_type) : referenced_type(referenced_type) {}
     void print(std::ostream &os) const override;    
 };
