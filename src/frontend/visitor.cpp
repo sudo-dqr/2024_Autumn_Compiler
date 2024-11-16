@@ -436,25 +436,29 @@ void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
         if (lval_symbol->type.is_const) {
             ErrorList::report_error(assign_stmt.lval->ident->ident->get_line_number(), 'h');
         } else {
-
+            exp_info = visit_exp(*assign_stmt.exp);
+            auto store_instr = new StoreInstr(exp_info.ir_value, lval_symbol->ir_value);
+            cur_ir_basic_block->instrs.push_back(store_instr);
         }
     }
-    visit_exp(*assign_stmt.exp);
 }
 
 void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
-    auto lval_symbol = visit_lval((*for_assign_stmt.lval));
-    visit_exp(*for_assign_stmt.exp);
+    ExpInfo exp_info;
+    auto lval_symbol = visit_lval((*assign_stmt.lval));
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
-            ErrorList::report_error(for_assign_stmt.lval->ident->ident->get_line_number(), 'h');
+            ErrorList::report_error(assign_stmt.lval->ident->ident->get_line_number(), 'h');
+        } else {
+            exp_info = visit_exp(*assign_stmt.exp);
+            auto store_instr = new StoreInstr(exp_info.ir_value, lval_symbol->ir_value);
+            cur_ir_basic_block->instrs.push_back(store_instr);
         }
     }
 }
 
 void Visitor::visit_exp_stmt(const ExpStmt &exp) {
-    if (exp.exp)
-        visit_exp(*exp.exp);
+    if (exp.exp) visit_exp(*exp.exp);
 }
 
 void Visitor::visit_block_stmt(const BlockStmt &block_stmt) {
@@ -558,7 +562,7 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
         return nullptr;
     }
     if (ident_symbol->type.is_array) {
-        
+
     } else {
         if (ident_symbol->type.is_const) {
             if (ident_symbol->type.btype == Token::CHARTK) {
