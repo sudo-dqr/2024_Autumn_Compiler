@@ -311,6 +311,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
     cur_ir_function = new Function(func_symbol->name, ir_func_type);
     func_symbol->ir_value = cur_ir_function;
     cur_ir_basic_block = new BasicBlock(Utils::get_next_counter());
+    cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
     if (func_def.func_fparams) {
         prepare_ir_funcparam_stack(*func_def.func_fparams);
     }
@@ -351,6 +352,11 @@ void Visitor::visit_main_func(const MainFunc &main_func) {
     symbol_list.push_back(*func_symbol);
     cur_scope->add_symbol(func_symbol); // main函数不会发生b错误
     cur_scope = cur_scope->push_scope();
+    auto function_type = new FunctionType(&IR_INT, std::vector<ValueType*>());
+    cur_ir_function = new Function(ident, function_type);
+    func_symbol->ir_value = cur_ir_function;
+    cur_ir_basic_block = new BasicBlock(Utils::get_next_counter());
+    cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
     this->scope_cnt++;
     cur_scope->set_scope(scope_cnt);
     visit_block(*main_func.block);
@@ -358,6 +364,7 @@ void Visitor::visit_main_func(const MainFunc &main_func) {
     if (!func_block_has_ending_return(*main_func.block)) {
         ErrorList::report_error(main_func.block->ending_line, 'g');
     }
+    Module::get_instance().functions.push_back(cur_ir_function);
 }
 
 bool Visitor::func_block_has_ending_return(const Block &block) {
