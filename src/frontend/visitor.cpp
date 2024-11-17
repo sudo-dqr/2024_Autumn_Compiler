@@ -501,18 +501,41 @@ void Visitor::visit_if_stmt(const IfStmt &if_stmt) {
 }
 
 void Visitor::visit_for_stmt(const ForStmt &for_stmt) {
-    if (for_stmt.assign1) {
-        visit_for_assign_stmt(*for_stmt.assign1);
-    }
+    if (for_stmt.assign1) visit_for_assign_stmt(*for_stmt.assign1);
+    for_stack.push_back(new BasicBlock(-1)); // condition block
+    cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack.back())); // jump to condition block
+    cur_ir_basic_block = for_stack.back();
+    cur_ir_basic_block->id = Utils::get_next_counter();
+    cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
+    for_stack.push_back(new BasicBlock(-1)); // stmt block
+    if (for_stmt.assign2) for_stack.push_back(new BasicBlock(-1)); // assign2 block
+    for_stack.push_back(new BasicBlock(-1)); // next normal block
+    if_true_block = for_stack[1]; // stmt block
+    if_false_block = for_stack.back(); // next normal block
     if (for_stmt.condition) {
         visit_cond(*for_stmt.condition);
+    } else {
+        cur_ir_basic_block->instrs.push_back(new BrInstr(if_true_block)); // jump to stmt block
     }
-    if (for_stmt.assign2) {
-        visit_for_assign_stmt(*for_stmt.assign2);
-    }
+    cur_ir_basic_block = if_true_block;
+    cur_ir_basic_block->id = Utils::get_next_counter();
+    cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
     this->loop_cnt++;
     visit_stmt(*for_stmt.stmt);
+    if (for_stmt.assign2) cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack[2])); // jump to assign2 block
+    else cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack[0])); // jump to condition block
     this->loop_cnt--;
+    if (for_stmt.assign2) {
+        cur_ir_basic_block = for_stack[2];
+        cur_ir_basic_block->id = Utils::get_next_counter();
+        cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
+        visit_for_assign_stmt(*for_stmt.assign2);
+        cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack[0])); // jump to condition block
+    }
+    cur_ir_basic_block = for_stack.back();
+    cur_ir_basic_block->id = Utils::get_next_counter();
+    cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
+    for_stack.clear(); 
 }
 
 void Visitor::visit_break_stmt(const BreakStmt &break_stmt) {
