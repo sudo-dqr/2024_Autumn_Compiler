@@ -507,10 +507,10 @@ void Visitor::visit_for_stmt(const ForStmt &for_stmt) {
     cur_ir_basic_block = for_stack.back();
     cur_ir_basic_block->id = Utils::get_next_counter();
     cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
-    for_stack.push_back(new BasicBlock(-1)); // stmt block
     if (for_stmt.assign2) for_stack.push_back(new BasicBlock(-1)); // assign2 block
+    for_stack.push_back(new BasicBlock(-1)); // stmt block
     for_stack.push_back(new BasicBlock(-1)); // next normal block
-    if_true_block = for_stack[1]; // stmt block
+    if_true_block = for_stack[for_stack.size() - 2]; // stmt block
     if_false_block = for_stack.back(); // next normal block
     if (for_stmt.condition) {
         visit_cond(*for_stmt.condition);
@@ -522,11 +522,10 @@ void Visitor::visit_for_stmt(const ForStmt &for_stmt) {
     cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
     this->loop_cnt++;
     visit_stmt(*for_stmt.stmt);
-    if (for_stmt.assign2) cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack[2])); // jump to assign2 block
-    else cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack[0])); // jump to condition block
+    cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack[for_stack.size() - 3])); 
     this->loop_cnt--;
     if (for_stmt.assign2) {
-        cur_ir_basic_block = for_stack[2];
+        cur_ir_basic_block = for_stack[1];
         cur_ir_basic_block->id = Utils::get_next_counter();
         cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
         visit_for_assign_stmt(*for_stmt.assign2);
@@ -541,12 +540,16 @@ void Visitor::visit_for_stmt(const ForStmt &for_stmt) {
 void Visitor::visit_break_stmt(const BreakStmt &break_stmt) {
     if (this->loop_cnt == 0) {
         ErrorList::report_error(break_stmt.break_token->get_line_number(), 'm');
+    } else {
+        cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack.back())); // jump to next normal block
     }
 }
 
 void Visitor::visit_continue_stmt(const ContinueStmt &continue_stmt) {
     if (this->loop_cnt == 0) {
         ErrorList::report_error(continue_stmt.continue_token->get_line_number(), 'm');
+    } else {
+        cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack[for_stack.size() - 3])); // cond block or assign2 block
     }
 }
 

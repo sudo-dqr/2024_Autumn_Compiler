@@ -29,7 +29,7 @@ private:
     std::deque<BasicBlock*> if_stack;
     BasicBlock* if_true_block;
     BasicBlock* if_false_block;
-    //! for_stack is like | cond block | stmt block | (assign2 block) | next normal block | 
+    //! for_stack is like | cond block | (assign2 block) | stmt | next normal block | 
     std::deque<BasicBlock*> for_stack;
     void visit_decl(const Decl &decl);
     void visit_func_def(const FuncDef &func_def);
