@@ -11,6 +11,8 @@ Visitor::Visitor() {
     this->cur_ir_basic_block = nullptr;
     this->cur_ir_lval = nullptr;
     this->if_stack = std::deque<BasicBlock*>();
+    this->if_true_block = nullptr;
+    this->if_false_block = nullptr;
     this->for_stack = std::deque<BasicBlock*>();
 }
 
@@ -445,12 +447,12 @@ void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
 
 void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
     ExpInfo exp_info;
-    auto lval_symbol = visit_lval((*assign_stmt.lval));
+    auto lval_symbol = visit_lval((*for_assign_stmt.lval));
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
-            ErrorList::report_error(assign_stmt.lval->ident->ident->get_line_number(), 'h');
+            ErrorList::report_error(for_assign_stmt.lval->ident->ident->get_line_number(), 'h');
         } else {
-            exp_info = visit_exp(*assign_stmt.exp);
+            exp_info = visit_exp(*for_assign_stmt.exp);
             auto store_instr = new StoreInstr(exp_info.ir_value, lval_symbol->ir_value);
             cur_ir_basic_block->instrs.push_back(store_instr);
         }
@@ -469,12 +471,33 @@ void Visitor::visit_block_stmt(const BlockStmt &block_stmt) {
     cur_scope = cur_scope->pop_scope();
 }
 
+//! 注意这里一定要使用pop_back()弹出所有basicblock, 保证if_stack为空
 void Visitor::visit_if_stmt(const IfStmt &if_stmt) {
+    // if basicblock stack
+    if_stack.push_back(new BasicBlock(-1)); // next normal block
+    if (if_stmt.else_stmt) if_stack.push_back(new BasicBlock(-1)); // else block if exists
+    if_stack.push_back(new BasicBlock(-1)); // if block
+    if_true_block = if_stack.back();
+    if_false_block = if_stack[if_stack.size() - 2]; // 这里没法给出一个确定的index 因为可能是else block/normal block
     visit_cond(*if_stmt.condition);
+    cur_ir_basic_block = if_stack.back();
+    cur_ir_basic_block->id = Utils::get_next_counter();
+    if_stack.pop_back();
+    cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
     visit_stmt(*if_stmt.if_stmt);
+    cur_ir_basic_block->instrs.push_back(new BrInstr(if_stack[0])); // jump to next normal block 这里是确定的
     if (if_stmt.else_stmt) {
+        cur_ir_basic_block = if_stack.back();
+        if_stack.pop_back();
+        cur_ir_basic_block->id = Utils::get_next_counter();
+        cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
         visit_stmt(*if_stmt.else_stmt);
+        cur_ir_basic_block->instrs.push_back(new BrInstr(if_stack[0])); // jump to next normal block
     }
+    cur_ir_basic_block = if_stack[0];
+    cur_ir_basic_block->id = Utils::get_next_counter();
+    cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
+    if_stack.pop_back();
 }
 
 void Visitor::visit_for_stmt(const ForStmt &for_stmt) {
