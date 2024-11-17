@@ -21,6 +21,8 @@ class Token {
         Token(std::string token, TokenType type, int line_number);
         ~Token();
         std::string get_token();
+        int get_int();
+        chr get_char();
         TokenType get_type();
         int get_line_number();
         std::string to_string();

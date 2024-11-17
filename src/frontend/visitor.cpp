@@ -719,7 +719,27 @@ ExpInfo Visitor::visit_add_exp(const AddExp &add_exp) {
     } else { // Add -> Mul {+/- Mul}
         ExpInfo info1 = visit_add_exp(*add_exp.addexp);
         ExpInfo info2 = visit_mul_exp(*add_exp.mulexp);
-        return {info1.is_const && info2.is_const, false, 0, Token::INTTK};
+        if (info1.is_const && info2.is_const) { // constant optimization
+            if (add_exp.op->get_type() == Token::PLUS)
+                return {false, false, info1.int_value + info2.int_value, Token::INTTK};
+            else
+                return {false, false, info1.int_value - info2.int_value, Token::INTTK};
+        } else {
+            Value* instr = nullptr;
+            if (add_exp.op->get_type() == Token::PLUS && info1.is_const && info1.int_value == 0) { // 0 + info2
+                instr = info2.ir_value;
+            } else if (info2.is_const && info2.int_value == 0) { // info1 +/- 0
+                instr = info1.ir_value;
+            } else {
+                if (add_exp.op->get_type() == Token::PLUS) {
+                    instr = new ArithmeticInstr(Utils::get_next_counter(), AriType::ADD, info1.ir_value, info2.ir_value);
+                } else {
+                    instr = new ArithmeticInstr(Utils::get_next_counter(), AriType::SUB, info1.ir_value, info2.ir_value);
+                }
+                cur_ir_basic_block->instrs.push_back(instr);
+            }
+            return {false, false, Token::INTTK, instr};
+        }
     }
 }
 
@@ -729,7 +749,38 @@ ExpInfo Visitor::visit_mul_exp(const MulExp &mul_exp) {
     } else { // Mul -> Unary {*/% Unary}
         ExpInfo info1 = visit_mul_exp(*mul_exp.mulexp);
         ExpInfo info2 = visit_unary_exp(*mul_exp.unaryexp);
-        return {info1.is_const && info2.is_const, false, 0, Token::INTTK};
+        if (info1.is_const && info2.is_const) { // constant optimization
+            if (mul_exp.op->get_type() == Token::MULT) {
+                return {false, false, info1.int_value * info2.int_value, Token::INTTK};
+            } else if (mul_exp.op->get_type() == Token::DIV) {
+                return {false, false, info1.int_value / info2.int_value, Token::INTTK};
+            } else {
+                return {false, false, info1.int_value % info2.int_value, Token::INTTK};
+            }
+        } else {
+            Value* instr = nullptr;
+            if (info1.is_const && info1.int_value == 0) { // 0 *|/|% info2
+                return {false, false, 0, Token::INTTK};
+            } else if (mul_exp.op->get_type() == Token::MULT && info1.is_const && info1.int_value == 1) { // 1 * info2
+                instr = info2.ir_value;
+            } else if (mul_exp.op->get_type() == Token::DIV && info2.is_const && info2.int_value == 1) { // info1 / 1
+                instr = info1.ir_value;
+            } else if (mul_exp.op->get_type() == Token::MULT && info2.is_const && info2.int_value == 1) { // info1 * 1
+                instr = info1.ir_value;
+            } else if (mul_exp.op->get_type() == Token::MOD && info2.is_const && info2.int_value == 1) { // info1 % 1
+                return {false, false, 0, Token::INTTK};
+            } else {
+                if (mul_exp.op->get_type() == Token::MULT) {
+                    instr = new ArithmeticInstr(Utils::get_next_counter(), AriType::MUL, info1.ir_value, info2.ir_value);
+                } else if (mul_exp.op->get_type() == Token::DIV) {
+                    instr = new ArithmeticInstr(Utils::get_next_counter(), AriType::DIV, info1.ir_value, info2.ir_value);
+                } else {
+                    instr = new ArithmeticInstr(Utils::get_next_counter(), AriType::MOD, info1.ir_value, info2.ir_value);
+                }
+                cur_ir_basic_block->instrs.push_back(instr);
+            }
+            return {false, false, Token::INTTK, instr};
+        }
     }
 }
 
@@ -743,6 +794,7 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
             ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'c');
             return {false, false, 0, Token::END};
         }
+        std::vector<Value*> ir_rparams;
         if (unary_exp.func_rparams) {
             if (unary_exp.func_rparams->exps.size() != ident_symbol->type.params.size()) {
                 ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'd');
@@ -759,6 +811,8 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
                         || (r_param_is_array && f_param_is_array && (r_param_type != f_param_type))) {
                         ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'e');
                         return {false, false, 0, Token::END};
+                    } else {
+                        ir_rparams.push_back(r_param_info.ir_value);
                     }
                 }
             }
@@ -768,9 +822,37 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
                 return {false, false, 0, Token::END};
             }
         }
-        return {ident_symbol->type.is_const, false, 0, ident_symbol->type.btype};
-    } else {
-        return visit_unary_exp(*unary_exp.unary_exp);
+        Instruction* call_instr = nullptr;
+        if (is_void_func)
+            call_instr = new CallInstr(dynamic_cast<Function*>(ident_symbol->ir_value), ir_rparams);
+        else
+            call_instr = new CallInstr(Utils::get_next_counter(), dynamic_cast<Function*>(ident_symbol->ir_value), ir_rparams);
+        cur_ir_basic_block->instrs.push_back(call_instr);
+        return {false, false, Token::INTTK, call_instr};
+    } else { // + - ! UnaryExp
+        Expinfo unary_info = visit_unary_exp(*unary_exp.unary_exp);
+        if (unary_exp.is_const) { // constant optimazation
+            if (unary_exp.op->get_type() == Token::PLUS) {
+                return {false, false, unary_info.int_value, Token::INTTK};
+            } else if (unary_exp.op->get_type() == Token::MINU) {
+                return {false, false, -unary_info.int_value, Token::INTTK};
+            } else {
+                return {false, false, (unary_info.int_value == 0) ? 1 : 0, Token::INTTK};
+            }
+        } else if (unary_exp.op->get_type() == Token::PLUS) {
+            return unary_info;
+        } else if (unary_exp.op->get_type() == Token::MINU) {
+            auto instr = new ArithmeticInstr(Utils::get_next_counter(), AriType::SUB, new IntConst(0), unary_info.ir_value);
+            cur_ir_basic_block->instrs.push_back(instr);
+            return {false, false, Token::INTTK, instr};
+        } else if (unary_exp.op->get_type() == Token::NOT) {
+            // 运算指令中没有 ! 操作, 首先使用icmp指令判断是否为0, 然后使用zext将结果转换为int
+            auto icmp_instr = new IcmpInstr(Utils::get_next_counter(), CmpType::EQ, unary_info.ir_value, new IntConst(0));
+            cur_ir_basic_block->instrs.push_back(icmp_instr);
+            auto zext_instr = new ZextInstr(Utils::get_next_counter(), icmp_instr, &IR_INT);
+            cur_ir_basic_block->instrs.push_back(zext_instr);
+            return {false, false, Token::INTTK, (Value*)zext_instr};
+        }
     }
 }
 
@@ -778,13 +860,13 @@ ExpInfo Visitor::visit_primary_exp(const PrimaryExp &primary_exp) {
     if (auto exp_ptr = std::get_if<Exp>(&primary_exp)) {
         return visit_exp(*exp_ptr);
     } else if (auto num_ptr = std::get_if<Number>(&primary_exp)) {
-        return {true, false, 0, Token::INTTK};
+        return {false, false, num_ptr->num->get_int(), Token::INTTK};
     } else if (auto char_ptr = std::get_if<Character>(&primary_exp)) {
-        return {false, false, 0, Token::CHARTK};
+        return {false, false, char_ptr->ch->get_char(), Token::CHARTK};
     } else if (auto lval_ptr = std::get_if<LVal>(&primary_exp)) {
         auto lval_symbol = visit_lval(*lval_ptr);
         if (lval_symbol) {
-            return {lval_symbol->type.is_const, lval_symbol->type.is_array, lval_symbol->type.array_size, lval_symbol->type.btype};
+
         } else {
             return {false, false, 0, Token::END};
         }

@@ -14,6 +14,14 @@ std::string Token::get_token() {
     return this->token;
 }
 
+int Token::get_int() {
+    return std::stoi(this->token);
+}
+
+char Token::get_char() {
+    return this->token[0];
+}
+
 Token::TokenType Token::get_type() {
     return this->type;
 }
