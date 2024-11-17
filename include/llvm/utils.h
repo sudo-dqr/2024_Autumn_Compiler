@@ -9,6 +9,9 @@ struct Utils {
 
     static int str_gv_cnt; // 字符串全局变量计数
     static int get_next_str_cnt() { return ++str_gv_cnt; }
+
+    static int control_cnt(const std::string &str);
+    static int cut_str(const std::string &str, int start);
 };
 
 #endif

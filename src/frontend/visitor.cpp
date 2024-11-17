@@ -633,7 +633,7 @@ void Visitor::visit_get_char_stmt(const GetCharStmt &get_char_stmt) {
 // }
 
 void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
-    int cnt = control_cnt(printf_stmt.str->str->get_token());
+    int cnt = Utils::control_cnt(printf_stmt.str->str->get_token());
     if (cnt != printf_stmt.exps.size()) {
         ErrorList::report_error(printf_stmt.str->str->get_line_number(), 'l');
     } else {
@@ -644,7 +644,7 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
         std::string format_str = printf_stmt.str->str->get_token();
         int pos = 0, i = 0;
         while (i < format_str.length()) {
-            int str_end = cut_str(format_str, i);
+            int str_end = Utils::cut_str(format_str, i);
             if (str_end == i) { // %d | %c
                 CallInstr* call_instr = nullptr;
                 if (format_str[i + 1] == 'd') 
@@ -673,30 +673,6 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
     }
 }
 
-int Visitor::cut_str(const std::string &str, int start) {
-    int i = start;
-    while (i < str.length()) {
-        if (str[i] == '%' && i + 1 < str.length()) {
-            if (str[i + 1] == 'd' || str[i + 1] == 'c') {
-                break;
-            }
-        }
-        i++;
-    }
-    return i;
-}
-
-int Visitor::control_cnt(const std::string &str) { // %d | %c
-    int cnt = 0;
-    for (int i = 0; i < str.length(); i++) {
-        if (str[i] == '%' && i + 1 < str.length()) {
-            if (str[i + 1] == 'd' || str[i + 1] == 'c') {
-                cnt++;
-            }
-        }
-    }
-    return cnt;
-}
 
 std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
     auto ident = lval.ident->ident->get_token();
