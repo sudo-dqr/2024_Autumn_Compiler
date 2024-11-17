@@ -31,6 +31,14 @@ private:
     BasicBlock* if_false_block;
     //! for_stack is like | cond block | (assign2 block) | stmt | next normal block | 
     std::deque<BasicBlock*> for_stack;
+    // getint getchar putint putch putstr
+    static Function* getint;
+    static Function* getchar;
+    static Function* putint;
+    static Function* putchar;
+    static Function* putstr;
+
+    
     void visit_decl(const Decl &decl);
     void visit_func_def(const FuncDef &func_def);
     void prepare_ir_funcparam_stack(const FuncFParams &func_fparams);

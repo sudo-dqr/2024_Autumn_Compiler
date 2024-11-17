@@ -64,8 +64,8 @@ struct CallInstr : public Instruction { // void / int/char
     Function* function;
     std::vector<Value*> args;
 
-    CallInstr(int dst_id, ValueType* return_value_type, Function* function, std::vector<Value*> args) // int / char
-    : Instruction("T" + dst_id, return_value_type, dst_id), function(function), args(args) {} 
+    CallInstr(int dst_id, Function* function, std::vector<Value*> args) // int / char
+    : Instruction("T" + dst_id, dst_id), function(function), args(args) {} 
 
     CallInstr(Function* function, std::vector<Value*> args) // void
     : Instruction(&IR_VOID), function(function), args(args) {}

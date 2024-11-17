@@ -2,18 +2,23 @@
 #include "utils.h"
 
 Visitor::Visitor() {
-    this->cur_scope = std::make_shared<SymbolTable>();
-    this->loop_cnt = 0;
-    this->is_void_func= false;
-    this->scope_cnt = 1; // global
-    this->symbol_list = std::deque<Symbol>();
-    this->cur_ir_function = nullptr;
-    this->cur_ir_basic_block = nullptr;
-    this->cur_ir_lval = nullptr;
-    this->if_stack = std::deque<BasicBlock*>();
-    this->if_true_block = nullptr;
-    this->if_false_block = nullptr;
-    this->for_stack = std::deque<BasicBlock*>();
+    cur_scope = std::make_shared<SymbolTable>();
+    loop_cnt = 0;
+    is_void_func= false;
+    scope_cnt = 1; // global
+    symbol_list = std::deque<Symbol>();
+    cur_ir_function = nullptr;
+    cur_ir_basic_block = nullptr;
+    cur_ir_lval = nullptr;
+    if_stack = std::deque<BasicBlock*>();
+    if_true_block = nullptr;
+    if_false_block = nullptr;
+    for_stack = std::deque<BasicBlock*>();
+    getint = new Function("getint", new FunctionType(&IR_INT, std::vector<ValueType*>()));
+    getchar = new Function("getchar", new FunctionType(&IR_CHAR, std::vector<ValueType*>()));
+    putint = new Function("putint", new FunctionType(&IR_VOID, std::vector<ValueType*>{&IR_INT}));
+    putchar = new Function("putchar", new FunctionType(&IR_VOID, std::vector<ValueType*>{&IR_CHAR}));
+    putstr = new Function("putstr", new FunctionType(&IR_VOID, std::vector<ValueType*>{new PointerType(&IR_CHAR)}));
 }
 
 
@@ -571,6 +576,10 @@ void Visitor::visit_get_int_stmt(const GetIntStmt &get_int_stmt) {
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
             ErrorList::report_error(get_int_stmt.lval->ident->ident->get_line_number(), 'h');
+        } else {
+            auto lval = cur_ir_lval;
+            auto call_instr = new CallInstr(Utils::get_next_counter(), getint, std::vector<Value*>{});
+            cur_ir_basic_block->instrs.push_back(call_instr);
         }
     }
 }
@@ -580,17 +589,46 @@ void Visitor::visit_get_char_stmt(const GetCharStmt &get_char_stmt) {
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
             ErrorList::report_error(get_char_stmt.lval->ident->ident->get_line_number(), 'h');
+        } else {
+            auto lval = cur_ir_lval;
+            auto call_instr = new CallInstr(Utils::get_next_counter(), getchar, std::vector<Value*>{});
+            cur_ir_basic_block->instrs.push_back(call_instr);
         }
     }
 }
 
+
+// 目前没有用putstr, 使用多个putch代替
 void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
     int cnt = control_cnt(printf_stmt.str->str->get_token());
     if (cnt != printf_stmt.exps.size()) {
         ErrorList::report_error(printf_stmt.str->str->get_line_number(), 'l');
-    }
-    for (const auto &exp : printf_stmt.exps) {
-        visit_exp(*exp);
+    } else {
+        std::vector<ExpInfo> exp_infos;
+        for (const auto &exp : printf_stmt.exps) {
+            exp_infos.push_back(visit_exp(*exp));
+            std::string format_str = printf_stmt.str->str->get_token();
+            int pos = 0;
+            for (int i = 0; i < format_str.length() && pos < exp_infos.size(); ) {
+                if (format_str[i] == '%' && i + 1 < format_str.length() && format_str[i + 1] == 'd') {
+                    auto call_instr = new CallInstr(Utils::get_next_counter(), putint, std::vector<Value*>{exp_infos[pos++].ir_value});
+                    cur_ir_basic_block->instrs.push_back(call_instr);
+                    i += 2;
+                } else if (format_str[i] == '%' && i + 1 < format_str.length() && format_str[i + 1] == 'c') {
+                    auto call_instr = new CallInstr(Utils::get_next_counter(), putchar, std::vector<Value*>{exp_infos[pos++].ir_value});
+                    cur_ir_basic_block->instrs.push_back(call_instr);
+                    i += 2;
+                } else if (format_str[i] == '\\') { // printf中转义字符只会有\n
+                    auto call_instr = new CallInstr(Utils::get_next_counter(), putchar, std::vector<Value*>{new CharConst('\n')});
+                    cur_ir_basic_block->instrs.push_back(call_instr);
+                    i += 2;
+                } else {
+                    auto call_instr = new CallInstr(Utils::get_next_counter(), putchar, std::vector<Value*>{new CharConst(format_str[i])});
+                    cur_ir_basic_block->instrs.push_back(call_instr);
+                    i++;
+                }
+            }
+        }
     }
 }
 
