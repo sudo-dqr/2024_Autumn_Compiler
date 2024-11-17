@@ -557,8 +557,12 @@ void Visitor::visit_return_stmt(const ReturnStmt &return_stmt) {
     if (return_stmt.return_exp) {
         if(this->is_void_func) {
             ErrorList::report_error(return_stmt.return_token->get_line_number(), 'f');
+        } else {
+            ExpInfo exp_info = visit_exp(*return_stmt.return_exp);
+            cur_ir_basic_block->instrs.push_back(new RetInstr(exp_info.ir_value));
         }
-        visit_exp(*return_stmt.return_exp);
+    } else {
+        cur_ir_basic_block->instrs.push_back(new RetInstr());
     }
 }
 

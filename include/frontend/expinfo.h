@@ -13,10 +13,39 @@ struct ExpInfo {
     Value* ir_value;
 
     ExpInfo() = default;
-    ExpInfo(bool is_bool, bool is_array, int int_value, Token::TokenType type) 
-    : is_bool(is_bool), is_array(is_array), type(type), int_value(int_value), char_value(0), ir_value(nullptr) {}
-    ExpInfo(bool is_bool, bool is_array, char char_value, Token::TokenType type)
-    : is_bool(is_bool), is_array(is_array), type(type), int_value(0), char_value(char_value), ir_value(nullptr) {}
+    ExpInfo(bool is_bool, bool is_array, Token::TokenType type, Value* ir_value) {
+        this->is_const = false;
+        this->is_bool = is_bool;
+        this->is_array = is_array;
+        this->type = type;
+        this->ir_value = ir_value;
+    }
+
+    ExpInfo(bool is_bool, bool is_array, int int_value, Token::TokenType type) {
+        this->is_const = true;
+        this->is_bool = is_bool;
+        this->is_array = is_array;
+        this->int_value = int_value;
+        this->type = type;
+        this->ir_value = new IntConst(int_value);
+    }
+
+    ExpInfo(bool is_array, char char_value, Token::TokenType type) {
+        this->is_const = true;
+        this->is_bool = false;
+        this->is_array = is_array;
+        this->char_value = char_value;
+        this->type = type;
+        this->ir_value = new CharConst(char_value);
+    }
+
+    ExpInfo(bool is_array, Token::TokenType type, Value* ir_value) {
+        this->is_const = false;
+        this->is_bool = false;
+        this->is_array = is_array;
+        this->type = type;
+        this->ir_value = ir_value;
+    }
 };
 
 #endif //COMPILER_EXPINFO_H
