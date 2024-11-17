@@ -38,7 +38,7 @@ private:
     static Function* putchar;
     static Function* putstr;
 
-    
+
     void visit_decl(const Decl &decl);
     void visit_func_def(const FuncDef &func_def);
     void prepare_ir_funcparam_stack(const FuncFParams &func_fparams);
@@ -60,6 +60,7 @@ private:
     void visit_get_char_stmt(const GetCharStmt &get_char_stmt);
     void visit_printf_stmt(const PrintfStmt &printf_stmt);
     int control_cnt(const std::string &str);
+    int cut_str(const std::string &str, int start);
     // Stmt finish
     std::shared_ptr<Symbol> visit_lval(const LVal &lval);
     void visit_main_func(const MainFunc &main_func);

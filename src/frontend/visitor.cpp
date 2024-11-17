@@ -599,6 +599,39 @@ void Visitor::visit_get_char_stmt(const GetCharStmt &get_char_stmt) {
 
 
 // 目前没有用putstr, 使用多个putch代替
+// void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
+//     int cnt = control_cnt(printf_stmt.str->str->get_token());
+//     if (cnt != printf_stmt.exps.size()) {
+//         ErrorList::report_error(printf_stmt.str->str->get_line_number(), 'l');
+//     } else {
+//         std::vector<ExpInfo> exp_infos;
+//         for (const auto &exp : printf_stmt.exps) {
+//             exp_infos.push_back(visit_exp(*exp));
+//             std::string format_str = printf_stmt.str->str->get_token();
+//             int pos = 0;
+//             for (int i = 0; i < format_str.length() && pos < exp_infos.size(); ) {
+//                 if (format_str[i] == '%' && i + 1 < format_str.length() && format_str[i + 1] == 'd') {
+//                     auto call_instr = new CallInstr(Utils::get_next_counter(), putint, std::vector<Value*>{exp_infos[pos++].ir_value});
+//                     cur_ir_basic_block->instrs.push_back(call_instr);
+//                     i += 2;
+//                 } else if (format_str[i] == '%' && i + 1 < format_str.length() && format_str[i + 1] == 'c') {
+//                     auto call_instr = new CallInstr(Utils::get_next_counter(), putchar, std::vector<Value*>{exp_infos[pos++].ir_value});
+//                     cur_ir_basic_block->instrs.push_back(call_instr);
+//                     i += 2;
+//                 } else if (format_str[i] == '\\') { // printf中转义字符只会有\n
+//                     auto call_instr = new CallInstr(Utils::get_next_counter(), putchar, std::vector<Value*>{new CharConst('\n')});
+//                     cur_ir_basic_block->instrs.push_back(call_instr);
+//                     i += 2;
+//                 } else {
+//                     auto call_instr = new CallInstr(Utils::get_next_counter(), putchar, std::vector<Value*>{new CharConst(format_str[i])});
+//                     cur_ir_basic_block->instrs.push_back(call_instr);
+//                     i++;
+//                 }
+//             }
+//         }
+//     }
+// }
+
 void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
     int cnt = control_cnt(printf_stmt.str->str->get_token());
     if (cnt != printf_stmt.exps.size()) {
@@ -607,29 +640,50 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
         std::vector<ExpInfo> exp_infos;
         for (const auto &exp : printf_stmt.exps) {
             exp_infos.push_back(visit_exp(*exp));
-            std::string format_str = printf_stmt.str->str->get_token();
-            int pos = 0;
-            for (int i = 0; i < format_str.length() && pos < exp_infos.size(); ) {
-                if (format_str[i] == '%' && i + 1 < format_str.length() && format_str[i + 1] == 'd') {
-                    auto call_instr = new CallInstr(Utils::get_next_counter(), putint, std::vector<Value*>{exp_infos[pos++].ir_value});
-                    cur_ir_basic_block->instrs.push_back(call_instr);
-                    i += 2;
-                } else if (format_str[i] == '%' && i + 1 < format_str.length() && format_str[i + 1] == 'c') {
-                    auto call_instr = new CallInstr(Utils::get_next_counter(), putchar, std::vector<Value*>{exp_infos[pos++].ir_value});
-                    cur_ir_basic_block->instrs.push_back(call_instr);
-                    i += 2;
-                } else if (format_str[i] == '\\') { // printf中转义字符只会有\n
-                    auto call_instr = new CallInstr(Utils::get_next_counter(), putchar, std::vector<Value*>{new CharConst('\n')});
-                    cur_ir_basic_block->instrs.push_back(call_instr);
-                    i += 2;
-                } else {
-                    auto call_instr = new CallInstr(Utils::get_next_counter(), putchar, std::vector<Value*>{new CharConst(format_str[i])});
-                    cur_ir_basic_block->instrs.push_back(call_instr);
-                    i++;
-                }
+        }
+        std::string format_str = printf_stmt.str->str->get_token();
+        int pos = 0, i = 0;
+        while (i < format_str.length()) {
+            int str_end = cut_str(format_str, i);
+            if (str_end == i) { // %d | %c
+                CallInstr* call_instr = nullptr;
+                if (format_str[i + 1] == 'd') 
+                    call_instr = new CallInstr(Utils::get_next_counter(), putint, std::vector<Value*>{exp_infos[pos++].ir_value});
+                else if (format_str[i + 1] == 'c') 
+                    call_instr = new CallInstr(Utils::get_next_counter(), putchar, std::vector<Value*>{exp_infos[pos++].ir_value});
+                cur_ir_basic_block->instrs.push_back(call_instr);
+                i += 2;
+            } else if (str_end = i + 1) { // single char
+                CallInstr* call_instr = new CallInstr(Utils::get_next_counter(), putchar, std::vector<Value*>{new CharConst(format_str[i])});
+                cur_ir_basic_block->instrs.push_back(call_instr);
+                i += 1;
+            } else { // global variable
+                int length = str_end - i;
+                int global_var_id = Utils::get_next_str_cnt();
+                std::string global_var_name = "dqr" + std::to_string(global_var_id);
+                std::string global_var_value = format_str.substr(i, length);
+                auto global_var_pointer = new PointerType(&IR_CHAR);
+                auto *global_var = new GlobalVariable(global_var_name, global_var_pointer, global_var_value);
+                Module::get_instance().global_variables.push_back(global_var);
+                auto call_instr = new CallInstr(Utils::get_next_counter(), putstr, std::vector<Value*>(global_var));
+                cur_ir_basic_block->instrs.push_back(call_instr);
+                i += length; 
             }
         }
     }
+}
+
+int Visitor::cut_str(const std::string &str, int start) {
+    int i = start;
+    while (i < str.length()) {
+        if (str[i] == '%' && i + 1 < str.length()) {
+            if (str[i + 1] == 'd' || str[i + 1] == 'c') {
+                break;
+            }
+        }
+        i++;
+    }
+    return i;
 }
 
 int Visitor::control_cnt(const std::string &str) { // %d | %c
