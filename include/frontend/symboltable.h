@@ -32,6 +32,11 @@ struct SymbolType {
     SymbolType(Token::TokenType type, std::deque<Symbol> params) : category(FUNC), btype(type), is_const(false), is_array(false), array_size(0), params(params) {}
 
     std::string to_string() const;
+
+    //! 检查是否为形参数组, 在FuncDef中解析形参数组时, 没有解析数组大小, default = -1
+    bool is_param_array() {
+        return is_array && array_size == -1;
+    }
 };
 
 struct Symbol {

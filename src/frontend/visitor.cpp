@@ -293,7 +293,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
             ValueType* ir_param_type = nullptr;
             SymbolType param_symbol_type = SymbolType();
             if (func_fparam->is_array) {
-                param_symbol_type = SymbolType(false, param_type, 0); // 形参不必解析数组大小
+                param_symbol_type = SymbolType(false, param_type, -1); // 形参不必解析数组大小(后面有检查是否为形参数组的方法)
                 if (param_type == Token::CHARTK) ir_param_type = new PointerType(&IR_CHAR);
                 else ir_param_type = new PointerType(&IR_INT);
             } else {
@@ -683,7 +683,24 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
         return nullptr;
     }
     if (ident_symbol->type.is_array) {
-
+        Value* array = nullptr;
+        if (ident_symbol->type.is_param_array()) { //TODO: 参数数组需要load, but WHY?
+            auto load_instr = new LoadInstr(Utils::get_next_counter(), ident_symbol->ir_value); 
+            cur_ir_basic_block->instrs.push_back(load_instr);
+            array = load_instr;
+        } else {
+            array = ident_symbol->ir_value;
+        }
+        if (lval.exp) {
+            ExpInfo exp_info = visit_exp(*lval.exp);
+            auto index = exp_info.ir_value;
+            auto pointer_type = new PointerType(array->get_type());
+            auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, array, index);
+            cur_ir_basic_block->instrs.push_back(getelementptr_instr);
+            cur_ir_lval = getelementptr_instr;
+        } else {
+            cur_ir_lval = array;
+        }
     } else {
         if (ident_symbol->type.is_const) {
             if (ident_symbol->type.btype == Token::CHARTK) {
@@ -695,14 +712,14 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
             cur_ir_lval = ident_symbol->ir_value;
         }
     }
-    if (lval.exp) {
-        visit_exp(*lval.exp);
-        SymbolType type = SymbolType(ident_symbol->type.is_const, ident_symbol->type.btype);
-        return std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
-    } else {
-        return ident_symbol;
-    }
-
+    // if (lval.exp) {
+    //     visit_exp(*lval.exp);
+    //     SymbolType type = SymbolType(ident_symbol->type.is_const, ident_symbol->type.btype);
+    //     return std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
+    // } else {
+    //     return ident_symbol;
+    // }
+    return ident_symbol;
 }
 
 ExpInfo Visitor::visit_exp(const Exp &exp) {
@@ -866,7 +883,17 @@ ExpInfo Visitor::visit_primary_exp(const PrimaryExp &primary_exp) {
     } else if (auto lval_ptr = std::get_if<LVal>(&primary_exp)) {
         auto lval_symbol = visit_lval(*lval_ptr);
         if (lval_symbol) {
-
+            if (auto intconst_ptr = dynamic_cast<IntConst*>(lval_symbol->ir_value)) {
+                return {false, false, intconst_ptr->value, Token::INTTK};
+            } else {
+                if (lval_symbol->exp) { // int / char 
+                    auto load_instr = new LoadInstr(Utils::get_next_counter(), lval_symbol->ir_value);
+                    cur_ir_basic_block->instrs.push_back(load_instr);
+                    return {false, false, Token::INTTK, load_instr};
+                } else { // may be array
+                    return {false, lval_symbol->type.is_array, Token::INTTK, lval_symbol->ir_value};
+                }
+            }
         } else {
             return {false, false, 0, Token::END};
         }
