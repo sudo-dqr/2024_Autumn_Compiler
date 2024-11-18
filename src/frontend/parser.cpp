@@ -7,8 +7,6 @@ void Parser::next_token() {
         backbuf.pop_back();
     } else if (lexer.has_next()) {
         buf.push_back(lexer.next());
-    } else {
-        std::cout << "Error! No Lexer Read!" << std::endl;
     }
 
     // backbuf是不断消耗的 不需要关心内存
@@ -24,7 +22,6 @@ Token Parser::get_curtoken() {
 
 void Parser::unget_token() { 
     auto& buf = is_recovering ? recoverybuf : buffer;
-    std::cout << "BackBuf in unget_token : " << buf.back().to_string() << std::endl;
     backbuf.push_back(buf.back());
     buf.pop_back();
 }
@@ -228,7 +225,6 @@ std::unique_ptr<ConstInitVal> Parser::parse_const_initval() {
 }
 
 std::unique_ptr<InitVal> Parser::parse_initval() {
-    std::cout << "InitVal : curtoken is " << get_curtoken().to_string() << std::endl;
     if (get_curtoken().get_type() == Token::STRCON) {
         auto stringconst = parse_stringconst();
         return std::make_unique<InitVal>(std::in_place_type<StringConst>,std::move(*stringconst));
@@ -251,7 +247,6 @@ std::unique_ptr<InitVal> Parser::parse_initval() {
 }
 
 std::unique_ptr<FuncDef> Parser::parse_funcdef() {
-    std::cout << "FuncDef : curtoken is " << get_curtoken().get_token() << std::endl;
     auto func_type = parse_functype();
     auto ident = parse_ident();
     std::unique_ptr<FuncFParams> func_fparams;
@@ -298,7 +293,6 @@ std::unique_ptr<StringConst> Parser::parse_stringconst() {
 }
 
 std::unique_ptr<MainFunc> Parser::parse_mainfunc() {
-    //std::cout << "MainFunc : curtoken is " << get_curtoken().get_token() << std::endl;
     next_token(); // 跳过int
     next_token(); // 跳过main
     next_token(); // 跳过(
@@ -341,7 +335,6 @@ std::unique_ptr<FuncFParam> Parser::parse_funcfparam() {
 }
 
 std::unique_ptr<Block> Parser::parse_block() {
-    std::cout << "Block : curtoken is " << get_curtoken().get_token() << "in line " << get_curtoken().get_line_number() <<std::endl;
     next_token(); // 跳过{
     auto block_items = std::vector<std::unique_ptr<BlockItem>>();
     while (get_curtoken().get_type() != Token::RBRACE) {
@@ -353,7 +346,6 @@ std::unique_ptr<Block> Parser::parse_block() {
 }
 
 std::unique_ptr<BlockItem> Parser::parse_blockitem() {
-    std::cout << "BlockItem : curtoken is " << get_curtoken().get_token() << " in line " << get_curtoken().get_line_number() <<std::endl;
     if (get_curtoken().get_type() == Token::INTTK 
         || get_curtoken().get_type() == Token::CHARTK
         || get_curtoken().get_type() == Token::CONSTTK) {
@@ -491,7 +483,6 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
 //! 为什么不能接着用backbuf? 因为我们要回复的其实就是LVal的tokens, 需要有一个明确的起始点
 
 std::unique_ptr<IfStmt> Parser::parse_ifstmt() {
-    std::cout << "IfStmt : curtoken is " << get_curtoken().get_token() << std::endl;
     next_token(); // 跳过if
     next_token(); // 跳过(
     auto condition = parse_cond();
@@ -514,7 +505,6 @@ std::unique_ptr<IfStmt> Parser::parse_ifstmt() {
 }
 
 std::unique_ptr<Cond> Parser::parse_cond() {
-    std::cout << "Cond : curtoken is " << get_curtoken().get_token() << std::endl;
     return std::make_unique<Cond>(parse_lorexp());
 }
 
@@ -629,7 +619,6 @@ std::unique_ptr<PrintfStmt> Parser::parse_printfstmt() {
 }
 
 std::unique_ptr<Exp> Parser::parse_exp() {
-    std::cout << "Exp : curtoken is " << get_curtoken().to_string() << std::endl;
     return std::make_unique<Exp>(parse_addexp());
 }
 
@@ -648,7 +637,6 @@ std::unique_ptr<ForAssignStmt> Parser::parse_forassignstmt() {
 }
 
 std::unique_ptr<LVal> Parser::parse_lval() {
-    std::cout << "LVal : curtoken is " << get_curtoken().to_string() << std::endl;
     auto ident = parse_ident();
     std::unique_ptr<Exp> exp;
     if (get_curtoken().get_type() == Token::LBRACK) {
@@ -668,10 +656,8 @@ std::unique_ptr<LVal> Parser::parse_lval() {
 }
 
 std::unique_ptr<Number> Parser::parse_number() {
-    std::cout << "Number : curtoken is " << get_curtoken().get_token() << std::endl;
     auto res = std::make_unique<Number>(std::make_unique<Token>(get_curtoken()));
     next_token();
-    std::cout << "Number : outtoken is " << get_curtoken().get_token() << std::endl;
     return std::move(res);
 }
 
@@ -682,7 +668,6 @@ std::unique_ptr<Character> Parser::parse_character() {
 }
 
 std::unique_ptr<PrimaryExp> Parser::parse_primaryexp() {
-    std::cout << "PrimaryExp : curtoken is " << get_curtoken().to_string() << std::endl;
     if (get_curtoken().get_type() == Token::LPARENT) {
         next_token(); // 跳过(
         auto exp = parse_exp();
@@ -713,7 +698,6 @@ std::unique_ptr<UnaryOp> Parser::parse_unaryop() {
 }
 
 std::unique_ptr<UnaryExp> Parser::parse_unaryexp() {
-    std::cout << "UnaryExp : curtoken is " << get_curtoken().to_string() << std::endl;
     if (get_curtoken().get_type() == Token::PLUS ||
         get_curtoken().get_type() == Token::MINU ||
         get_curtoken().get_type() == Token::NOT) {
@@ -769,7 +753,6 @@ std::unique_ptr<FuncRParams> Parser::parse_funcrparams() {
 }
 
 std::unique_ptr<MulExp> Parser::parse_mulexp() {
-    std::cout << "MulExp : cur token is " << get_curtoken().get_token() << std::endl;
     std::unique_ptr<MulExp> mul_exp = std::make_unique<MulExp>(parse_unaryexp());
     while (get_curtoken().get_type() == Token::MULT ||
             get_curtoken().get_type() == Token::DIV ||
@@ -783,7 +766,6 @@ std::unique_ptr<MulExp> Parser::parse_mulexp() {
 }
 
 std::unique_ptr<AddExp> Parser::parse_addexp() {
-    std::cout << "AddExp : cur token is " << get_curtoken().get_token() << std::endl;
     auto add_exp = std::make_unique<AddExp>(parse_mulexp());
     while (get_curtoken().get_type() == Token::PLUS ||
             get_curtoken().get_type() == Token::MINU ) {
@@ -792,12 +774,10 @@ std::unique_ptr<AddExp> Parser::parse_addexp() {
         auto mul_exp = parse_mulexp();
         add_exp = std::make_unique<AddExp>(std::move(add_exp), std::make_unique<Token>(op), std::move(mul_exp));            
     }
-    //std::cout << "AddExp : jump token is " << get_curtoken().get_token() << "in line " << get_curtoken().get_line_number() << std::endl;
     return std::move(add_exp);
 }
 
 std::unique_ptr<RelExp> Parser::parse_relexp() {
-    std::cout << "RelExp : cur token is " << get_curtoken().get_token() << std::endl;
     auto rel_exp = std::make_unique<RelExp>(parse_addexp());
     while (get_curtoken().get_type() == Token::GRE ||
             get_curtoken().get_type() == Token::GEQ ||
@@ -812,7 +792,6 @@ std::unique_ptr<RelExp> Parser::parse_relexp() {
 }
 
 std::unique_ptr<EqExp> Parser::parse_eqexp() {
-    std::cout << "EqExp : cur token is " << get_curtoken().get_token() << std::endl;
     auto eq_exp = std::make_unique<EqExp>(parse_relexp());
     while (get_curtoken().get_type() == Token::EQL ||
             get_curtoken().get_type() == Token::NEQ ) {
@@ -825,7 +804,6 @@ std::unique_ptr<EqExp> Parser::parse_eqexp() {
 }
 
 std::unique_ptr<LAndExp> Parser::parse_landexp() {
-    std::cout << "LAndExp : cur token is " << get_curtoken().get_token() << std::endl;
     auto land_exp = std::make_unique<LAndExp>(parse_eqexp());
     while (get_curtoken().get_type() == Token::AND) {
         next_token();
@@ -836,7 +814,6 @@ std::unique_ptr<LAndExp> Parser::parse_landexp() {
 }
 
 std::unique_ptr<LOrExp> Parser::parse_lorexp() {
-    std::cout << "LOrExp : cur token is " << get_curtoken().get_token() << std::endl;
     auto lor_exp = std::make_unique<LOrExp>(parse_landexp());
     while (get_curtoken().get_type() == Token::OR) {
         next_token();
