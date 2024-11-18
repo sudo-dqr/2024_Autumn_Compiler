@@ -908,17 +908,41 @@ void Visitor::visit_cond(const Cond &cond) {
 }
 
 void Visitor::visit_lor_exp(const LOrExp &lor_exp) {
-    if (lor_exp.lorexp) {
+    if (lor_exp.lorexp) { // short-circuit evaluation
+        if_stack.push_back(if_false_block); // save the orginal if_false_block
+        if_false_block = new BasicBlock(-1);
         visit_lor_exp(*lor_exp.lorexp);
+        if_false_block.id = Utils::get_next_counter();
+        cur_ir_basic_block = if_false_block;
+        cur_ir_function->basic_blocks.push_back(if_false_block);
+        if_false_block = if_stack.back();
+        if_stack.pop_back();
     }
     visit_land_exp(*lor_exp.landexp);
 }
 
 void Visitor::visit_land_exp(const LAndExp &land_exp) {
     if (land_exp.landexp) {
+        if_stack.push_back(if_true_block); // save the orginal if_true_block
+        if_true_block = new BasicBlock(-1);
         visit_land_exp(*land_exp.landexp);
+        if_true_block.id = Utils::get_next_counter();
+        cur_ir_basic_block = if_true_block;
+        cur_ir_function->basic_blocks.push_back(if_true_block);
+        if_true_block = if_stack.back();
+        if_stack.pop_back();
     }
-    visit_eq_exp(*land_exp.eqexp);
+    ExpInfo exp_info = visit_eq_exp(*land_exp.eqexp);
+    if (exp_info.type.is_const) {
+        if (exp_info.int_value == 0) cur_ir_basic_block->instrs.push_back(new BrInstr(if_false_block));
+        else cur_ir_basic_block->instrs.push_back(new BrInstr(if_true_block));
+    } else if (exp_info.type.is_bool) {
+        cur_ir_basic_block->instrs.push_back(new BrInstr(exp_info.ir_value, if_true_block, if_false_block));
+    } else { // int -> bool
+        auto icmp_instr = new IcmpInstr(Utils::get_next_counter(), CmpType::NE, exp_info.ir_value, new IntConst(0));
+        cur_ir_basic_block->instrs.push_back(icmp_instr);
+        cur_ir_basic_block->instrs.push_back(new BrInstr(icmp_instr, if_true_block, if_false_block));
+    }
 }
 
 void Visitor::visit_eq_exp(const EqExp &eq_exp) {
