@@ -945,21 +945,87 @@ void Visitor::visit_land_exp(const LAndExp &land_exp) {
     }
 }
 
-void Visitor::visit_eq_exp(const EqExp &eq_exp) {
+ExpInfo Visitor::visit_eq_exp(const EqExp &eq_exp) { // == !=
+    ExpInfo expinfo1, expinfo2;
     if (!eq_exp.op) {
-        visit_rel_exp(*eq_exp.relexp);
+        return visit_rel_exp(*eq_exp.relexp);
     } else {
-        visit_eq_exp(*eq_exp.eqexp);
-        visit_rel_exp(*eq_exp.relexp);
+        expinfo1 = visit_eq_exp(*eq_exp.eqexp);
+        expinfo2 = visit_rel_exp(*eq_exp.relexp);
+    }
+    if (expinfo1.type.is_const && expinfo2.type.is_const) {
+        if (eq_exp.op->get_type() == Token::EQL)
+            return {true, false, expinfo1.int_value == expinfo2.int_value, Token::INTTK};
+        else
+            return {true, false, expinfo1.int_value != expinfo2.int_value, Token::INTTK};
+    } else {
+        Instruction* instr = nullptr;
+        if (!expinfo1.type.is_const && expinfo1.type.is_bool) {
+            instr = new ZextInstr(Utils::get_next_counter(), expinfo1.ir_value, &IR_INT);
+            cur_ir_basic_block->instrs.push_back(instr);
+            expinfo1.ir_value = instr;
+        }
+        if (!expinfo2.type.is_const && expinfo2.type.is_bool) {
+            instr = new ZextInstr(Utils::get_next_counter(), expinfo2.ir_value, &IR_INT);
+            cur_ir_basic_block->instrs.push_back(instr);
+            expinfo2.ir_value = instr;
+        }
+        instr = new IcmpInstr(Utils::get_next_counter(), (eq_exp.op->get_type() == Token::EQL) ? CmpType::EQ : CmpType::NE, expinfo1.ir_value, expinfo2.ir_value);
+        cur_ir_basic_block->instrs.push_back(instr);
+        return {false, false, Token::INTTK, instr};
     }
 }
 
-void Visitor::visit_rel_exp(const RelExp &rel_exp) {
+ExpInfo Visitor::visit_rel_exp(const RelExp &rel_exp) { // > < >= <=
+    ExpInfo expinfo1, expinfo2;
     if (!rel_exp.op) {
-        visit_add_exp(*rel_exp.addexp);
+        return visit_add_exp(*rel_exp.addexp);
     } else {
-        visit_rel_exp(*rel_exp.relexp);
-        visit_add_exp(*rel_exp.addexp);
+        expinfo1 = visit_rel_exp(*rel_exp.relexp);
+        expinfo2 = visit_add_exp(*rel_exp.addexp);
+    }
+    if (expinfo1.type.is_const && expinfo2.type.is_const) { // constant optimization
+        switch (rel_exp.op->get_type()) {
+            case Token::LSS:
+                return {true, false, expinfo1.int_value < expinfo2.int_value, Token::INTTK};
+                break;
+            case Token::LEQ:
+                return {true, false, expinfo1.int_value <= expinfo2.int_value, Token::INTTK};
+                break;
+            case Token::GRE:
+                return {true, false, expinfo1.int_value > expinfo2.int_value, Token::INTTK};
+                break;
+            case Token::GEQ:
+                return {true, false, expinfo1.int_value >= expinfo2.int_value, Token::INTTK};
+                break;       
+            default:
+                break;
+        }
+    } else {
+        if (!expinfo1.type.is_const && expinfo1.type.is_bool) {
+            auto instr = new ZextInstr(Utils::get_next_counter(), expinfo1.ir_value, &IR_INT);
+            cur_ir_basic_block->instrs.push_back(instr);
+            expinfo1.ir_value = instr;
+        }
+        Instruction* instr = nullptr;
+        switch (rel_exp.op->get_type()) {
+            case Token::LSS:
+                instr = new IcmpInstr(Utils::get_next_counter(), CmpType::SLT, expinfo1.ir_value, expinfo2.ir_value);
+                break;
+            case Token::LEQ:
+                instr = new IcmpInstr(Utils::get_next_counter(), CmpType::SLE, expinfo1.ir_value, expinfo2.ir_value);
+                break;
+            case Token::GRE:
+                instr = new IcmpInstr(Utils::get_next_counter(), CmpType::SGT, expinfo1.ir_value, expinfo2.ir_value);
+                break;
+            case Token::GEQ:
+                instr = new IcmpInstr(Utils::get_next_counter(), CmpType::SGE, expinfo1.ir_value, expinfo2.ir_value);
+                break;        
+            default:
+                break;
+        }
+        cur_ir_basic_block->instrs.push_back(instr);
+        return {false, false, Token::INTTK, instr};
     }
 }
 

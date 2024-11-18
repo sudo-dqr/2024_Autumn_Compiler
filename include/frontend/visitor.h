@@ -75,8 +75,8 @@ private:
     void visit_cond(const Cond &cond);
     void visit_lor_exp(const LOrExp &lor_exp);
     void visit_land_exp(const LAndExp &land_exp);
-    void visit_eq_exp(const EqExp &eq_exp);
-    void visit_rel_exp(const RelExp &rel_exp);
+    ExpInfo visit_eq_exp(const EqExp &eq_exp);
+    ExpInfo visit_rel_exp(const RelExp &rel_exp);
 };
 
 #endif //COMPILER_VISITOR_H
