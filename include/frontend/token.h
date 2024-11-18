@@ -20,6 +20,8 @@ class Token {
     public:
         Token(std::string token, TokenType type, int line_number);
         ~Token();
+        int get_int();
+        char get_char();
         std::string get_token();
         TokenType get_type();
         int get_line_number();
