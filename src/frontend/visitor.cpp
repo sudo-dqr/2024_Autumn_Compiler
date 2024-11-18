@@ -1035,8 +1035,9 @@ ExpInfo Visitor::visit_rel_exp(const RelExp &rel_exp) { // > < >= <=
     }
 }
 
-void Visitor::print_symbol_list(std::ostream &os) {
+void Visitor::print_symbol_list() {
     // bubble_sort by scope_cnt
+    std::ofstream symbol_out("symbol_list.txt", std::ios::trunc);
     for (int i = 0; i < symbol_list.size(); i++) {
         for (int j = 0; j < symbol_list.size() - i - 1; j++) {
             if (symbol_list[j].scope_cnt > symbol_list[j + 1].scope_cnt) {
@@ -1045,6 +1046,7 @@ void Visitor::print_symbol_list(std::ostream &os) {
         }
     }
     for (const auto &symbol : symbol_list) {
-        os << symbol.scope_cnt << " " << symbol.name << " " << symbol.type.to_string() << std::endl;
+        symbol_out << symbol.scope_cnt << " " << symbol.name << " " << symbol.type.to_string() << std::endl;
     }
+    symbol_out.close();
 }

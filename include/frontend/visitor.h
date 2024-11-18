@@ -15,7 +15,7 @@ class Visitor {
 public:
     Visitor();
     void visit(const CompUnit &comp_unit);
-    void print_symbol_list(std::ostream &os);
+    void print_symbol_list();
 
 private:
     std::shared_ptr<SymbolTable> cur_scope;

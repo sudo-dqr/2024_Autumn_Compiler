@@ -3,7 +3,9 @@
 //! This file is the definition of Value and other subclasses of Value in LLVM IR.
 
 #include "type.h"
+#include "utils.h"
 #include <memory>
+#include <fstream>
 
 // 前向声明 Instruction 类 头文件需要另外包含在.cpp文件中
 struct Instruction;
@@ -76,7 +78,7 @@ struct Function : public Value {
     Function(std::string name, FunctionType* function_type) : Value(name, type) {
         auto args_type = function_type->arg_types;
         for (const auto &arg: args_type) {
-            auto param = FParam(114514,arg); //! id error
+            auto param = FParam(Utils::get_next_counter(),arg); //! id error
             fparams.push_back(&param); 
         }
         
@@ -93,6 +95,12 @@ struct Module : public IRPrintable {
         std::vector<GlobalVariable*> global_variables;
         std::vector<Function*> functions;
         void print(std::ostream &os) const override;
+        void print_llvm_ir() const {
+            std::ofstream llvm_ir_out("llvm_ir.txt", std::ios::trunc);
+            print(llvm_ir_out);
+            llvm_ir_out.close();
+        }
+
         static Module& get_instance() {
             static Module instance;
             return instance;

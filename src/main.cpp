@@ -12,8 +12,6 @@ int main() {
         std::cout << "testfile not found!" << std::endl;
         return 1;
     }
-    std::ofstream error_out("error.txt", std::ios::trunc);
-    error_out.close();
     std::stringstream buffer;
     buffer << file.rdbuf();
     std::string text = buffer.str();
@@ -22,9 +20,8 @@ int main() {
     auto comp_unit = parser.parse();
     Visitor visitor = Visitor();
     visitor.visit(*comp_unit);
-    std::ofstream symbol_table_out("symbol.txt", std::ios::trunc);
-    visitor.print_symbol_list(symbol_table_out);
-    symbol_table_out.close();
+    visitor.print_symbol_list();
+    Module::get_instance().print_llvm_ir();
     ErrorList::print_errors();
     return 0;
 }
