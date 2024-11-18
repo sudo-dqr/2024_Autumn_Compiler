@@ -1,5 +1,10 @@
 #include "visitor.h"
-#include "utils.h"
+
+Function* Visitor::getint_func = new Function("getint", new FunctionType(&IR_INT, std::vector<ValueType*>()));
+Function* Visitor::getchar_func = new Function("getchar", new FunctionType(&IR_CHAR, std::vector<ValueType*>()));
+Function* Visitor::putint_func = new Function("putint", new FunctionType(&IR_VOID, std::vector<ValueType*>{&IR_INT}));
+Function* Visitor::putchar_func = new Function("putchar", new FunctionType(&IR_VOID, std::vector<ValueType*>{&IR_CHAR}));
+Function* Visitor::putstr_func = new Function("putstr", new FunctionType(&IR_VOID, std::vector<ValueType*>{new PointerType(&IR_CHAR)}));
 
 Visitor::Visitor() {
     cur_scope = std::make_shared<SymbolTable>();
@@ -14,11 +19,6 @@ Visitor::Visitor() {
     if_true_block = nullptr;
     if_false_block = nullptr;
     for_stack = std::deque<BasicBlock*>();
-    getint = new Function("getint", new FunctionType(&IR_INT, std::vector<ValueType*>()));
-    getchar = new Function("getchar", new FunctionType(&IR_CHAR, std::vector<ValueType*>()));
-    putint = new Function("putint", new FunctionType(&IR_VOID, std::vector<ValueType*>{&IR_INT}));
-    putchar = new Function("putchar", new FunctionType(&IR_VOID, std::vector<ValueType*>{&IR_CHAR}));
-    putstr = new Function("putstr", new FunctionType(&IR_VOID, std::vector<ValueType*>{new PointerType(&IR_CHAR)}));
 }
 
 
@@ -578,7 +578,7 @@ void Visitor::visit_get_int_stmt(const GetIntStmt &get_int_stmt) {
             ErrorList::report_error(get_int_stmt.lval->ident->ident->get_line_number(), 'h');
         } else {
             auto lval = cur_ir_lval;
-            auto call_instr = new CallInstr(Utils::get_next_counter(), getint, std::vector<Value*>{});
+            auto call_instr = new CallInstr(Utils::get_next_counter(), &IR_INT, getint_func, std::vector<Value*>{});
             cur_ir_basic_block->instrs.push_back(call_instr);
         }
     }
@@ -591,7 +591,7 @@ void Visitor::visit_get_char_stmt(const GetCharStmt &get_char_stmt) {
             ErrorList::report_error(get_char_stmt.lval->ident->ident->get_line_number(), 'h');
         } else {
             auto lval = cur_ir_lval;
-            auto call_instr = new CallInstr(Utils::get_next_counter(), getchar, std::vector<Value*>{});
+            auto call_instr = new CallInstr(Utils::get_next_counter(), &IR_CHAR, getchar_func, std::vector<Value*>{});
             cur_ir_basic_block->instrs.push_back(call_instr);
         }
     }
@@ -648,13 +648,13 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
             if (str_end == i) { // %d | %c
                 CallInstr* call_instr = nullptr;
                 if (format_str[i + 1] == 'd') 
-                    call_instr = new CallInstr(Utils::get_next_counter(), putint, std::vector<Value*>{exp_infos[pos++].ir_value});
+                    call_instr = new CallInstr(putint_func, std::vector<Value*>{exp_infos[pos++].ir_value});
                 else if (format_str[i + 1] == 'c') 
-                    call_instr = new CallInstr(Utils::get_next_counter(), putchar, std::vector<Value*>{exp_infos[pos++].ir_value});
+                    call_instr = new CallInstr(putchar_func, std::vector<Value*>{exp_infos[pos++].ir_value});
                 cur_ir_basic_block->instrs.push_back(call_instr);
                 i += 2;
             } else if (str_end = i + 1) { // single char
-                CallInstr* call_instr = new CallInstr(Utils::get_next_counter(), putchar, std::vector<Value*>{new CharConst(format_str[i])});
+                CallInstr* call_instr = new CallInstr(putchar_func, std::vector<Value*>{new CharConst(format_str[i])});
                 cur_ir_basic_block->instrs.push_back(call_instr);
                 i += 1;
             } else { // global variable
@@ -665,7 +665,7 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
                 auto global_var_pointer = new PointerType(&IR_CHAR);
                 auto *global_var = new GlobalVariable(global_var_name, global_var_pointer, global_var_value);
                 Module::get_instance().global_variables.push_back(global_var);
-                auto call_instr = new CallInstr(Utils::get_next_counter(), putstr, std::vector<Value*>(global_var));
+                auto call_instr = new CallInstr(putstr_func, std::vector<Value*>{global_var});
                 cur_ir_basic_block->instrs.push_back(call_instr);
                 i += length; 
             }
@@ -694,7 +694,7 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
         if (lval.exp) {
             ExpInfo exp_info = visit_exp(*lval.exp);
             auto index = exp_info.ir_value;
-            auto pointer_type = new PointerType(array->get_type());
+            auto pointer_type = new PointerType(array->type);
             auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, array, index);
             cur_ir_basic_block->instrs.push_back(getelementptr_instr);
             cur_ir_lval = getelementptr_instr;
@@ -749,11 +749,11 @@ ExpInfo Visitor::visit_add_exp(const AddExp &add_exp) {
                 instr = info1.ir_value;
             } else {
                 if (add_exp.op->get_type() == Token::PLUS) {
-                    instr = new ArithmeticInstr(Utils::get_next_counter(), AriType::ADD, info1.ir_value, info2.ir_value);
+                    instr = new ArithmeticInstr(Utils::get_next_counter(), ArithmeticInstr::ADD, info1.ir_value, info2.ir_value);
                 } else {
-                    instr = new ArithmeticInstr(Utils::get_next_counter(), AriType::SUB, info1.ir_value, info2.ir_value);
+                    instr = new ArithmeticInstr(Utils::get_next_counter(), ArithmeticInstr::SUB, info1.ir_value, info2.ir_value);
                 }
-                cur_ir_basic_block->instrs.push_back(instr);
+                cur_ir_basic_block->instrs.push_back(dynamic_cast<Instruction*>(instr));
             }
             return {false, false, Token::INTTK, instr};
         }
@@ -788,13 +788,13 @@ ExpInfo Visitor::visit_mul_exp(const MulExp &mul_exp) {
                 return {false, false, 0, Token::INTTK};
             } else {
                 if (mul_exp.op->get_type() == Token::MULT) {
-                    instr = new ArithmeticInstr(Utils::get_next_counter(), AriType::MUL, info1.ir_value, info2.ir_value);
+                    instr = new ArithmeticInstr(Utils::get_next_counter(), ArithmeticInstr::MUL, info1.ir_value, info2.ir_value);
                 } else if (mul_exp.op->get_type() == Token::DIV) {
-                    instr = new ArithmeticInstr(Utils::get_next_counter(), AriType::DIV, info1.ir_value, info2.ir_value);
+                    instr = new ArithmeticInstr(Utils::get_next_counter(), ArithmeticInstr::SDIV, info1.ir_value, info2.ir_value);
                 } else {
-                    instr = new ArithmeticInstr(Utils::get_next_counter(), AriType::MOD, info1.ir_value, info2.ir_value);
+                    instr = new ArithmeticInstr(Utils::get_next_counter(), ArithmeticInstr::SREM, info1.ir_value, info2.ir_value);
                 }
-                cur_ir_basic_block->instrs.push_back(instr);
+                cur_ir_basic_block->instrs.push_back(dynamic_cast<Instruction*>(instr));
             }
             return {false, false, Token::INTTK, instr};
         }
@@ -809,66 +809,70 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
         std::shared_ptr<Symbol> ident_symbol = cur_scope->get_symbol(ident);
         if (!ident_symbol) { // c error : undefined identifier
             ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'c');
-            return {false, false, 0, Token::END};
-        }
-        std::vector<Value*> ir_rparams;
-        if (unary_exp.func_rparams) {
-            if (unary_exp.func_rparams->exps.size() != ident_symbol->type.params.size()) {
-                ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'd');
-                return {false, false, 0, Token::END};
-            } else { // e problem : how to know real param type?
-                for (int i = 0; i < ident_symbol->type.params.size(); i++) {
-                    SymbolType type = ident_symbol->type.params[i].type;
-                    Token::TokenType f_param_type = type.btype;
-                    bool f_param_is_array = type.is_array;
-                    ExpInfo r_param_info = visit_exp(*unary_exp.func_rparams->exps[i]);
-                    Token::TokenType r_param_type = r_param_info.type;
-                    bool r_param_is_array = r_param_info.is_array;
-                    if ((r_param_is_array && !f_param_is_array) || (!r_param_is_array && f_param_is_array)
-                        || (r_param_is_array && f_param_is_array && (r_param_type != f_param_type))) {
-                        ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'e');
-                        return {false, false, 0, Token::END};
-                    } else {
-                        ir_rparams.push_back(r_param_info.ir_value);
+            return ExpInfo(false, false, 0, Token::END);
+        } else {
+            std::vector<Value*> ir_rparams;
+            if (unary_exp.func_rparams) {
+                if (unary_exp.func_rparams->exps.size() != ident_symbol->type.params.size()) {
+                    ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'd');
+                    return ExpInfo(false, false, 0, Token::END);
+                } else { // e problem : how to know real param type?
+                    for (int i = 0; i < ident_symbol->type.params.size(); i++) {
+                        SymbolType type = ident_symbol->type.params[i].type;
+                        Token::TokenType f_param_type = type.btype;
+                        bool f_param_is_array = type.is_array;
+                        ExpInfo r_param_info = visit_exp(*unary_exp.func_rparams->exps[i]);
+                        Token::TokenType r_param_type = r_param_info.type;
+                        bool r_param_is_array = r_param_info.is_array;
+                        if ((r_param_is_array && !f_param_is_array) || (!r_param_is_array && f_param_is_array)
+                            || (r_param_is_array && f_param_is_array && (r_param_type != f_param_type))) {
+                            ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'e');
+                            return ExpInfo(false, false, 0, Token::END);
+                        } else {
+                            ir_rparams.push_back(r_param_info.ir_value);
+                        }
                     }
                 }
-            }
-        } else {
-            if (!ident_symbol->type.params.empty()) {
+            } else if (!ident_symbol->type.params.empty()) {
                 ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'd');
-                return {false, false, 0, Token::END};
+                return ExpInfo(false, false, 0, Token::END);
             }
+            Instruction* call_instr = nullptr;
+            if (is_void_func)
+                call_instr = new CallInstr(dynamic_cast<Function*>(ident_symbol->ir_value), ir_rparams);
+            else if (ident_symbol->type.btype == Token::INTTK)
+                call_instr = new CallInstr(Utils::get_next_counter(), &IR_INT, dynamic_cast<Function*>(ident_symbol->ir_value), ir_rparams);
+            else 
+                call_instr = new CallInstr(Utils::get_next_counter(), &IR_CHAR, dynamic_cast<Function*>(ident_symbol->ir_value), ir_rparams);
+            cur_ir_basic_block->instrs.push_back(call_instr);
+            return ExpInfo(false, false, Token::INTTK, call_instr);
         }
-        Instruction* call_instr = nullptr;
-        if (is_void_func)
-            call_instr = new CallInstr(dynamic_cast<Function*>(ident_symbol->ir_value), ir_rparams);
-        else
-            call_instr = new CallInstr(Utils::get_next_counter(), dynamic_cast<Function*>(ident_symbol->ir_value), ir_rparams);
-        cur_ir_basic_block->instrs.push_back(call_instr);
-        return {false, false, Token::INTTK, call_instr};
     } else { // + - ! UnaryExp
-        Expinfo unary_info = visit_unary_exp(*unary_exp.unary_exp);
-        if (unary_exp.is_const) { // constant optimazation
-            if (unary_exp.op->get_type() == Token::PLUS) {
-                return {false, false, unary_info.int_value, Token::INTTK};
-            } else if (unary_exp.op->get_type() == Token::MINU) {
-                return {false, false, -unary_info.int_value, Token::INTTK};
+        ExpInfo unary_info = visit_unary_exp(*unary_exp.unary_exp);
+        if (unary_info.is_const) { // constant optimazation
+            if ((*unary_exp.unary_op->op).get_type() == Token::PLUS) {
+                return ExpInfo(false, false, unary_info.int_value, Token::INTTK);
+            } else if ((*unary_exp.unary_op->op).get_type() == Token::MINU) {
+                return ExpInfo(false, false, -unary_info.int_value, Token::INTTK);
             } else {
-                return {false, false, (unary_info.int_value == 0) ? 1 : 0, Token::INTTK};
+                return ExpInfo(false, false, !unary_info.int_value, Token::INTTK);
             }
-        } else if (unary_exp.op->get_type() == Token::PLUS) {
+        } else if ((*unary_exp.unary_op->op).get_type() == Token::PLUS) {
             return unary_info;
-        } else if (unary_exp.op->get_type() == Token::MINU) {
-            auto instr = new ArithmeticInstr(Utils::get_next_counter(), AriType::SUB, new IntConst(0), unary_info.ir_value);
+        } else if ((*unary_exp.unary_op->op).get_type() == Token::MINU) {
+            auto instr = new ArithmeticInstr(Utils::get_next_counter(), ArithmeticInstr::SUB, new IntConst(0), unary_info.ir_value);
             cur_ir_basic_block->instrs.push_back(instr);
-            return {false, false, Token::INTTK, instr};
-        } else if (unary_exp.op->get_type() == Token::NOT) {
+            return ExpInfo(false, false, Token::INTTK, instr);
+        } else if ((*unary_exp.unary_op->op).get_type() == Token::NOT) {
             // 运算指令中没有 ! 操作, 首先使用icmp指令判断是否为0, 然后使用zext将结果转换为int
-            auto icmp_instr = new IcmpInstr(Utils::get_next_counter(), CmpType::EQ, unary_info.ir_value, new IntConst(0));
+            auto icmp_instr = new IcmpInstr(Utils::get_next_counter(), IcmpInstr::EQ, unary_info.ir_value, new IntConst(0));
             cur_ir_basic_block->instrs.push_back(icmp_instr);
             auto zext_instr = new ZextInstr(Utils::get_next_counter(), icmp_instr, &IR_INT);
             cur_ir_basic_block->instrs.push_back(zext_instr);
-            return {false, false, Token::INTTK, (Value*)zext_instr};
+            return ExpInfo(false, false, Token::INTTK, zext_instr);
+        } else {
+            std::cout << "Invalid operate in unary_exp" << std::endl;
+            return ExpInfo(false, false, 0, Token::END);
         }
     }
 }
@@ -877,29 +881,30 @@ ExpInfo Visitor::visit_primary_exp(const PrimaryExp &primary_exp) {
     if (auto exp_ptr = std::get_if<Exp>(&primary_exp)) {
         return visit_exp(*exp_ptr);
     } else if (auto num_ptr = std::get_if<Number>(&primary_exp)) {
-        return {false, false, num_ptr->num->get_int(), Token::INTTK};
+        return ExpInfo(true, false, num_ptr->num->get_int(), Token::INTTK);
     } else if (auto char_ptr = std::get_if<Character>(&primary_exp)) {
-        return {false, false, char_ptr->ch->get_char(), Token::CHARTK};
+        return ExpInfo(true, false, char_ptr->ch->get_char(), Token::CHARTK);
     } else if (auto lval_ptr = std::get_if<LVal>(&primary_exp)) {
         auto lval_symbol = visit_lval(*lval_ptr);
         if (lval_symbol) {
             if (auto intconst_ptr = dynamic_cast<IntConst*>(lval_symbol->ir_value)) {
-                return {false, false, intconst_ptr->value, Token::INTTK};
+                return ExpInfo(true, false, intconst_ptr->value, Token::INTTK);
             } else {
-                if (lval_symbol->exp) { // int / char 
+                if (lval_ptr->exp) { // int / char 
                     auto load_instr = new LoadInstr(Utils::get_next_counter(), lval_symbol->ir_value);
                     cur_ir_basic_block->instrs.push_back(load_instr);
-                    return {false, false, Token::INTTK, load_instr};
+                    return ExpInfo(false, false, Token::INTTK, load_instr);
                 } else { // may be array
-                    return {false, lval_symbol->type.is_array, Token::INTTK, lval_symbol->ir_value};
+                    return ExpInfo(false, true, Token::INTTK, lval_symbol->ir_value);
                 }
             }
         } else {
-            return {false, false, 0, Token::END};
+            std::cout << "Invalid LVal in PrimaryExp Variant" << std::endl;
+            return ExpInfo(false, false, 0, Token::END);
         }
     } else {
-        std::cout << "visit_primary_exp error" << std::endl;
-        return {false, false, 0, Token::END};
+        std::cout << "Invalid Type of PrimaryExp Variant" << std::endl;
+        return ExpInfo(false, false, 0, Token::END);
     }
 }
 
@@ -912,7 +917,7 @@ void Visitor::visit_lor_exp(const LOrExp &lor_exp) {
         if_stack.push_back(if_false_block); // save the orginal if_false_block
         if_false_block = new BasicBlock(-1);
         visit_lor_exp(*lor_exp.lorexp);
-        if_false_block.id = Utils::get_next_counter();
+        if_false_block->id = Utils::get_next_counter();
         cur_ir_basic_block = if_false_block;
         cur_ir_function->basic_blocks.push_back(if_false_block);
         if_false_block = if_stack.back();
@@ -926,20 +931,20 @@ void Visitor::visit_land_exp(const LAndExp &land_exp) {
         if_stack.push_back(if_true_block); // save the orginal if_true_block
         if_true_block = new BasicBlock(-1);
         visit_land_exp(*land_exp.landexp);
-        if_true_block.id = Utils::get_next_counter();
+        if_true_block->id = Utils::get_next_counter();
         cur_ir_basic_block = if_true_block;
         cur_ir_function->basic_blocks.push_back(if_true_block);
         if_true_block = if_stack.back();
         if_stack.pop_back();
     }
     ExpInfo exp_info = visit_eq_exp(*land_exp.eqexp);
-    if (exp_info.type.is_const) {
+    if (exp_info.is_const) {
         if (exp_info.int_value == 0) cur_ir_basic_block->instrs.push_back(new BrInstr(if_false_block));
         else cur_ir_basic_block->instrs.push_back(new BrInstr(if_true_block));
-    } else if (exp_info.type.is_bool) {
+    } else if (exp_info.is_bool) {
         cur_ir_basic_block->instrs.push_back(new BrInstr(exp_info.ir_value, if_true_block, if_false_block));
     } else { // int -> bool
-        auto icmp_instr = new IcmpInstr(Utils::get_next_counter(), CmpType::NE, exp_info.ir_value, new IntConst(0));
+        auto icmp_instr = new IcmpInstr(Utils::get_next_counter(), IcmpInstr::NE, exp_info.ir_value, new IntConst(0));
         cur_ir_basic_block->instrs.push_back(icmp_instr);
         cur_ir_basic_block->instrs.push_back(new BrInstr(icmp_instr, if_true_block, if_false_block));
     }
@@ -953,79 +958,80 @@ ExpInfo Visitor::visit_eq_exp(const EqExp &eq_exp) { // == !=
         expinfo1 = visit_eq_exp(*eq_exp.eqexp);
         expinfo2 = visit_rel_exp(*eq_exp.relexp);
     }
-    if (expinfo1.type.is_const && expinfo2.type.is_const) {
+    if (expinfo1.is_const && expinfo2.is_const) {
         if (eq_exp.op->get_type() == Token::EQL)
             return {true, false, expinfo1.int_value == expinfo2.int_value, Token::INTTK};
         else
             return {true, false, expinfo1.int_value != expinfo2.int_value, Token::INTTK};
     } else {
         Instruction* instr = nullptr;
-        if (!expinfo1.type.is_const && expinfo1.type.is_bool) {
+        if (!expinfo1.is_const && expinfo1.is_bool) {
             instr = new ZextInstr(Utils::get_next_counter(), expinfo1.ir_value, &IR_INT);
             cur_ir_basic_block->instrs.push_back(instr);
             expinfo1.ir_value = instr;
         }
-        if (!expinfo2.type.is_const && expinfo2.type.is_bool) {
+        if (!expinfo2.is_const && expinfo2.is_bool) {
             instr = new ZextInstr(Utils::get_next_counter(), expinfo2.ir_value, &IR_INT);
             cur_ir_basic_block->instrs.push_back(instr);
             expinfo2.ir_value = instr;
         }
-        instr = new IcmpInstr(Utils::get_next_counter(), (eq_exp.op->get_type() == Token::EQL) ? CmpType::EQ : CmpType::NE, expinfo1.ir_value, expinfo2.ir_value);
+        instr = new IcmpInstr(Utils::get_next_counter(), (eq_exp.op->get_type() == Token::EQL) ? IcmpInstr::EQ : IcmpInstr::NE, expinfo1.ir_value, expinfo2.ir_value);
         cur_ir_basic_block->instrs.push_back(instr);
         return {false, false, Token::INTTK, instr};
     }
 }
 
 ExpInfo Visitor::visit_rel_exp(const RelExp &rel_exp) { // > < >= <=
-    ExpInfo expinfo1, expinfo2;
     if (!rel_exp.op) {
         return visit_add_exp(*rel_exp.addexp);
     } else {
-        expinfo1 = visit_rel_exp(*rel_exp.relexp);
-        expinfo2 = visit_add_exp(*rel_exp.addexp);
-    }
-    if (expinfo1.type.is_const && expinfo2.type.is_const) { // constant optimization
-        switch (rel_exp.op->get_type()) {
-            case Token::LSS:
-                return {true, false, expinfo1.int_value < expinfo2.int_value, Token::INTTK};
-                break;
-            case Token::LEQ:
-                return {true, false, expinfo1.int_value <= expinfo2.int_value, Token::INTTK};
-                break;
-            case Token::GRE:
-                return {true, false, expinfo1.int_value > expinfo2.int_value, Token::INTTK};
-                break;
-            case Token::GEQ:
-                return {true, false, expinfo1.int_value >= expinfo2.int_value, Token::INTTK};
-                break;       
-            default:
-                break;
-        }
-    } else {
-        if (!expinfo1.type.is_const && expinfo1.type.is_bool) {
-            auto instr = new ZextInstr(Utils::get_next_counter(), expinfo1.ir_value, &IR_INT);
+        ExpInfo expinfo1 = visit_rel_exp(*rel_exp.relexp);
+        ExpInfo expinfo2 = visit_add_exp(*rel_exp.addexp);
+        if (expinfo1.is_const && expinfo2.is_const) { // constant optimization
+            switch (rel_exp.op->get_type()) {
+                case Token::LSS:
+                    return ExpInfo(true, false, expinfo1.int_value < expinfo2.int_value, Token::INTTK);
+                    break;
+                case Token::LEQ:
+                    return ExpInfo(true, false, expinfo1.int_value <= expinfo2.int_value, Token::INTTK);
+                    break;
+                case Token::GRE:
+                    return ExpInfo(true, false, expinfo1.int_value > expinfo2.int_value, Token::INTTK);
+                    break;
+                case Token::GEQ:
+                    return ExpInfo(true, false, expinfo1.int_value >= expinfo2.int_value, Token::INTTK);
+                    break;       
+                default:
+                    std::cout << "Invalid Operater in rel_exp" << std::endl;
+                    return ExpInfo(false, false, 0, Token::END);
+                    break;
+            }
+        } else {
+            if (!expinfo1.is_const && expinfo1.is_bool) {
+                auto instr = new ZextInstr(Utils::get_next_counter(), expinfo1.ir_value, &IR_INT);
+                cur_ir_basic_block->instrs.push_back(instr);
+                expinfo1.ir_value = instr;
+            }
+            Instruction* instr = nullptr;
+            switch (rel_exp.op->get_type()) {
+                case Token::LSS:
+                    instr = new IcmpInstr(Utils::get_next_counter(), IcmpInstr::SLT, expinfo1.ir_value, expinfo2.ir_value);
+                    break;
+                case Token::LEQ:
+                    instr = new IcmpInstr(Utils::get_next_counter(), IcmpInstr::SLE, expinfo1.ir_value, expinfo2.ir_value);
+                    break;
+                case Token::GRE:
+                    instr = new IcmpInstr(Utils::get_next_counter(), IcmpInstr::SGT, expinfo1.ir_value, expinfo2.ir_value);
+                    break;
+                case Token::GEQ:
+                    instr = new IcmpInstr(Utils::get_next_counter(), IcmpInstr::SGE, expinfo1.ir_value, expinfo2.ir_value);
+                    break;        
+                default:
+                    break;
+            }
             cur_ir_basic_block->instrs.push_back(instr);
-            expinfo1.ir_value = instr;
+            return ExpInfo(false, false, Token::INTTK, instr);
         }
-        Instruction* instr = nullptr;
-        switch (rel_exp.op->get_type()) {
-            case Token::LSS:
-                instr = new IcmpInstr(Utils::get_next_counter(), CmpType::SLT, expinfo1.ir_value, expinfo2.ir_value);
-                break;
-            case Token::LEQ:
-                instr = new IcmpInstr(Utils::get_next_counter(), CmpType::SLE, expinfo1.ir_value, expinfo2.ir_value);
-                break;
-            case Token::GRE:
-                instr = new IcmpInstr(Utils::get_next_counter(), CmpType::SGT, expinfo1.ir_value, expinfo2.ir_value);
-                break;
-            case Token::GEQ:
-                instr = new IcmpInstr(Utils::get_next_counter(), CmpType::SGE, expinfo1.ir_value, expinfo2.ir_value);
-                break;        
-            default:
-                break;
-        }
-        cur_ir_basic_block->instrs.push_back(instr);
-        return {false, false, Token::INTTK, instr};
     }
 }
 

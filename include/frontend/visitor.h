@@ -7,6 +7,7 @@
 #include "type.h"
 #include "value.h"
 #include "instr.h"
+#include "utils.h"
 #include <algorithm>
 #include <deque>
 
@@ -32,11 +33,11 @@ private:
     //! for_stack is like | cond block | (assign2 block) | stmt | next normal block | 
     std::deque<BasicBlock*> for_stack;
     // getint getchar putint putch putstr
-    static Function* getint;
-    static Function* getchar;
-    static Function* putint;
-    static Function* putchar;
-    static Function* putstr;
+    static Function* getint_func;
+    static Function* getchar_func;
+    static Function* putint_func;
+    static Function* putchar_func;
+    static Function* putstr_func;
 
 
     void visit_decl(const Decl &decl);

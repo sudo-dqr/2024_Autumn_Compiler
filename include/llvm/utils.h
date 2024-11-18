@@ -1,6 +1,8 @@
 #ifndef IR_UTILS_H
 #define IR_UTILS_H
 
+#include <string>
+
 struct Utils {
     static int counter;
     static void reset_counter() { counter = -1; }
