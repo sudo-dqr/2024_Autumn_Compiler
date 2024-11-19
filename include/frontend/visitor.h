@@ -36,7 +36,7 @@ private:
     static Function* getint_func;
     static Function* getchar_func;
     static Function* putint_func;
-    static Function* putchar_func;
+    static Function* putch_func;
     static Function* putstr_func;
 
 

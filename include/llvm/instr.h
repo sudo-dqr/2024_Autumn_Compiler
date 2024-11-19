@@ -77,8 +77,8 @@ struct GetelementptrInstr : public Instruction {
     Value* array;
     std::vector<Value*> indices;
 
-    GetelementptrInstr(int dst_id, ValueType* type, Value* array, std::vector<Value*> indices) // value type是一个指针类型
-    : Instruction(dst_id, type), array(array), indices(indices) {}
+    GetelementptrInstr(int dst_id, ValueType* dst_type, Value* array, std::vector<Value*> indices) // value type是一个指针类型
+    : Instruction(dst_id, dst_type), array(array), indices(indices) {}
 
     void print(std::ostream &os) const override;
 };

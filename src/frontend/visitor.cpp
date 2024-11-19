@@ -3,7 +3,7 @@
 Function* Visitor::getint_func = new Function("getint", new FunctionType(&IR_INT, std::vector<ValueType*>()));
 Function* Visitor::getchar_func = new Function("getchar", new FunctionType(&IR_CHAR, std::vector<ValueType*>()));
 Function* Visitor::putint_func = new Function("putint", new FunctionType(&IR_VOID, std::vector<ValueType*>{&IR_INT}));
-Function* Visitor::putchar_func = new Function("putchar", new FunctionType(&IR_VOID, std::vector<ValueType*>{&IR_CHAR}));
+Function* Visitor::putch_func = new Function("putch", new FunctionType(&IR_VOID, std::vector<ValueType*>{&IR_CHAR}));
 Function* Visitor::putstr_func = new Function("putstr", new FunctionType(&IR_VOID, std::vector<ValueType*>{new PointerType(&IR_CHAR)}));
 
 Visitor::Visitor() {
@@ -649,15 +649,15 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
             if (str_end == i) { // %d | %c | \n
                 CallInstr* call_instr = nullptr;
                 if (format_str[i] == '\\')
-                    call_instr = new CallInstr(putchar_func, std::vector<Value*>{new CharConst('\n')});
+                    call_instr = new CallInstr(putch_func, std::vector<Value*>{new IntConst('\n')});
                 else if (format_str[i + 1] == 'd') 
                     call_instr = new CallInstr(putint_func, std::vector<Value*>{exp_infos[pos++].ir_value});
                 else if (format_str[i + 1] == 'c') 
-                    call_instr = new CallInstr(putchar_func, std::vector<Value*>{exp_infos[pos++].ir_value});
+                    call_instr = new CallInstr(putch_func, std::vector<Value*>{exp_infos[pos++].ir_value});
                 cur_ir_basic_block->instrs.push_back(call_instr);
                 i += 2;
             } else if (str_end == i + 1) { // single char
-                CallInstr* call_instr = new CallInstr(putchar_func, std::vector<Value*>{new CharConst(format_str[i])});
+                CallInstr* call_instr = new CallInstr(putch_func, std::vector<Value*>{new IntConst(format_str[i])});
                 cur_ir_basic_block->instrs.push_back(call_instr);
                 i += 1;
             } else { // global variable
@@ -672,7 +672,7 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
                 // 这里的全局变量是一个一维数组指针, 需要两个index
                 indices.push_back(new IntConst(0));
                 indices.push_back(new IntConst(0));
-                auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), global_var_type, global_var, indices);
+                auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), new PointerType(&IR_CHAR), global_var, indices);
                 cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                 auto call_instr = new CallInstr(putstr_func, std::vector<Value*>{getelementptr_instr});
                 cur_ir_basic_block->instrs.push_back(call_instr);

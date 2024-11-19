@@ -102,11 +102,10 @@ void CallInstr::print(std::ostream &os) const {
 void GetelementptrInstr::print(std::ostream &os) const {
     Instruction::print(os);
     os << "%" << id << " = getelementptr ";
-    type->print(os);
+    array->type->print(os);
     os << ", ";
-    auto array_ptr = (PointerType*)type; // i32 -> i32*
-    array_ptr->print(os);
-    os << " ";
+    array->type->print(os);
+    os << "* ";
     if (auto global_ptr = dynamic_cast<GlobalVariable*>(array)) os << "@" << array->name;
     else os << "%" << id;
     os << ", "; // index : i32
@@ -130,12 +129,16 @@ void IcmpInstr::print(std::ostream &os) const {
             break;
         case NE:
             os << "ne ";
+            break;
         case SGT:
             os << "sgt ";
+            break;
         case SGE:
             os << "sge ";
+            break;
         case SLT:
             os << "slt ";
+            break;
         case SLE:
             os << "sle ";
         default:
