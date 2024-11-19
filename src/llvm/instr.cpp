@@ -78,11 +78,11 @@ void CallInstr::print(std::ostream &os) const {
     if (auto void_ptr = dynamic_cast<VoidType*>(type)) {
         os << "call void @";
     } else {
-        os << "%" << id << "call ";
+        os << "%" << id << "= call ";
         type->print(os);
         os << " @";
     }
-    os << name << "(";
+    os << this->function->name << "(";
     for (int i = 0; i < args.size(); i++) {
         if (auto constexp_ptr = dynamic_cast<IntConst*>(args[i])) {
             os << "i32 ";
@@ -106,7 +106,8 @@ void GetelementptrInstr::print(std::ostream &os) const {
     os << ", ";
     auto array_ptr = (PointerType*)type; // i32 -> i32*
     array_ptr->print(os);
-    if (auto global_ptr = dynamic_cast<GlobalVariable*>(array)) os << "@" << name;
+    os << " ";
+    if (auto global_ptr = dynamic_cast<GlobalVariable*>(array)) os << "@" << array->name;
     else os << "%" << id;
     os << ", i32 "; // index : i32
     if (auto intconst_ptr = dynamic_cast<IntConst*>(index)) intconst_ptr->print(os);

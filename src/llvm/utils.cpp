@@ -5,12 +5,10 @@ int Utils::str_gv_cnt = -1;
 
 int Utils::cut_str(const std::string &str, int start) {
     int i = start;
-    while (i < str.length()) {
-        if (str[i] == '%' && i + 1 < str.length()) {
-            if (str[i + 1] == 'd' || str[i + 1] == 'c') {
-                break;
-            }
-        }
+    while (i < str.length() - 1) {
+        if (str[i] == '%' && i + 1 < str.length() - 1) {
+            if (str[i + 1] == 'd' || str[i + 1] == 'c') break;
+        } else if (str[i] == '\\') break;
         i++;
     }
     return i;

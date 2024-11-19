@@ -36,9 +36,9 @@ struct User : public Value {
 struct GlobalVariable : public Value {
     int int_value;
     char char_value;
-    std::vector<int> int_array_init_values; // int array
-    std::vector<char> char_array_init_values; // char array
-    std::string char_array_init_string; // string const 全局变量可以使用字符串常量直接初始化，局部变量不可以
+    std::vector<int> int_array_init_values = std::vector<int>(); // int array
+    std::vector<char> char_array_init_values = std::vector<char>(); // char array
+    std::string char_array_init_string = ""; // string const 全局变量可以使用字符串常量直接初始化，局部变量不可以
 
     GlobalVariable() = default;
     GlobalVariable(std::string name, ValueType* type, int int_value) 
@@ -49,7 +49,7 @@ struct GlobalVariable : public Value {
     : Value(name, type), int_array_init_values(int_array_init_values) {}
     GlobalVariable(std::string name, ValueType* type, std::vector<char> char_array_init_values) 
     : Value(name, type), char_array_init_values(char_array_init_values) {}
-    GlobalVariable(std::string name, ValueType* type, std::string str) 
+    GlobalVariable(std::string name, ValueType* type, std::string str) // 字符串全局变量 
     : Value(name, type), char_array_init_string(str) {}
 
     void print(std::ostream &os) const override;

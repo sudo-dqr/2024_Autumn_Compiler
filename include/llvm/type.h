@@ -19,8 +19,6 @@ struct ArrayType : public ValueType {
     int size;
 
     ArrayType(ValueType* element_type, int size) : element_type(element_type), size(size) {}
-    ValueType* get_element_type() { return element_type; }
-    int get_size() { return size; }
     void print(std::ostream &os) const override;   
 };
 
@@ -30,8 +28,6 @@ struct FunctionType : public ValueType {
 
     FunctionType(ValueType* return_type, std::vector<ValueType*> arg_types) : 
                     return_type(return_type), arg_types(arg_types) {}
-    ValueType* get_return_type() { return return_type; }
-    std::vector<ValueType*> get_arg_types() { return arg_types; }
     void print(std::ostream &os) const override;
 };
 

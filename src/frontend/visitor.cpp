@@ -642,18 +642,20 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
             exp_infos.push_back(visit_exp(*exp));
         }
         std::string format_str = printf_stmt.str->str->get_token();
-        int pos = 0, i = 0;
-        while (i < format_str.length()) {
+        int pos = 0, i = 1;
+        while (i < format_str.length() - 1) {
             int str_end = Utils::cut_str(format_str, i);
-            if (str_end == i) { // %d | %c
+            if (str_end == i) { // %d | %c | \n
                 CallInstr* call_instr = nullptr;
-                if (format_str[i + 1] == 'd') 
+                if (format_str[i] == '\\')
+                    call_instr = new CallInstr(putchar_func, std::vector<Value*>{new CharConst('\n')});
+                else if (format_str[i + 1] == 'd') 
                     call_instr = new CallInstr(putint_func, std::vector<Value*>{exp_infos[pos++].ir_value});
                 else if (format_str[i + 1] == 'c') 
                     call_instr = new CallInstr(putchar_func, std::vector<Value*>{exp_infos[pos++].ir_value});
                 cur_ir_basic_block->instrs.push_back(call_instr);
                 i += 2;
-            } else if (str_end = i + 1) { // single char
+            } else if (str_end == i + 1) { // single char
                 CallInstr* call_instr = new CallInstr(putchar_func, std::vector<Value*>{new CharConst(format_str[i])});
                 cur_ir_basic_block->instrs.push_back(call_instr);
                 i += 1;
@@ -662,10 +664,12 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
                 int global_var_id = Utils::get_next_str_cnt();
                 std::string global_var_name = "dqr" + std::to_string(global_var_id);
                 std::string global_var_value = format_str.substr(i, length);
-                auto global_var_pointer = new PointerType(&IR_CHAR);
-                auto *global_var = new GlobalVariable(global_var_name, global_var_pointer, global_var_value);
+                auto global_var_type = new ArrayType(&IR_CHAR, length + 1);
+                auto *global_var = new GlobalVariable(global_var_name, global_var_type, global_var_value);
                 Module::get_instance().global_variables.push_back(global_var);
-                auto call_instr = new CallInstr(putstr_func, std::vector<Value*>{global_var});
+                auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), new PointerType(&IR_CHAR), global_var, new IntConst(0));
+                cur_ir_basic_block->instrs.push_back(getelementptr_instr);
+                auto call_instr = new CallInstr(putstr_func, std::vector<Value*>{getelementptr_instr});
                 cur_ir_basic_block->instrs.push_back(call_instr);
                 i += length; 
             }
