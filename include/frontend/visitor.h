@@ -25,7 +25,7 @@ private:
     std::deque<Symbol> symbol_list;
     Function* cur_ir_function;
     BasicBlock* cur_ir_basic_block;
-    Value* cur_ir_lval; // lval = exp
+    Value* cur_ir_lval; // 主要使用场景为getint getchar, 在visit_lval中维护
     //! if_stack is like | normal block | (else block) | if block |
     std::deque<BasicBlock*> if_stack;
     BasicBlock* if_true_block;

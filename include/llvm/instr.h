@@ -2,6 +2,7 @@
 #define IR_INSTR_H
 
 #include "value.h"
+#include <deque>
 
 struct Instruction : public User {
     protected :
@@ -75,9 +76,9 @@ struct CallInstr : public Instruction { // void / int/char
 
 struct GetelementptrInstr : public Instruction {
     Value* array;
-    std::vector<Value*> indices;
+    std::deque<Value*> indices;
 
-    GetelementptrInstr(int dst_id, ValueType* dst_type, Value* array, std::vector<Value*> indices) // value type是一个指针类型
+    GetelementptrInstr(int dst_id, ValueType* dst_type, Value* array, std::deque<Value*> indices) // value type是一个指针类型
     : Instruction(dst_id, dst_type), array(array), indices(indices) {}
 
     void print(std::ostream &os) const override;

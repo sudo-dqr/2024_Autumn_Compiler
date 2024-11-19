@@ -161,7 +161,7 @@ void StoreInstr::print(std::ostream &os) const {
     store_value->type->print(os);
     os << " ";
     IntConst* intconst_ptr = nullptr;
-    if (intconst_ptr = dynamic_cast<IntConst*>(store_value->type)) intconst_ptr->print(os);
+    if (intconst_ptr = dynamic_cast<IntConst*>(store_value)) intconst_ptr->print(os);
     else os << "%" << store_value->id;
     os << ", ";
     dst_ptr->type->print(os);

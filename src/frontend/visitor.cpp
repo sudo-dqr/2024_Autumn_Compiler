@@ -112,7 +112,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
             cur_ir_basic_block->instrs.push_back(alloc_instr);
             if (auto const_exps_ptr = std::get_if<ConstExps>(&(*const_def.const_init_val))) {
                 for (int i = 0; i < const_exps_ptr->const_exps.size(); i++) {
-                    auto index = std::vector<Value*>{new IntConst(i)};
+                    auto index = std::deque<Value*>{new IntConst(i)};
                     PointerType* pointer_type = nullptr;
                     if (btype == Token::CHARTK) pointer_type = new PointerType(&IR_CHAR);
                     else pointer_type = new PointerType(&IR_INT);
@@ -127,7 +127,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                 auto string_const = string_const_ptr->str->get_token();
                 for (int i = 0; i < string_const.length(); i++) { 
                     auto pointer_type = PointerType(&IR_CHAR);
-                    auto index = std::vector<Value*>{new IntConst(i)};
+                    auto index = std::deque<Value*>{new IntConst(i)};
                     auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), &pointer_type, alloc_instr, index);
                     cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                     auto store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
@@ -178,7 +178,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
             }
             symbol->ir_value = global_variable;
             Module::get_instance().global_variables.push_back(global_variable);
-        } else { // 局部变量未初始化就是不store
+        } else {
             ValueType* type = nullptr;
             if (btype == Token::CHARTK) type = &IR_CHAR;
             else if (btype == Token::INTTK) type = &IR_INT;
@@ -188,12 +188,12 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
             if (var_def.init_val) {
                 if (auto exp_ptr = std::get_if<Exp>(&(*var_def.init_val))) {
                     exp_info = visit_exp(*exp_ptr);
-                    auto store_instr = new StoreInstr(exp_info.ir_value, alloc_instr);
+                    auto store_instr = new StoreInstr(exp_info.ir_value, symbol->ir_value);
                     cur_ir_basic_block->instrs.push_back(store_instr);
                 } else {
                     std::cout << "Invalid Variable Initval!" << std::endl;
                 }
-            }
+            } // else 局部变量未初始化就是不store
         }
     } else { // array
         //'{' [ Exp { ',' Exp } ] '}' | StringConst
@@ -238,7 +238,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
             if (var_def.init_val) {
                 if (auto exps_ptr = std::get_if<Exps>(&(*var_def.init_val))) {
                     for (int i = 0; i < exps_ptr->exps.size(); i++) {
-                        auto index = std::vector<Value*>{new IntConst(i)};
+                        auto index = std::deque<Value*>{new IntConst(i)};
                         PointerType* pointer_type = nullptr;
                         if (btype == Token::CHARTK) pointer_type = new PointerType(&IR_CHAR);
                         else pointer_type = new PointerType(&IR_INT);
@@ -253,7 +253,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                     auto string_const = string_const_ptr->str->get_token();
                     for (int i = 0; i < string_const.length(); i++) {
                         auto pointer_type = new PointerType(&IR_CHAR);
-                        auto index = std::vector<Value*>{new IntConst(i)};
+                        auto index = std::deque<Value*>{new IntConst(i)};
                         auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
                         cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                         auto store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
@@ -668,7 +668,7 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
                 auto global_var_type = new ArrayType(&IR_CHAR, length + 1);
                 auto *global_var = new GlobalVariable(global_var_name, global_var_type, global_var_value);
                 Module::get_instance().global_variables.push_back(global_var);
-                std::vector<Value*> indices = std::vector<Value*>();
+                std::deque<Value*> indices = std::deque<Value*>();
                 // 这里的全局变量是一个一维数组指针, 需要两个index
                 indices.push_back(new IntConst(0));
                 indices.push_back(new IntConst(0));
@@ -680,60 +680,6 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
             }
         }
     }
-}
-
-
-std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
-    auto ident = lval.ident->ident->get_token();
-    auto ident_symbol = cur_scope->get_symbol(ident);
-    if (!ident_symbol) { // c error : undefined identifier
-        ErrorList::report_error(lval.ident->ident->get_line_number(), 'c');
-        cur_ir_lval = nullptr;
-        return nullptr;
-    }
-    if (ident_symbol->type.is_array) {
-        Value* array = nullptr;
-        if (ident_symbol->type.is_param) { //! 对于形参参数, alloc, store之后需要load到新的虚拟寄存器
-            auto load_instr = new LoadInstr(Utils::get_next_counter(), ident_symbol->ir_value); 
-            cur_ir_basic_block->instrs.push_back(load_instr);
-            array = load_instr;
-        } else {
-            array = ident_symbol->ir_value;
-        }
-        if (lval.exp) {
-            ExpInfo exp_info = visit_exp(*lval.exp);
-            auto index = std::vector<Value*>{new IntConst(exp_info.int_value)};
-            auto pointer_type = new PointerType(array->type);
-            auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, array, index);
-            cur_ir_basic_block->instrs.push_back(getelementptr_instr);
-            cur_ir_lval = getelementptr_instr;
-        } else {
-            cur_ir_lval = array;
-        }
-    } else {
-        if (ident_symbol->type.is_const) {
-            if (ident_symbol->type.btype == Token::CHARTK) {
-                cur_ir_lval = new CharConst(ident_symbol->char_value);
-            } else if (ident_symbol->type.btype == Token::INTTK) {
-                cur_ir_lval = new IntConst(ident_symbol->int_value);
-            }
-        } else if (ident_symbol->type.is_param) {
-            auto load_instr = new LoadInstr(Utils::get_next_counter(), ident_symbol->ir_value);
-            cur_ir_basic_block->instrs.push_back(load_instr);
-            cur_ir_lval = load_instr;
-            ident_symbol->ir_value = load_instr;
-        } else {
-            cur_ir_lval = ident_symbol->ir_value;
-        }
-    }
-    // if (lval.exp) {
-    //     visit_exp(*lval.exp);
-    //     SymbolType type = SymbolType(ident_symbol->type.is_const, ident_symbol->type.btype);
-    //     return std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
-    // } else {
-    //     return ident_symbol;
-    // }
-    return ident_symbol;
 }
 
 ExpInfo Visitor::visit_exp(const Exp &exp) {
@@ -853,11 +799,11 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
             }
             Instruction* call_instr = nullptr;
             if (is_void_func)
-                call_instr = new CallInstr(dynamic_cast<Function*>(ident_symbol->ir_value), ir_rparams);
+                call_instr = new CallInstr((Function*)(ident_symbol->ir_value), ir_rparams);
             else if (ident_symbol->type.btype == Token::INTTK)
-                call_instr = new CallInstr(Utils::get_next_counter(), &IR_INT, dynamic_cast<Function*>(ident_symbol->ir_value), ir_rparams);
+                call_instr = new CallInstr(Utils::get_next_counter(), &IR_INT, (Function*)(ident_symbol->ir_value), ir_rparams);
             else 
-                call_instr = new CallInstr(Utils::get_next_counter(), &IR_CHAR, dynamic_cast<Function*>(ident_symbol->ir_value), ir_rparams);
+                call_instr = new CallInstr(Utils::get_next_counter(), &IR_CHAR, (Function*)(ident_symbol->ir_value), ir_rparams);
             cur_ir_basic_block->instrs.push_back(call_instr);
             return ExpInfo(false, false, Token::INTTK, call_instr);
         }
@@ -891,6 +837,62 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
     }
 }
 
+std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
+    auto ident = lval.ident->ident->get_token();
+    auto ident_symbol = cur_scope->get_symbol(ident);
+    if (!ident_symbol) { // c error : undefined identifier
+        ErrorList::report_error(lval.ident->ident->get_line_number(), 'c');
+        cur_ir_lval = nullptr;
+        return nullptr;
+    }
+    if (!(ident_symbol->type.is_array)) { // ident (not array)
+        if (ident_symbol->type.is_const) {
+            if (ident_symbol->type.btype == Token::INTTK) {
+                cur_ir_lval = new IntConst(ident_symbol->int_value);
+            } else {
+                cur_ir_lval = new CharConst(ident_symbol->char_value);
+            }
+            ident_symbol->ir_value = cur_ir_lval;
+        } else {
+            cur_ir_lval = ident_symbol->ir_value;
+        }
+    } else { // ident[exp]
+        Value* arr = nullptr;
+        if (ident_symbol->type.is_param) {
+            auto load = new LoadInstr(Utils::get_next_counter(), ident_symbol->ir_value);
+            cur_ir_basic_block->instrs.push_back(load);
+            ident_symbol->ir_value = load;
+            arr = load;
+        } else {
+            arr = ident_symbol->ir_value;
+        }   
+        std::deque<Value*> indices;
+        if (lval.exp) indices.push_back(visit_exp(*lval.exp).ir_value);
+        /*
+        ! 数组作为参数时, 数组名是一个基本类型指针, 例如int* 类型, 只需要一个索引
+        %0 = load i32*, i32** %a.addr, align 4
+        %arrayidx = getelementptr inbounds i32, i32* %0, i32 1
+        ! 数组不是参数时, 数组名是一个数组类型指针, 需要两位索引
+        %arrayidx = getelementptr inbounds [5 x i32], [5 x i32]* %s, i32 0, i32 1
+        */
+        if (!ident_symbol->type.is_param) indices.push_front(new IntConst(0));
+        // %arraydecay = getelementptr inbounds [5 x i32], [5 x i32]* %s, i32 0, i32 0
+        // %call = call i32 @add(i32* %arraydecay, i32 signext 5)
+        if (!lval.exp) { //TODO: WHY?
+            indices.push_back(new IntConst(0));
+        }
+        if (indices.empty()) {
+            cur_ir_lval = arr;
+        } else { // ident[exp]
+            auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), new PointerType(&IR_INT), arr, indices);
+            cur_ir_basic_block->instrs.push_back(getelementptr_instr);
+            cur_ir_lval = getelementptr_instr;
+            ident_symbol->ir_value = getelementptr_instr;
+        }
+    }
+    return ident_symbol;
+}
+
 ExpInfo Visitor::visit_primary_exp(const PrimaryExp &primary_exp) {
     if (auto exp_ptr = std::get_if<Exp>(&primary_exp)) {
         return visit_exp(*exp_ptr);
@@ -898,18 +900,24 @@ ExpInfo Visitor::visit_primary_exp(const PrimaryExp &primary_exp) {
         return ExpInfo(true, false, num_ptr->num->get_int(), Token::INTTK);
     } else if (auto char_ptr = std::get_if<Character>(&primary_exp)) {
         return ExpInfo(true, false, char_ptr->ch->get_char(), Token::CHARTK);
-    } else if (auto lval_ptr = std::get_if<LVal>(&primary_exp)) {
+    } else if (auto lval_ptr = std::get_if<LVal>(&primary_exp)) { // ident[exp] | ident
         auto lval_symbol = visit_lval(*lval_ptr);
         if (lval_symbol) {
             if (auto intconst_ptr = dynamic_cast<IntConst*>(lval_symbol->ir_value)) {
                 return ExpInfo(true, false, intconst_ptr->value, Token::INTTK);
-            } else {
-                if (lval_ptr->exp) { // int / char 
-                    auto load_instr = new LoadInstr(Utils::get_next_counter(), lval_symbol->ir_value);
+            } else { // ident[exp] | ident
+                if (lval_symbol->type.is_array && lval_ptr->exp) { // array element
+                    auto load_instr = new LoadInstr(Utils::get_next_counter(), cur_ir_lval);
                     cur_ir_basic_block->instrs.push_back(load_instr);
+                    lval_symbol->ir_value = load_instr;
                     return ExpInfo(false, false, Token::INTTK, load_instr);
-                } else { // may be array
-                    return ExpInfo(false, true, Token::INTTK, lval_symbol->ir_value);
+                } else if (!lval_symbol->type.is_array) {
+                    auto load_instr = new LoadInstr(Utils::get_next_counter(), cur_ir_lval);
+                    cur_ir_basic_block->instrs.push_back(load_instr);
+                    lval_symbol->ir_value = load_instr;
+                    return ExpInfo(false, false, Token::INTTK, load_instr);
+                } else { // array
+                    return ExpInfo(false, true, Token::INTTK, cur_ir_lval);
                 }
             }
         } else {
