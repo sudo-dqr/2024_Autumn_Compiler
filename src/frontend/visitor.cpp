@@ -878,7 +878,7 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
         if (!ident_symbol->type.is_param) indices.push_front(new IntConst(0));
         // %arraydecay = getelementptr inbounds [5 x i32], [5 x i32]* %s, i32 0, i32 0
         // %call = call i32 @add(i32* %arraydecay, i32 signext 5)
-        if (!lval.exp) { //TODO: WHY?
+        if (ident_symbol->type.is_array && (!lval.exp)) {
             indices.push_back(new IntConst(0));
         }
         if (indices.empty()) {

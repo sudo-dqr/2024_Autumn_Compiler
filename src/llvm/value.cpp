@@ -3,17 +3,19 @@
 #include "instr.h"
 
 void GlobalVariable::print(std::ostream &os) const {
-    if (auto int_type = dynamic_cast<IntType*>(type)) {
+    // 当前global variable的type是一个指针类型
+    auto deref_type = ((PointerType*)this->type)->referenced_type;
+    if (auto int_type = dynamic_cast<IntType*>(deref_type)) {
         os << "@" << name << " = dso_local global ";
         type->print(os);
         os << " ";
         os << int_value;
-    } else if (auto char_type = dynamic_cast<CharType*>(type)) {
+    } else if (auto char_type = dynamic_cast<CharType*>(deref_type)) {
         os << "@" << name << " = dso_local global ";
         type->print(os);
         os << " ";
         os << char_value;
-    } else if (auto array_type = dynamic_cast<ArrayType*>(type)) {
+    } else if (auto array_type = dynamic_cast<ArrayType*>(deref_type)) {
         if (array_type->element_type == &IR_INT
             && int_array_init_values.size() == 0) {
                 os << "@" << name << " = dso_local global ";
