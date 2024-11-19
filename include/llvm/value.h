@@ -78,8 +78,8 @@ struct Function : public Value {
     Function(std::string name, FunctionType* function_type) : Value(name, function_type) {
         auto args_type = function_type->arg_types;
         for (const auto &arg: args_type) {
-            auto param = FParam(Utils::get_next_counter(),arg); //! id error
-            fparams.push_back(&param); 
+            auto param = new FParam(Utils::get_next_counter(),arg);
+            fparams.push_back(param); 
         }
         
     }
