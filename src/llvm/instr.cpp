@@ -163,6 +163,8 @@ void StoreInstr::print(std::ostream &os) const {
     if (intconst_ptr = dynamic_cast<IntConst*>(store_value->type)) intconst_ptr->print(os);
     else os << "%" << store_value->id;
     os << ", ";
+    dst_ptr->type->print(os);
+    os << " ";
     GlobalVariable* global_ptr = nullptr;
     if (global_ptr = dynamic_cast<GlobalVariable*>(dst_ptr)) os << "@" << dst_ptr->name;
     else os << "%" << dst_ptr->id;

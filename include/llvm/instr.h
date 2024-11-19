@@ -17,8 +17,8 @@ struct Instruction : public User {
 struct AllocaInstr : public Instruction {
     int elements_num;
 
-    AllocaInstr(int dst_id, ValueType* type) : Instruction("pointer" + dst_id, type, dst_id), elements_num(1) {}
-    AllocaInstr(int dst_id, ValueType* type, int elements_num) : Instruction("pointer" + dst_id, type, dst_id), elements_num(elements_num) {}
+    AllocaInstr(int dst_id, ValueType* type) : Instruction("pointer" + dst_id, new PointerType(type), dst_id), elements_num(1) {}
+    AllocaInstr(int dst_id, ValueType* type, int elements_num) : Instruction("pointer" + dst_id, new PointerType(type), dst_id), elements_num(elements_num) {}
     void print(std::ostream &os) const override;
 };
 
