@@ -8,7 +8,7 @@ void Instruction::print(std::ostream &os) const {
 void AllocaInstr::print(std::ostream &os) const {
     Instruction::print(os);
     os << "%" << id << " = alloca ";
-    type->print(os);
+    ((PointerType*)type)->referenced_type->print(os);
 }
 
 // %xxx = <op> T %yyy, %zzz
@@ -175,7 +175,7 @@ void StoreInstr::print(std::ostream &os) const {
 void LoadInstr::print(std::ostream &os) const {
     Instruction::print(os);
     os << "%" << id << " = load ";
-    ((PointerType*)type)->referenced_type->print(os);
+    type->print(os);
     os << ", ";
     src_ptr->type->print(os);
     os << " ";

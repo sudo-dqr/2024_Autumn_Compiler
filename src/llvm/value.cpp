@@ -7,34 +7,34 @@ void GlobalVariable::print(std::ostream &os) const {
     auto deref_type = ((PointerType*)this->type)->referenced_type;
     if (auto int_type = dynamic_cast<IntType*>(deref_type)) {
         os << "@" << name << " = dso_local global ";
-        type->print(os);
+        deref_type->print(os);
         os << " ";
         os << int_value;
     } else if (auto char_type = dynamic_cast<CharType*>(deref_type)) {
         os << "@" << name << " = dso_local global ";
-        type->print(os);
+        deref_type->print(os);
         os << " ";
         os << char_value;
     } else if (auto array_type = dynamic_cast<ArrayType*>(deref_type)) {
         if (array_type->element_type == &IR_INT
             && int_array_init_values.size() == 0) {
                 os << "@" << name << " = dso_local global ";
-                type->print(os);
+                deref_type->print(os);
                 os << " ";
                 os << "zeroinitializer";
         } else if (array_type->element_type == &IR_CHAR
             && char_array_init_values.size() == 0 && char_array_init_string.length() == 0) {
                 os << "@" << name << " = dso_local global ";
-                type->print(os);
+                deref_type->print(os);
                 os << " ";
                 os << "zeroinitializer";
         } else if (char_array_init_string.length() != 0) { // string const
         os << "@" << name << " = private unnamed_addr constant ";
-            type->print(os);
+            deref_type->print(os);
             os << " c\"" << char_array_init_string << "\\00\"";
         } else {
             os << "@" << name << " = dso_local global ";
-            type->print(os);
+            deref_type->print(os);
             os << " ";
             os << "[";
             auto element_type = array_type->element_type;
@@ -98,7 +98,6 @@ void Module::print(std::ostream &os) const {
     os << std::endl;
     for (auto &function : functions) {
         function->print(os);
-        os << std::endl;
         os << std::endl;
     }
 }
