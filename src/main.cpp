@@ -20,7 +20,7 @@ int main() {
     auto comp_unit = parser.parse();
     Visitor visitor = Visitor();
     visitor.visit(*comp_unit);
-    visitor.print_symbol_list();
+    //visitor.print_symbol_list();
     Module::get_instance().print_llvm_ir();
     ErrorList::print_errors();
     return 0;
