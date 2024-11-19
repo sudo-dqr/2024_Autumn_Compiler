@@ -359,6 +359,7 @@ void Visitor::visit_main_func(const MainFunc &main_func) {
     auto func_symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
     symbol_list.push_back(*func_symbol);
     cur_scope->add_symbol(func_symbol); // main函数不会发生b错误
+    Utils::reset_counter();
     cur_scope = cur_scope->push_scope();
     auto function_type = new FunctionType(&IR_INT, std::vector<ValueType*>());
     cur_ir_function = new Function(ident, function_type);
