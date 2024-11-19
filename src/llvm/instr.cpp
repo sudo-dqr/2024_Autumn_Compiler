@@ -33,6 +33,7 @@ void ArithmeticInstr::print(std::ostream &os) const {
             break;
     }
     type->print(os); // 这里应该只有int char类型在运算前会先转成int
+    os << " ";
     IntConst* intconst_ptr = nullptr;
     if (intconst_ptr = dynamic_cast<IntConst*>(op1)) intconst_ptr->print(os);
     else os << "%" << op1->id;
@@ -172,8 +173,9 @@ void StoreInstr::print(std::ostream &os) const {
 
 // %val = load T, P %ptr
 void LoadInstr::print(std::ostream &os) const {
+    Instruction::print(os);
     os << "%" << id << " = load ";
-    type->print(os);
+    ((PointerType*)type)->referenced_type->print(os);
     os << ", ";
     src_ptr->type->print(os);
     os << " ";

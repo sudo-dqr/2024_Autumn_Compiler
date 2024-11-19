@@ -111,8 +111,8 @@ struct StoreInstr : public Instruction {
 struct LoadInstr : public Instruction {
     Value* src_ptr;
 
-    LoadInstr(int dst_id, Value* src_ptr) : 
-    Instruction("T" + dst_id, ((PointerType*)src_ptr)->referenced_type, dst_id), src_ptr(src_ptr) {}
+    LoadInstr(int dst_id, Value* src_ptr) : // 传进来的是PointerType 有referenced_type
+    Instruction("T" + dst_id, src_ptr->type, dst_id), src_ptr(src_ptr) {}
     
     void print(std::ostream &os) const override;
 };

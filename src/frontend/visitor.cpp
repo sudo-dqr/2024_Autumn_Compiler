@@ -56,7 +56,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
     ExpInfo exp_info;
     std::shared_ptr<Symbol> symbol = nullptr;
     if (!const_def.const_exp) { // constant
-        SymbolType type = SymbolType(true, btype);
+        SymbolType type = SymbolType(true, false, btype);
         symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         if (auto constant = std::get_if<ConstExp>(&(*const_def.const_init_val))) {
             exp_info = visit_constexp(*constant);
@@ -71,7 +71,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
     } else { // array
         exp_info = visit_constexp(*const_def.const_exp); // array size
         int array_size = exp_info.int_value;
-        SymbolType type = SymbolType(true, btype, array_size);
+        SymbolType type = SymbolType(true, false, btype, array_size);
         symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         ValueType* ir_element_type; // base is valuetype; base pointer to son
         if (btype == Token::CHARTK) ir_element_type = &IR_CHAR;
@@ -155,7 +155,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
     ExpInfo exp_info;
     std::shared_ptr<Symbol> symbol = nullptr;
     if (!var_def.const_exp) { // variant
-        SymbolType type = SymbolType(false, btype);
+        SymbolType type = SymbolType(false, false, btype);
         symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         if (cur_scope->is_in_global_scope()) {
             if (var_def.init_val) {
@@ -199,7 +199,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
         //'{' [ Exp { ',' Exp } ] '}' | StringConst
         exp_info = visit_constexp(*var_def.const_exp);
         int array_size = exp_info.int_value;
-        SymbolType type = SymbolType(false, btype, array_size);
+        SymbolType type = SymbolType(false, false, btype, array_size);
         symbol  = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         ValueType* ir_element_type = nullptr;
         if (btype == Token::CHARTK) ir_element_type = &IR_CHAR;
@@ -293,11 +293,11 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
             ValueType* ir_param_type = nullptr;
             SymbolType param_symbol_type = SymbolType();
             if (func_fparam->is_array) {
-                param_symbol_type = SymbolType(false, param_type, -1); // 形参不必解析数组大小(后面有检查是否为形参数组的方法)
+                param_symbol_type = SymbolType(false, true, param_type, -1); // 形参不必解析数组大小
                 if (param_type == Token::CHARTK) ir_param_type = new PointerType(&IR_CHAR);
                 else ir_param_type = new PointerType(&IR_INT);
             } else {
-                param_symbol_type = SymbolType(false, param_type);
+                param_symbol_type = SymbolType(false, true, param_type);
                 if (param_type == Token::CHARTK) ir_param_type = &IR_CHAR;
                 else ir_param_type = &IR_INT;
             }
@@ -693,7 +693,7 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
     }
     if (ident_symbol->type.is_array) {
         Value* array = nullptr;
-        if (ident_symbol->type.is_param_array()) { //TODO: 参数数组需要load, but WHY?
+        if (ident_symbol->type.is_param) { //! 对于形参参数, alloc, store之后需要load到新的虚拟寄存器
             auto load_instr = new LoadInstr(Utils::get_next_counter(), ident_symbol->ir_value); 
             cur_ir_basic_block->instrs.push_back(load_instr);
             array = load_instr;
@@ -717,6 +717,11 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
             } else if (ident_symbol->type.btype == Token::INTTK) {
                 cur_ir_lval = new IntConst(ident_symbol->int_value);
             }
+        } else if (ident_symbol->type.is_param) {
+            auto load_instr = new LoadInstr(Utils::get_next_counter(), ident_symbol->ir_value);
+            cur_ir_basic_block->instrs.push_back(load_instr);
+            cur_ir_lval = load_instr;
+            ident_symbol->ir_value = load_instr;
         } else {
             cur_ir_lval = ident_symbol->ir_value;
         }
