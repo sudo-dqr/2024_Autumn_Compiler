@@ -29,7 +29,8 @@ void GlobalVariable::print(std::ostream &os) const {
 }
 
 void FParam::print(std::ostream &os) const {
-    // 形参保存在虚拟寄存器上不输出 进入函数第一步将形参保存到栈上
+    type->print(os);
+    os << " %" << id;
 }
 
 void BasicBlock::print(std::ostream &os) const {
@@ -42,6 +43,19 @@ void BasicBlock::print(std::ostream &os) const {
 
 void Function::print(std::ostream &os) const {
     os << "define dso_local ";
+    type->print(os);
+    os << " @" << name << "(";
+    for (int i = 0; i < fparams.size(); i++) {
+        fparams[i]->print(os);
+        if (i != fparams.size() - 1) {
+            os << ", ";
+        }
+    }
+    os << ") {\n";
+    for (auto &basic_block : basic_blocks) {
+        basic_block->print(os);
+    }
+    os << "}\n";
 }
 
 void Module::print(std::ostream &os) const {
