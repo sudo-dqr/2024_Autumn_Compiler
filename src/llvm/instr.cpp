@@ -109,10 +109,13 @@ void GetelementptrInstr::print(std::ostream &os) const {
     os << " ";
     if (auto global_ptr = dynamic_cast<GlobalVariable*>(array)) os << "@" << array->name;
     else os << "%" << id;
-    os << ", i32 "; // index : i32
-    if (auto intconst_ptr = dynamic_cast<IntConst*>(index)) intconst_ptr->print(os);
-    else {
-        os << "%" << index->id;
+    os << ", "; // index : i32
+    for (const auto &indice : indices) {
+        os << "i32 ";
+        IntConst* intconst_ptr = dynamic_cast<IntConst*>(indice);
+        if (intconst_ptr) intconst_ptr->print(os);
+        else os << "%" << indice->id;
+        if (&indice != &indices.back()) os << ", ";
     }
 }
 

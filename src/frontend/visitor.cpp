@@ -112,7 +112,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
             cur_ir_basic_block->instrs.push_back(alloc_instr);
             if (auto const_exps_ptr = std::get_if<ConstExps>(&(*const_def.const_init_val))) {
                 for (int i = 0; i < const_exps_ptr->const_exps.size(); i++) {
-                    auto index = new IntConst(i);
+                    auto index = std::vector<Value*>{new IntConst(i)};
                     PointerType* pointer_type = nullptr;
                     if (btype == Token::CHARTK) pointer_type = new PointerType(&IR_CHAR);
                     else pointer_type = new PointerType(&IR_INT);
@@ -127,7 +127,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                 auto string_const = string_const_ptr->str->get_token();
                 for (int i = 0; i < string_const.length(); i++) { 
                     auto pointer_type = PointerType(&IR_CHAR);
-                    auto index = new IntConst(i);
+                    auto index = std::vector<Value*>{new IntConst(i)};
                     auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), &pointer_type, alloc_instr, index);
                     cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                     auto store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
@@ -238,7 +238,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
             if (var_def.init_val) {
                 if (auto exps_ptr = std::get_if<Exps>(&(*var_def.init_val))) {
                     for (int i = 0; i < exps_ptr->exps.size(); i++) {
-                        auto index = new IntConst(i);
+                        auto index = std::vector<Value*>{new IntConst(i)};
                         PointerType* pointer_type = nullptr;
                         if (btype == Token::CHARTK) pointer_type = new PointerType(&IR_CHAR);
                         else pointer_type = new PointerType(&IR_INT);
@@ -253,7 +253,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                     auto string_const = string_const_ptr->str->get_token();
                     for (int i = 0; i < string_const.length(); i++) {
                         auto pointer_type = new PointerType(&IR_CHAR);
-                        auto index = new IntConst(i);
+                        auto index = std::vector<Value*>{new IntConst(i)};
                         auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
                         cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                         auto store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
@@ -667,7 +667,11 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
                 auto global_var_type = new ArrayType(&IR_CHAR, length + 1);
                 auto *global_var = new GlobalVariable(global_var_name, global_var_type, global_var_value);
                 Module::get_instance().global_variables.push_back(global_var);
-                auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), new PointerType(&IR_CHAR), global_var, new IntConst(0));
+                std::vector<Value*> indices = std::vector<Value*>();
+                // 这里的全局变量是一个一维数组指针, 需要两个index
+                indices.push_back(new IntConst(0));
+                indices.push_back(new IntConst(0));
+                auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), global_var_type, global_var, indices);
                 cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                 auto call_instr = new CallInstr(putstr_func, std::vector<Value*>{getelementptr_instr});
                 cur_ir_basic_block->instrs.push_back(call_instr);
@@ -697,7 +701,7 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
         }
         if (lval.exp) {
             ExpInfo exp_info = visit_exp(*lval.exp);
-            auto index = exp_info.ir_value;
+            auto index = std::vector<Value*>{new IntConst(exp_info.int_value)};
             auto pointer_type = new PointerType(array->type);
             auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, array, index);
             cur_ir_basic_block->instrs.push_back(getelementptr_instr);

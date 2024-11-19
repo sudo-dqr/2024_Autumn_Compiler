@@ -75,10 +75,10 @@ struct CallInstr : public Instruction { // void / int/char
 
 struct GetelementptrInstr : public Instruction {
     Value* array;
-    Value* index;
+    std::vector<Value*> indices;
 
-    GetelementptrInstr(int dst_id, ValueType* type, Value* array, Value* index) // value type是一个指针类型
-    : Instruction(dst_id, type), array(array), index(index) {}
+    GetelementptrInstr(int dst_id, ValueType* type, Value* array, std::vector<Value*> indices) // value type是一个指针类型
+    : Instruction(dst_id, type), array(array), indices(indices) {}
 
     void print(std::ostream &os) const override;
 };
