@@ -24,7 +24,7 @@ struct ExpInfo {
 
     ExpInfo(bool is_bool, bool is_array, Value* ir_value) {
         this->is_const = false;
-        this->is_bool = false;
+        this->is_bool = is_bool;
         this->is_array = is_array;
         this->type = Token::END;
         this->ir_value = ir_value;

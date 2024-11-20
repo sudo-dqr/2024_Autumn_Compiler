@@ -963,7 +963,7 @@ ExpInfo Visitor::visit_eq_exp(const EqExp &eq_exp) { // == !=
         }
         instr = new IcmpInstr(Utils::get_next_counter(), (eq_exp.op->get_type() == Token::EQL) ? IcmpInstr::EQ : IcmpInstr::NE, expinfo1.ir_value, expinfo2.ir_value);
         cur_ir_basic_block->instrs.push_back(instr);
-        return {false, false, instr};
+        return {true, false, instr};
     }
 }
 
@@ -1016,7 +1016,7 @@ ExpInfo Visitor::visit_rel_exp(const RelExp &rel_exp) { // > < >= <=
                     break;
             }
             cur_ir_basic_block->instrs.push_back(instr);
-            return ExpInfo(false, false, instr);
+            return ExpInfo(true, false, instr);
         }
     }
 }
