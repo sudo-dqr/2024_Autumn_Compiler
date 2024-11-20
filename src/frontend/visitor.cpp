@@ -548,6 +548,16 @@ void Visitor::visit_get_int_stmt(const GetIntStmt &get_int_stmt) {
             auto lval = cur_ir_lval;
             auto call_instr = new CallInstr(Utils::get_next_counter(), &IR_INT, getint_func, std::vector<Value*>{});
             cur_ir_basic_block->instrs.push_back(call_instr);
+            Instruction* store_instr = nullptr;
+            auto deref_type = dynamic_cast<PointerType*>(lval->type)->referenced_type;
+            if (auto char_ptr = dynamic_cast<CharType*>(deref_type)) {
+                auto trunc_instr = new TruncInstr(Utils::get_next_counter(), call_instr, &IR_CHAR);
+                cur_ir_basic_block->instrs.push_back(trunc_instr);
+                store_instr = new StoreInstr(trunc_instr, lval);
+            } else {
+                store_instr = new StoreInstr(call_instr, lval);
+            }
+            cur_ir_basic_block->instrs.push_back(store_instr);
         }
     }
 }
@@ -559,8 +569,19 @@ void Visitor::visit_get_char_stmt(const GetCharStmt &get_char_stmt) {
             ErrorList::report_error(get_char_stmt.lval->ident->ident->get_line_number(), 'h');
         } else {
             auto lval = cur_ir_lval;
-            auto call_instr = new CallInstr(Utils::get_next_counter(), &IR_CHAR, getchar_func, std::vector<Value*>{});
+            auto call_instr = new CallInstr(Utils::get_next_counter(), &IR_INT, getchar_func, std::vector<Value*>{});
             cur_ir_basic_block->instrs.push_back(call_instr);
+            Instruction* store_instr = nullptr;
+            // 左值是一个指针
+            auto deref_type = dynamic_cast<PointerType*>(lval->type)->referenced_type;
+            if (auto char_ptr = dynamic_cast<CharType*>(deref_type)) {
+                auto trunc_instr = new TruncInstr(Utils::get_next_counter(), call_instr, &IR_CHAR);
+                cur_ir_basic_block->instrs.push_back(trunc_instr);
+                store_instr = new StoreInstr(trunc_instr, lval);
+            } else {
+                store_instr = new StoreInstr(call_instr, lval);
+            }
+            cur_ir_basic_block->instrs.push_back(store_instr);
         }
     }
 }
@@ -582,10 +603,26 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
                 CallInstr* call_instr = nullptr;
                 if (format_str[i] == '\\')
                     call_instr = new CallInstr(putch_func, std::vector<Value*>{new IntConst('\n')});
-                else if (format_str[i + 1] == 'd') 
-                    call_instr = new CallInstr(putint_func, std::vector<Value*>{exp_infos[pos++].ir_value});
-                else if (format_str[i + 1] == 'c') 
-                    call_instr = new CallInstr(putch_func, std::vector<Value*>{exp_infos[pos++].ir_value});
+                else if (format_str[i + 1] == 'd') { // 参数为i32 如果是char则需要zext
+                    if (auto char_ptr = dynamic_cast<CharType*>(exp_infos[pos].ir_value->type)) {
+                        auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_infos[pos].ir_value, &IR_INT);
+                        cur_ir_basic_block->instrs.push_back(zext_instr);
+                        call_instr = new CallInstr(putint_func, std::vector<Value*>{zext_instr});
+                    } else {
+                        call_instr = new CallInstr(putint_func, std::vector<Value*>{exp_infos[pos].ir_value});
+                    }
+                    pos++;
+                }
+                else if (format_str[i + 1] == 'c') { // 参数为i32 如果是char则需要zext
+                    if (auto char_ptr = dynamic_cast<CharType*>(exp_infos[pos].ir_value->type)) {
+                        auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_infos[pos].ir_value, &IR_INT);
+                        cur_ir_basic_block->instrs.push_back(zext_instr);
+                        call_instr = new CallInstr(putch_func, std::vector<Value*>{zext_instr});
+                    } else {
+                        call_instr = new CallInstr(putch_func, std::vector<Value*>{exp_infos[pos].ir_value});
+                    }
+                    pos++;
+                }
                 cur_ir_basic_block->instrs.push_back(call_instr);
                 i += 2;
             } else if (str_end == i + 1) { // single char
@@ -789,7 +826,7 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
         if (ident_symbol->type.is_param) {
             auto load_instr = new LoadInstr(Utils::get_next_counter(), ident_symbol->ir_value);
             cur_ir_basic_block->instrs.push_back(load_instr);
-            arr = load;
+            arr = load_instr;
         } else {
             arr = ident_symbol->ir_value;
         }   

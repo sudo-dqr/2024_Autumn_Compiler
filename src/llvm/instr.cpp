@@ -79,7 +79,7 @@ void CallInstr::print(std::ostream &os) const {
     if (auto void_ptr = dynamic_cast<VoidType*>(type)) {
         os << "call void @";
     } else {
-        os << "%" << id << "= call ";
+        os << "%" << id << " = call ";
         type->print(os);
         os << " @";
     }
@@ -103,10 +103,10 @@ void CallInstr::print(std::ostream &os) const {
 void GetelementptrInstr::print(std::ostream &os) const {
     Instruction::print(os);
     os << "%" << id << " = getelementptr ";
-    array->type->print(os);
+    dynamic_cast<PointerType*>(array->type)->referenced_type->print(os);
     os << ", ";
     array->type->print(os);
-    os << "* ";
+    os << " ";
     if (auto global_ptr = dynamic_cast<GlobalVariable*>(array)) os << "@" << array->name;
     else os << "%" << id;
     os << ", "; // index : i32
@@ -190,7 +190,7 @@ void ZextInstr::print(std::ostream &os) const {
     os << "%" << id << " = zext ";
     operand->type->print(os);
     os << " ";
-    os << "%" << operand->type << " to ";
+    os << "%" << operand->id << " to ";
     type->print(os);
 }
 
