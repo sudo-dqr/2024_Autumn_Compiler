@@ -150,6 +150,7 @@ void IcmpInstr::print(std::ostream &os) const {
     IntConst* intconst_ptr = nullptr;
     if (intconst_ptr = dynamic_cast<IntConst*>(op1)) intconst_ptr->print(os);
     else os << "%" << op1->id;
+    os << ", ";
     if (intconst_ptr = dynamic_cast<IntConst*>(op2)) intconst_ptr->print(os);
     else os << "%" << op2->id;
 }

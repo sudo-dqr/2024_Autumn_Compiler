@@ -58,7 +58,7 @@ struct BasicBlock : public Value {
     std::vector<Instruction*> instrs;
 
     BasicBlock() = default;
-    BasicBlock(int id) : Value("basicblock" + id, &IR_LABEL) {}
+    BasicBlock(int id) : Value("basicblock" + id, &IR_LABEL, id) {}
 
     void print(std::ostream &os) const override;
 
