@@ -4,26 +4,36 @@ declare void @putint(i32)
 declare void @putch(i32)
 declare void @putstr(i8*)
 
-@dqr0 = private unnamed_addr constant [8 x i8] c"Hello: \00"
-@dqr1 = private unnamed_addr constant [3 x i8] c", \00"
+@a = dso_local global i32 1000
+
+define dso_local i32 @foo(i32 %0, i32 %1) {
+	%3 = alloca i32
+	%4 = alloca i32
+	store i32 %0, i32* %3
+	store i32 %1, i32* %4
+	%5 = load i32, i32* %3
+	%6 = load i32, i32* %4
+	%7 = add i32 %5, %6
+	ret i32 %7
+}
+
+define dso_local void @bar() {
+	store i32 1200, i32* @a
+	ret void
+}
 
 define dso_local i32 @main() {
+	call void @bar()
 	%1 = alloca i32
-	%2 = alloca i8
+	%2 = load i32, i32* @a
+	store i32 %2, i32* %1
 	%3 = call i32 @getint()
-	store i32 %3, i32* %1
-	%4 = call i32 @getchar()
-	%5 = trunc i32 %4 to i8
-	store i8 %5, i8* %2
-	%6 = load i32, i32* %1
-	%7 = load i8, i8* %2
-	%8 = getelementptr [8 x i8], [8 x i8]* @dqr0, i32 0, i32 0
-	call void @putstr(i8* %8)
+	store i32 %3, i32* @a
+	%4 = load i32, i32* @a
+	%5 = load i32, i32* %1
+	%6 = call i32 @foo(i32 %4, i32 %5)
 	call void @putint(i32 %6)
-	%9 = getelementptr [3 x i8], [3 x i8]* @dqr1, i32 0, i32 0
-	call void @putstr(i8* %9)
-	%10 = zext i8 %7 to i32
-	call void @putch(i32 %10)
+	call void @putch(i32 10)
 	ret i32 0
 }
 

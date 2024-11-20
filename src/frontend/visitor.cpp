@@ -767,7 +767,7 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
                 return ExpInfo(false, false, nullptr);
             }
             Instruction* call_instr = nullptr;
-            if (is_void_func)
+            if (ident_symbol->type.btype == Token::VOIDTK)
                 call_instr = new CallInstr((Function*)(ident_symbol->ir_value), ir_rparams);
             else if (ident_symbol->type.btype == Token::INTTK)
                 call_instr = new CallInstr(Utils::get_next_counter(), &IR_INT, (Function*)(ident_symbol->ir_value), ir_rparams);
