@@ -41,14 +41,12 @@ struct SymbolType {
 };
 
 struct Symbol {
-    SymbolType type;
+    SymbolType type; // -> btype
     std::string name;
     int scope_cnt;
-    int int_value;
-    char char_value;
+    int value;
     Value* ir_value;
-    std::vector<int> int_values;
-    std::vector<char> char_values;
+    std::vector<int> array_values;
     std::string string_value;
     
     Symbol(SymbolType type, std::string name, int scope_cnt)

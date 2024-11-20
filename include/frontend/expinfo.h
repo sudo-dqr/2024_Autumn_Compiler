@@ -4,30 +4,22 @@
 #include "value.h"
 
 struct ExpInfo {
-    bool is_const;
+    bool is_const; // 表示是不是一个常量, 不是指是不是使用const修饰的
     bool is_array;
     bool is_bool; // i1 type
-    Token::TokenType type;
-    int int_value;
-    char char_value;
+    Token::TokenType type; // int/char
+    int value;
     Value* ir_value;
 
     ExpInfo() = default;
-    ExpInfo(bool is_bool, bool is_array, Token::TokenType type, Value* ir_value) {
-        this->is_const = false;
-        this->is_bool = is_bool;
-        this->is_array = is_array;
-        this->type = type;
-        this->ir_value = ir_value;
-    }
 
-    ExpInfo(bool is_bool, bool is_array, int int_value, Token::TokenType type) {
+    ExpInfo(bool is_bool, bool is_array, int value, Token::TokenType type) {
         this->is_const = true;
         this->is_bool = is_bool;
         this->is_array = is_array;
-        this->int_value = int_value;
+        this->value = value;
         this->type = type;
-        this->ir_value = new IntConst(int_value);
+        this->ir_value = new IntConst(value);
     }
 
     ExpInfo(bool is_bool, bool is_array, Value* ir_value) {
