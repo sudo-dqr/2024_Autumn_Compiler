@@ -45,7 +45,6 @@ define dso_local i32 @main() {
 	br i1 %24, label %25, label %26
 25:
 	br label %35
-	br label %26
 26:
 	%27 = load i32, i32* %6
 	%28 = load i32, i32* %1
@@ -61,7 +60,6 @@ define dso_local i32 @main() {
 	br i1 %32, label %33, label %34
 33:
 	br label %38
-	br label %34
 34:
 	br label %35
 35:

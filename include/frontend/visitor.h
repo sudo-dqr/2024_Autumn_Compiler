@@ -22,6 +22,7 @@ private:
     int loop_cnt;
     bool is_void_func;
     int scope_cnt;
+    bool stmt_is_return_or_break;
     std::deque<Symbol> symbol_list;
     Function* cur_ir_function;
     BasicBlock* cur_ir_basic_block;
