@@ -787,9 +787,8 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
     } else { // ident[exp]
         Value* arr = nullptr;
         if (ident_symbol->type.is_param) {
-            auto load = new LoadInstr(Utils::get_next_counter(), ident_symbol->ir_value);
-            cur_ir_basic_block->instrs.push_back(load);
-            ident_symbol->ir_value = load;
+            auto load_instr = new LoadInstr(Utils::get_next_counter(), ident_symbol->ir_value);
+            cur_ir_basic_block->instrs.push_back(load_instr);
             arr = load;
         } else {
             arr = ident_symbol->ir_value;
@@ -833,16 +832,16 @@ ExpInfo Visitor::visit_primary_exp(const PrimaryExp &primary_exp) {
         if (lval_symbol) {
             if (auto intconst_ptr = dynamic_cast<IntConst*>(lval_symbol->ir_value)) {
                 return ExpInfo(false, false, intconst_ptr->value, Token::INTTK);
+            } else if (auto charconst_ptr = dynamic_cast<CharConst*>(lval_symbol->ir_value)) {
+                return ExpInfo(false, false, charconst_ptr->value, Token::CHARTK);
             } else { // ident[exp] | ident
                 if (lval_symbol->type.is_array && lval_ptr->exp) { // array element
-                    auto load_instr = new LoadInstr(Utils::get_next_counter(), cur_ir_lval);
+                    auto load_instr = new LoadInstr(Utils::get_next_counter(), lval_symbol->ir_value);
                     cur_ir_basic_block->instrs.push_back(load_instr);
-                    lval_symbol->ir_value = load_instr;
                     return ExpInfo(false, false, load_instr);
                 } else if (!lval_symbol->type.is_array) {
-                    auto load_instr = new LoadInstr(Utils::get_next_counter(), cur_ir_lval);
+                    auto load_instr = new LoadInstr(Utils::get_next_counter(), lval_symbol->ir_value);
                     cur_ir_basic_block->instrs.push_back(load_instr);
-                    lval_symbol->ir_value = load_instr;
                     return ExpInfo(false, false, load_instr);
                 } else { // array
                     return ExpInfo(false, true, cur_ir_lval);

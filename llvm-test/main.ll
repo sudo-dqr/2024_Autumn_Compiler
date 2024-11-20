@@ -5,24 +5,18 @@ declare void @putch(i32)
 declare void @putstr(i8*)
 
 @a = dso_local global i32 1
-
-define dso_local i32 @add(i32 %0, i32 %1) {
-	%3 = alloca i32
-	%4 = alloca i32
-	store i32 %0, i32* %3
-	store i32 %1, i32* %4
-	%5 = load i32, i32* %3
-	%6 = load i32, i32* %4
-	%7 = add i32 %5, %6
-	ret i32 %7
-}
+@b = dso_local global i32 3
 
 define dso_local i32 @main() {
 	%1 = alloca i32
-	store i32 2, i32* %1
-	%2 = load i32, i32* @a
-	%3 = load i32, i32* %1
-	%4= call i32 @add(i32 %2, i32 %3)
-	ret i32 %4
+	%2 = load i32, i32* @b
+	%3 = add i32 %2, 4
+	store i32 %3, i32* %1
+	%4 = load i32, i32* @a
+	%5 = load i32, i32* @b
+	%6 = add i32 %4, %5
+	%7 = load i32, i32* %1
+	%8 = add i32 %6, %7
+	ret i32 %8
 }
 
