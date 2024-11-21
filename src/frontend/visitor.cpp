@@ -757,40 +757,33 @@ ExpInfo Visitor::visit_mul_exp(const MulExp &mul_exp) {
 }
 
 ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
+    ExpInfo exp_info = ExpInfo(false, false, 0, Token::END); // default is error info
     if (unary_exp.primary_exp) { // primary exp
-        return visit_primary_exp(*unary_exp.primary_exp);
+        exp_info = visit_primary_exp(*unary_exp.primary_exp);
     } else if (unary_exp.ident) { // ident()
         std::string ident = unary_exp.ident->ident->get_token();
         std::shared_ptr<Symbol> ident_symbol = cur_scope->get_symbol(ident);
         if (!ident_symbol) { // c error : undefined identifier
             ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'c');
-            return ExpInfo(false, false, 0, Token::END);
         } else {
             std::vector<Value*> ir_rparams;
             if (unary_exp.func_rparams) {
                 if (unary_exp.func_rparams->exps.size() != ident_symbol->type.params.size()) {
                     ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'd');
-                    return ExpInfo(false, false, 0, Token::END);
-                } else { // e problem : how to know real param type?
+                } else {
                     for (int i = 0; i < ident_symbol->type.params.size(); i++) {
-                        SymbolType type = ident_symbol->type.params[i].type;
-                        Token::TokenType f_param_type = type.btype;
-                        bool f_param_is_array = type.is_array;
-                        ExpInfo r_param_info = visit_exp(*unary_exp.func_rparams->exps[i]);
-                        Token::TokenType r_param_type = r_param_info.type;
-                        bool r_param_is_array = r_param_info.is_array;
-                        if ((r_param_is_array && !f_param_is_array) || (!r_param_is_array && f_param_is_array)
-                            || (r_param_is_array && f_param_is_array && (r_param_type != f_param_type))) {
+                        auto fparam_type = ((FunctionType*)(ident_symbol->ir_value->type))->arg_types[i];
+                        ExpInfo rparam_info = visit_exp(*unary_exp.func_rparams->exps[i]);
+                        if (is_diff_type(fparam_type, rparam_info)) {
+                            std::cout << "Function call parameter type mismatch" << std::endl;
                             ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'e');
-                            return ExpInfo(false, false, 0, Token::END);
                         } else {
-                            ir_rparams.push_back(r_param_info.ir_value);
+                            ir_rparams.push_back(rparam_info.ir_value);
                         }
                     }
                 }
             } else if (!ident_symbol->type.params.empty()) {
                 ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'd');
-                return ExpInfo(false, false, nullptr);
             }
             Instruction* call_instr = nullptr;
             if (ident_symbol->type.btype == Token::VOIDTK)
@@ -800,36 +793,46 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
             else 
                 call_instr = new CallInstr(Utils::get_next_counter(), &IR_CHAR, (Function*)(ident_symbol->ir_value), ir_rparams);
             cur_ir_basic_block->instrs.push_back(call_instr);
-            return ExpInfo(false, false, call_instr);
+            exp_info = ExpInfo(false, false, call_instr);
         }
     } else { // + - ! UnaryExp
         ExpInfo unary_info = visit_unary_exp(*unary_exp.unary_exp);
         if (unary_info.is_const) { // constant optimazation
             if ((*unary_exp.unary_op->op).get_type() == Token::PLUS) {
-                return ExpInfo(false, false, unary_info.value, Token::INTTK);
+                exp_info = ExpInfo(false, false, unary_info.value, Token::INTTK);
             } else if ((*unary_exp.unary_op->op).get_type() == Token::MINU) {
-                return ExpInfo(false, false, -unary_info.value, Token::INTTK);
+                exp_info = ExpInfo(false, false, -unary_info.value, Token::INTTK);
             } else {
-                return ExpInfo(false, false, !unary_info.value, Token::INTTK);
+                exp_info = ExpInfo(false, false, !unary_info.value, Token::INTTK);
             }
         } else if ((*unary_exp.unary_op->op).get_type() == Token::PLUS) {
-            return unary_info;
+            exp_info = unary_info;
         } else if ((*unary_exp.unary_op->op).get_type() == Token::MINU) {
             auto instr = new ArithmeticInstr(Utils::get_next_counter(), ArithmeticInstr::SUB, new IntConst(0), unary_info.ir_value);
             cur_ir_basic_block->instrs.push_back(instr);
-            return ExpInfo(false, false, instr);
-        } else if ((*unary_exp.unary_op->op).get_type() == Token::NOT) {
+            exp_info = ExpInfo(false, false, instr);
+        } else { // NOT
             // 运算指令中没有 ! 操作, 首先使用icmp指令判断是否为0, 然后使用zext将结果转换为int
             auto icmp_instr = new IcmpInstr(Utils::get_next_counter(), IcmpInstr::EQ, unary_info.ir_value, new IntConst(0));
             cur_ir_basic_block->instrs.push_back(icmp_instr);
             auto zext_instr = new ZextInstr(Utils::get_next_counter(), icmp_instr, &IR_INT);
             cur_ir_basic_block->instrs.push_back(zext_instr);
-            return ExpInfo(false, false, zext_instr);
-        } else {
-            std::cout << "Invalid operate in unary_exp" << std::endl;
-            return ExpInfo(false, false, nullptr);
+            exp_info = ExpInfo(false, false, zext_instr);
         }
     }
+    return exp_info;
+}
+
+bool Visitor::is_diff_type(ValueType* fparam_type, ExpInfo rparam_info) {
+    auto fparam_array_ptr = dynamic_cast<PointerType*>(fparam_type);
+    if (fparam_array_ptr && !rparam_info.is_array) return true;
+    else if (!fparam_array_ptr && rparam_info.is_array) return true;
+    else if (fparam_array_ptr && rparam_info.is_array) {
+        auto felement_type = fparam_array_ptr->referenced_type;
+        auto relement_type = dynamic_cast<PointerType*>(rparam_info.ir_value->type)->referenced_type;
+        if (felement_type != relement_type) return true;
+    }
+    return false;
 }
 
 std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
@@ -884,40 +887,39 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
 }
 
 ExpInfo Visitor::visit_primary_exp(const PrimaryExp &primary_exp) {
+    ExpInfo exp_info = ExpInfo(false, false, 0, Token::END);
     if (auto exp_ptr = std::get_if<Exp>(&primary_exp)) {
-        return visit_exp(*exp_ptr);
+        exp_info = visit_exp(*exp_ptr);
     } else if (auto num_ptr = std::get_if<Number>(&primary_exp)) {
-        return ExpInfo(false, false, num_ptr->num->get_int(), Token::INTTK);
+        exp_info = ExpInfo(false, false, num_ptr->num->get_int(), Token::INTTK);
     } else if (auto char_ptr = std::get_if<Character>(&primary_exp)) {
-        return ExpInfo(false, false, char_ptr->ch->get_char(), Token::CHARTK);
-    } else if (auto lval_ptr = std::get_if<LVal>(&primary_exp)) { // ident[exp] | ident
+        exp_info = ExpInfo(false, false, char_ptr->ch->get_char(), Token::CHARTK);
+    } else { // LVal -> ident[exp] | ident
+        auto lval_ptr = std::get_if<LVal>(&primary_exp);
         auto lval_symbol = visit_lval(*lval_ptr);
         if (lval_symbol) {
             if (auto intconst_ptr = dynamic_cast<IntConst*>(lval_symbol->ir_value)) {
-                return ExpInfo(false, false, intconst_ptr->value, Token::INTTK);
+                exp_info = ExpInfo(false, false, intconst_ptr->value, Token::INTTK);
             } else if (auto charconst_ptr = dynamic_cast<CharConst*>(lval_symbol->ir_value)) {
-                return ExpInfo(false, false, charconst_ptr->value, Token::CHARTK);
+                exp_info = ExpInfo(false, false, charconst_ptr->value, Token::CHARTK);
             } else { // ident[exp] | ident
                 if (lval_symbol->type.is_array && lval_ptr->exp) { // array element
                     auto load_instr = new LoadInstr(Utils::get_next_counter(), cur_ir_lval);
                     cur_ir_basic_block->instrs.push_back(load_instr);
-                    return ExpInfo(false, false, load_instr);
+                    exp_info = ExpInfo(false, false, load_instr);
                 } else if (!lval_symbol->type.is_array) {
                     auto load_instr = new LoadInstr(Utils::get_next_counter(), cur_ir_lval);
                     cur_ir_basic_block->instrs.push_back(load_instr);
-                    return ExpInfo(false, false, load_instr);
+                    exp_info = ExpInfo(false, false, load_instr);
                 } else { // array
-                    return ExpInfo(false, true, cur_ir_lval);
+                    exp_info = ExpInfo(false, true, cur_ir_lval);
                 }
             }
         } else {
             std::cout << "Visit_Primary_Exp : Not Found LVal Symbol" << std::endl;
-            return ExpInfo(false, false, nullptr);
         }
-    } else {
-        std::cout << "Visit_Primary_Exp : Invalid Type of PrimaryExp Variant" << std::endl;
-        return ExpInfo(false, false, nullptr);
     }
+    return exp_info;
 }
 
 void Visitor::visit_cond(const Cond &cond) {
@@ -994,28 +996,25 @@ ExpInfo Visitor::visit_eq_exp(const EqExp &eq_exp) { // == !=
 }
 
 ExpInfo Visitor::visit_rel_exp(const RelExp &rel_exp) { // > < >= <=
+    ExpInfo exp_info = ExpInfo(false, false, 0, Token::END);
     if (!rel_exp.op) {
-        return visit_add_exp(*rel_exp.addexp);
+        exp_info = visit_add_exp(*rel_exp.addexp);
     } else {
         ExpInfo expinfo1 = visit_rel_exp(*rel_exp.relexp);
         ExpInfo expinfo2 = visit_add_exp(*rel_exp.addexp);
         if (expinfo1.is_const && expinfo2.is_const) { // constant optimization
             switch (rel_exp.op->get_type()) {
                 case Token::LSS:
-                    return ExpInfo(true, false, expinfo1.value < expinfo2.value, Token::INTTK);
+                    exp_info = ExpInfo(true, false, expinfo1.value < expinfo2.value, Token::INTTK);
                     break;
                 case Token::LEQ:
-                    return ExpInfo(true, false, expinfo1.value <= expinfo2.value, Token::INTTK);
+                    exp_info = ExpInfo(true, false, expinfo1.value <= expinfo2.value, Token::INTTK);
                     break;
                 case Token::GRE:
-                    return ExpInfo(true, false, expinfo1.value > expinfo2.value, Token::INTTK);
+                    exp_info = ExpInfo(true, false, expinfo1.value > expinfo2.value, Token::INTTK);
                     break;
-                case Token::GEQ:
-                    return ExpInfo(true, false, expinfo1.value >= expinfo2.value, Token::INTTK);
-                    break;       
-                default:
-                    std::cout << "Visit_RelExp : Invalid Operater" << std::endl;
-                    return ExpInfo(false, false, nullptr);
+                default: //case Token::GEQ:
+                    exp_info = ExpInfo(true, false, expinfo1.value >= expinfo2.value, Token::INTTK);
                     break;
             }
         } else {
@@ -1042,9 +1041,10 @@ ExpInfo Visitor::visit_rel_exp(const RelExp &rel_exp) { // > < >= <=
                     break;
             }
             cur_ir_basic_block->instrs.push_back(instr);
-            return ExpInfo(true, false, instr);
+            exp_info = ExpInfo(true, false, instr);
         }
     }
+    return exp_info;
 }
 
 void Visitor::print_symbol_list() {

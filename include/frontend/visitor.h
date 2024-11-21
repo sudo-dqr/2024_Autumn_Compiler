@@ -73,6 +73,7 @@ private:
     ExpInfo visit_add_exp(const AddExp &add_exp);
     ExpInfo visit_mul_exp(const MulExp &mul_exp);
     ExpInfo visit_unary_exp(const UnaryExp &unary_exp);
+    bool is_diff_type(ValueType* fparam_type, ExpInfo rparam_info);
     ExpInfo visit_primary_exp(const PrimaryExp &primary_exp);
     void visit_cond(const Cond &cond);
     void visit_lor_exp(const LOrExp &lor_exp);

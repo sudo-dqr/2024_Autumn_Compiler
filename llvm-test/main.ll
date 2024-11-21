@@ -34,15 +34,17 @@ define dso_local i32 @main() {
 	%6 = getelementptr [6 x i32], [6 x i32]* @a, i32 0, i32 4
 	%7 = load i32, i32* %6
 	%8 = getelementptr [6 x i32], [6 x i32]* @a, i32 0, i32 0
-	store i32 0, i32* %5
-	%9 = load i32, i32* %5
-	%10 = getelementptr [3 x i32], [3 x i32]* %1, i32 0, i32 0
-	%11 = load i32, i32* %10
-	%12 = getelementptr [3 x i32], [3 x i32]* %1, i32 0, i32 0
-	call void @putint(i32 %9)
-	%13 = getelementptr [4 x i8], [4 x i8]* @dqr0, i32 0, i32 0
-	call void @putstr(i8* %13)
-	call void @putint(i32 0)
+	%9 = call i32 @foo(i32 %7, i32* %8)
+	store i32 %9, i32* %5
+	%10 = load i32, i32* %5
+	%11 = getelementptr [3 x i32], [3 x i32]* %1, i32 0, i32 0
+	%12 = load i32, i32* %11
+	%13 = getelementptr [3 x i32], [3 x i32]* %1, i32 0, i32 0
+	%14 = call i32 @foo(i32 %12, i32* %13)
+	call void @putint(i32 %10)
+	%15 = getelementptr [4 x i8], [4 x i8]* @dqr0, i32 0, i32 0
+	call void @putstr(i8* %15)
+	call void @putint(i32 %14)
 	call void @putch(i32 10)
 	ret i32 0
 }
