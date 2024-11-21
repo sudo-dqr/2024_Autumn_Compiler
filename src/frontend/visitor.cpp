@@ -843,7 +843,6 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
     if (!(ident_symbol->type.is_array)) { // ident (not array)
         if (ident_symbol->type.is_const) {
             cur_ir_lval = new IntConst(ident_symbol->value);
-            ident_symbol->ir_value = cur_ir_lval;
         } else {
             cur_ir_lval = ident_symbol->ir_value;
         }
@@ -852,10 +851,11 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
         if (ident_symbol->type.is_param) {
             auto load_instr = new LoadInstr(Utils::get_next_counter(), ident_symbol->ir_value);
             cur_ir_basic_block->instrs.push_back(load_instr);
-            arr = load_instr;
+            arr = load_instr; // array is ArrayType* type
         } else {
-            arr = ident_symbol->ir_value;
+            arr = ident_symbol->ir_value; // array is PointerType* type
         }   
+        //! arr作为一个形参时,load之后就是一个数组类型, 不是形参时, 就是一个数组类型指针, 在进行数组unwrap注意区分
         std::deque<Value*> indices;
         if (lval.exp) indices.push_back(visit_exp(*lval.exp).ir_value);
         /*
@@ -868,16 +868,16 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
         if (!ident_symbol->type.is_param) indices.push_front(new IntConst(0));
         // %arraydecay = getelementptr inbounds [5 x i32], [5 x i32]* %s, i32 0, i32 0
         // %call = call i32 @add(i32* %arraydecay, i32 signext 5)
-        if (ident_symbol->type.is_array && (!lval.exp)) {
+        if (!lval.exp) {
             indices.push_back(new IntConst(0));
         }
         if (indices.empty()) {
             cur_ir_lval = arr;
         } else { // ident[exp]
-            auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), new PointerType(&IR_INT), arr, indices);
+            auto getelementptr_instr = 
+            new GetelementptrInstr(Utils::get_next_counter(), GetelementptrInstr::resolve_array_unwrap(arr, indices.size()), arr, indices);
             cur_ir_basic_block->instrs.push_back(getelementptr_instr);
             cur_ir_lval = getelementptr_instr;
-            ident_symbol->ir_value = getelementptr_instr;
         }
     }
     return ident_symbol;

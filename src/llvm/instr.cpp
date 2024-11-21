@@ -108,7 +108,7 @@ void GetelementptrInstr::print(std::ostream &os) const {
     array->type->print(os);
     os << " ";
     if (auto global_ptr = dynamic_cast<GlobalVariable*>(array)) os << "@" << array->name;
-    else os << "%" << id;
+    else os << "%" << array->id;
     os << ", "; // index : i32
     for (const auto &indice : indices) {
         os << "i32 ";

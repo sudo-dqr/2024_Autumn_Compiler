@@ -80,6 +80,22 @@ struct GetelementptrInstr : public Instruction {
 
     GetelementptrInstr(int dst_id, ValueType* dst_type, Value* array, std::deque<Value*> indices) // value type是一个指针类型
     : Instruction(dst_id, dst_type), array(array), indices(indices) {}
+    static ValueType* resolve_array_unwrap(Value* array, int index_cnt) {
+        ValueType* ret = array->type;
+        for (int i = 0; i < index_cnt; i++) {
+            if (auto ptr = dynamic_cast<PointerType*>(ret)) {
+                ret = ptr->referenced_type;
+            } else if (auto array_ptr = dynamic_cast<ArrayType*>(ret)) {
+                ret = array_ptr->element_type;
+            } else {
+                std::cout << "GetelementptrInstr resolve_array_unwrap error" << std::endl;
+                std::cout << "Real Type is ";
+                ret->print(std::cout);
+                std::cout << std::endl;
+            }
+        }
+        return ret;
+    }
 
     void print(std::ostream &os) const override;
 };
