@@ -5,46 +5,45 @@
 void GlobalVariable::print(std::ostream &os) const {
     // 当前global variable的type是一个指针类型
     auto deref_type = ((PointerType*)this->type)->referenced_type;
-    if (auto int_type = dynamic_cast<IntType*>(deref_type)) {
+    if (is_printf_str) {
+        os << "@" << name << " = private unnamed_addr constant ";
+        deref_type->print(os);
+        os << " c\"" << array_string << "\\00\"";
+    } else {
         os << "@" << name << " = dso_local global ";
         deref_type->print(os);
         os << " ";
-        os << value;
-    } else if (auto char_type = dynamic_cast<CharType*>(deref_type)) {
-        os << "@" << name << " = dso_local global ";
-        deref_type->print(os);
-        os << " ";
-        os << value;
-    } else if (auto array_type = dynamic_cast<ArrayType*>(deref_type)) {
-        if (array_values.size() == 0 && array_string.length() == 0) {
-            os << "@" << name << " = dso_local global ";
-            deref_type->print(os);
-            os << " ";
-            os << "zeroinitializer";
-        } else if (array_string.length() != 0) { // string const
-            os << "@" << name << " = private unnamed_addr constant ";
-            deref_type->print(os);
-            os << " c\"" << array_string << "\\00\"";
-        } else {
-            os << "@" << name << " = dso_local global ";
-            deref_type->print(os);
-            os << " ";
-            os << "[";
-            auto element_type = array_type->element_type;
-            if (auto int_type = dynamic_cast<IntType*>(element_type)) {
-                for (int i = 0; i < array_values.size(); i++) {
-                    os << "i32 " << array_values[i];
-                    if (i != array_values.size() - 1) os << ", ";
+        if (auto int_type = dynamic_cast<IntType*>(deref_type)) {
+            os << value;
+        } else if (auto char_type = dynamic_cast<CharType*>(deref_type)) {
+            os << value;
+        } else if (auto array_type = dynamic_cast<ArrayType*>(deref_type)) {
+            if (array_values.size() == 0 && array_string.length() == 0) {
+                os << "zeroinitializer";
+            } else if (array_string.length() != 0) { // string const
+                os << "c\"" << array_string;
+                int array_size = array_type->size;
+                for (int i = array_string.length(); i < array_size; i++) 
+                    os << "\\00";
+                os << "\"";
+            } else {
+                os << "[";
+                auto element_type = array_type->element_type;
+                if (auto int_type = dynamic_cast<IntType*>(element_type)) {
+                    for (int i = 0; i < array_values.size(); i++) {
+                        os << "i32 " << array_values[i];
+                        if (i != array_values.size() - 1) os << ", ";
+                    }
+                } else if (auto char_type = dynamic_cast<CharType*>(element_type)) {
+                    for (int i = 0; i < array_values.size(); i++) {
+                        os << "i8 " << (char)array_values[i];
+                        if (i != array_values.size() - 1) os << ", ";
+                    }
                 }
-            } else if (auto char_type = dynamic_cast<CharType*>(element_type)) {
-                for (int i = 0; i < array_values.size(); i++) {
-                    os << "i8 " << (char)array_values[i];
-                    if (i != array_values.size() - 1) os << ", ";
-                }
+                os << "]";
             }
-            os << "]";
-        }
-    } else std::cout << "GlobalVariable Print : Not Supported Type of GlobalVariable" << std::endl;
+        } else std::cout << "GlobalVariable Print : Not Supported Type of GlobalVariable" << std::endl;
+    }
 }
 
 void FParam::print(std::ostream &os) const {
@@ -109,5 +108,5 @@ void IntConst::print(std::ostream &os) const {
 }
 
 void CharConst::print(std::ostream &os) const {
-    os << (char)value;
+    os << value;
 }

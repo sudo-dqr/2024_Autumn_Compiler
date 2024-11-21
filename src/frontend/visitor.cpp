@@ -83,8 +83,8 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                 }
                 global_variable = new GlobalVariable(ident, array_type, symbol->array_values);
             } else if (auto string_const_ptr = std::get_if<StringConst>(&(*const_def.const_init_val))) {
-                symbol->string_value = string_const_ptr->str->get_token();
-                global_variable = new GlobalVariable(ident, array_type, symbol->string_value);
+                symbol->string_value = string_const_ptr->str->get_token().substr(1, string_const_ptr->str->get_token().length() - 2);
+                global_variable = new GlobalVariable(ident, array_type, symbol->string_value, false);
             } else {
                 std::cout << "ConstDef : Invalid Const Array Initval!" << std::endl;
             }
@@ -116,6 +116,15 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                     auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
                     cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                     auto store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
+                    cur_ir_basic_block->instrs.push_back(store_instr);
+                }
+                // \0
+                for (int i = string_const.length(); i < array_size; i++) {
+                    auto index = std::deque<Value*>{new IntConst(i)};
+                    index.push_front(new IntConst(0));
+                    auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
+                    cur_ir_basic_block->instrs.push_back(getelementptr_instr);
+                    auto store_instr = new StoreInstr(new CharConst('\0'), getelementptr_instr);
                     cur_ir_basic_block->instrs.push_back(store_instr);
                 }
             }
@@ -158,9 +167,8 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
             symbol->ir_value = global_variable;
             Module::get_instance().global_variables.push_back(global_variable);
         } else {
-            ValueType* type = nullptr;
-            if (btype == Token::CHARTK) type = &IR_CHAR;
-            else if (btype == Token::INTTK) type = &IR_INT;
+            ValueType* type = (btype == Token::CHARTK) ? 
+                            dynamic_cast<ValueType*>(&IR_CHAR) : dynamic_cast<ValueType*>(&IR_INT);
             auto alloc_instr = new AllocaInstr(Utils::get_next_counter(), type);
             symbol->ir_value = alloc_instr;
             cur_ir_basic_block->instrs.push_back(alloc_instr);
@@ -193,11 +201,14 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                     global_variable = new GlobalVariable(ident, array_type, symbol->array_values);
                 } else {
                     auto string_const_ptr = std::get_if<StringConst>(&(*var_def.init_val));
-                    global_variable = new GlobalVariable(ident, array_type, string_const_ptr->str->get_token());
+                    // delete ""
+                    std::string string_const = string_const_ptr->str->get_token().substr(1, string_const_ptr->str->get_token().length() - 2);
+                    global_variable = new GlobalVariable(ident, array_type, string_const, false);
                 }
-                symbol->ir_value = global_variable;
-                Module::get_instance().global_variables.push_back(global_variable);
-            } // else 全局字符数组未初始化默认为"", 全局整型数组默认为0
+            } else
+                global_variable = new GlobalVariable(ident, array_type, std::vector<int>());
+            symbol->ir_value = global_variable;
+            Module::get_instance().global_variables.push_back(global_variable);
         } else {
             auto alloc_instr = new AllocaInstr(Utils::get_next_counter(), array_type);
             symbol->ir_value = alloc_instr;
@@ -218,13 +229,22 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                 } else { // stringconst
                     auto string_const_ptr = std::get_if<StringConst>(&(*var_def.init_val));
                     auto string_const = string_const_ptr->str->get_token();
+                    auto pointer_type = new PointerType(&IR_CHAR);
                     for (int i = 0; i < string_const.length(); i++) {
-                        auto pointer_type = new PointerType(&IR_CHAR);
                         auto index = std::deque<Value*>{new IntConst(i)};
                         index.push_front(new IntConst(0));
                         auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
                         cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                         auto store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
+                        cur_ir_basic_block->instrs.push_back(store_instr);
+                    }
+                    // \0
+                    for (int i = string_const.length(); i < array_size; i++) {
+                        auto index = std::deque<Value*>{new IntConst(i)};
+                        index.push_front(new IntConst(0));
+                        auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
+                        cur_ir_basic_block->instrs.push_back(getelementptr_instr);
+                        auto store_instr = new StoreInstr(new CharConst('\0'), getelementptr_instr);
                         cur_ir_basic_block->instrs.push_back(store_instr);
                     }
                 }
@@ -641,7 +661,7 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
                 std::string global_var_name = "dqr" + std::to_string(global_var_id);
                 std::string global_var_value = format_str.substr(i, length);
                 auto global_var_type = new ArrayType(&IR_CHAR, length + 1);
-                auto *global_var = new GlobalVariable(global_var_name, global_var_type, global_var_value);
+                auto *global_var = new GlobalVariable(global_var_name, global_var_type, global_var_value, true);
                 Module::get_instance().global_variables.push_back(global_var);
                 std::deque<Value*> indices = std::deque<Value*>();
                 // 这里的全局变量是一个一维数组指针, 需要两个index

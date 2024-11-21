@@ -37,14 +37,15 @@ struct GlobalVariable : public Value {
     int value;
     std::vector<int> array_values = std::vector<int>(); // int/char array
     std::string array_string = ""; // string const 全局变量可以使用字符串常量直接初始化，局部变量不可以
+    bool is_printf_str = false;
 
     GlobalVariable() = default;
     GlobalVariable(std::string name, ValueType* dst_type, int value)  // 全局变量的类型是一个指针类型 
     : Value(name, new PointerType(dst_type)), value(value) {}
     GlobalVariable(std::string name, ValueType* dst_type, std::vector<int> array_values) 
     : Value(name, new PointerType(dst_type)), array_values(array_values) {}
-    GlobalVariable(std::string name, ValueType* dst_type, std::string str) // 字符串全局变量 
-    : Value(name, new PointerType(dst_type)), array_string(str) {}
+    GlobalVariable(std::string name, ValueType* dst_type, std::string str, bool is_printf_str) // 字符串全局变量 
+    : Value(name, new PointerType(dst_type)), array_string(str), is_printf_str(is_printf_str) {}
 
     void print(std::ostream &os) const override;
 };
