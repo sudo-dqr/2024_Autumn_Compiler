@@ -16,7 +16,7 @@ define dso_local i32 @foo(i32 %0, i32* %1) {
 	%5 = load i32, i32* %3
 	%6 = load i32*, i32** %4
 	%7 = getelementptr i32, i32* %6, i32 2
-	%8 = load i32*, i32** %4
+	%8 = load i32, i32* %7
 	%9 = add i32 %5, %8
 	ret i32 %9
 }
@@ -32,12 +32,12 @@ define dso_local i32 @main() {
 	store i32 3, i32* %4
 	%5 = alloca i32
 	%6 = getelementptr [6 x i32], [6 x i32]* @a, i32 0, i32 4
-	%7 = load [6 x i32], [6 x i32]* @a
+	%7 = load i32, i32* %6
 	%8 = getelementptr [6 x i32], [6 x i32]* @a, i32 0, i32 0
 	store i32 0, i32* %5
 	%9 = load i32, i32* %5
 	%10 = getelementptr [3 x i32], [3 x i32]* %1, i32 0, i32 0
-	%11 = load [3 x i32], [3 x i32]* %1
+	%11 = load i32, i32* %10
 	%12 = getelementptr [3 x i32], [3 x i32]* %1, i32 0, i32 0
 	call void @putint(i32 %9)
 	%13 = getelementptr [4 x i8], [4 x i8]* @dqr0, i32 0, i32 0

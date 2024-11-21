@@ -94,7 +94,7 @@ struct GetelementptrInstr : public Instruction {
                 std::cout << std::endl;
             }
         }
-        return ret;
+        return new PointerType(ret);
     }
 
     void print(std::ostream &os) const override;

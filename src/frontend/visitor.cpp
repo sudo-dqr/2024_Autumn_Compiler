@@ -899,11 +899,11 @@ ExpInfo Visitor::visit_primary_exp(const PrimaryExp &primary_exp) {
                 return ExpInfo(false, false, charconst_ptr->value, Token::CHARTK);
             } else { // ident[exp] | ident
                 if (lval_symbol->type.is_array && lval_ptr->exp) { // array element
-                    auto load_instr = new LoadInstr(Utils::get_next_counter(), lval_symbol->ir_value);
+                    auto load_instr = new LoadInstr(Utils::get_next_counter(), cur_ir_lval);
                     cur_ir_basic_block->instrs.push_back(load_instr);
                     return ExpInfo(false, false, load_instr);
                 } else if (!lval_symbol->type.is_array) {
-                    auto load_instr = new LoadInstr(Utils::get_next_counter(), lval_symbol->ir_value);
+                    auto load_instr = new LoadInstr(Utils::get_next_counter(), cur_ir_lval);
                     cur_ir_basic_block->instrs.push_back(load_instr);
                     return ExpInfo(false, false, load_instr);
                 } else { // array
