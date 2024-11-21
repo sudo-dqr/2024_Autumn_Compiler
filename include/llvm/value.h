@@ -112,7 +112,7 @@ struct IntConst : public Value {
 struct CharConst : public Value {
     int value;
 
-    CharConst(char value) : Value(&IR_CHAR), value(value) {}
+    CharConst(int value) : Value(&IR_CHAR), value(value) {}
     void print(std::ostream &os) const override;
 };
 

@@ -36,7 +36,7 @@ void GlobalVariable::print(std::ostream &os) const {
                     }
                 } else if (auto char_type = dynamic_cast<CharType*>(element_type)) {
                     for (int i = 0; i < array_values.size(); i++) {
-                        os << "i8 " << (char)array_values[i];
+                        os << "i8 " << array_values[i];
                         if (i != array_values.size() - 1) os << ", ";
                     }
                 }

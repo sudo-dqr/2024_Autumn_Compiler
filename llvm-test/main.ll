@@ -4,48 +4,21 @@ declare void @putint(i32)
 declare void @putch(i32)
 declare void @putstr(i8*)
 
-@a = dso_local global [6 x i32] [i32 1, i32 2, i32 3, i32 4, i32 5, i32 6]
-@dqr0 = private unnamed_addr constant [4 x i8] c" - \00"
-
-define dso_local i32 @foo(i32 %0, i32* %1) {
-2:
-	%3 = alloca i32
-	%4 = alloca i32*
-	store i32 %0, i32* %3
-	store i32* %1, i32** %4
-	%5 = load i32, i32* %3
-	%6 = load i32*, i32** %4
-	%7 = getelementptr i32, i32* %6, i32 2
-	%8 = load i32, i32* %7
-	%9 = add i32 %5, %8
-	ret i32 %9
-}
+@ch = dso_local global i8 97
+@a = dso_local global [3 x i8] [i8 99, i8 100, i8 101]
+@b = dso_local global i8 98
 
 define dso_local i32 @main() {
 0:
-	%1 = alloca [3 x i32]
-	%2 = getelementptr [3 x i32], [3 x i32]* %1, i32 0, i32 0
-	store i32 1, i32* %2
-	%3 = getelementptr [3 x i32], [3 x i32]* %1, i32 0, i32 1
-	store i32 2, i32* %3
-	%4 = getelementptr [3 x i32], [3 x i32]* %1, i32 0, i32 2
-	store i32 3, i32* %4
-	%5 = alloca i32
-	%6 = getelementptr [6 x i32], [6 x i32]* @a, i32 0, i32 4
-	%7 = load i32, i32* %6
-	%8 = getelementptr [6 x i32], [6 x i32]* @a, i32 0, i32 0
-	%9 = call i32 @foo(i32 %7, i32* %8)
-	store i32 %9, i32* %5
-	%10 = load i32, i32* %5
-	%11 = getelementptr [3 x i32], [3 x i32]* %1, i32 0, i32 0
-	%12 = load i32, i32* %11
-	%13 = getelementptr [3 x i32], [3 x i32]* %1, i32 0, i32 0
-	%14 = call i32 @foo(i32 %12, i32* %13)
-	call void @putint(i32 %10)
-	%15 = getelementptr [4 x i8], [4 x i8]* @dqr0, i32 0, i32 0
-	call void @putstr(i8* %15)
-	call void @putint(i32 %14)
-	call void @putch(i32 10)
+	%1 = alloca [3 x i8]
+	%2 = getelementptr [3 x i8], [3 x i8]* %1, i32 0, i32 0
+	store i8 102, i8* %2
+	%3 = getelementptr [3 x i8], [3 x i8]* %1, i32 0, i32 1
+	store i8 103, i8* %3
+	%4 = getelementptr [3 x i8], [3 x i8]* %1, i32 0, i32 2
+	store i8 104, i8* %4
+	%5 = alloca i8
+	store i8 99, i8* %5
 	ret i32 0
 }
 
