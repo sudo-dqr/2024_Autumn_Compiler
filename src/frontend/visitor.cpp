@@ -487,7 +487,7 @@ void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
                 exp_info.ir_value = trunc_instr;
                 std::cout << "Assign Stmt Trunc Int to Char" << std::endl;
             }
-            auto store_instr = new StoreInstr(exp_info.ir_value, lval_symbol->ir_value);
+            auto store_instr = new StoreInstr(exp_info.ir_value, cur_ir_lval);
             cur_ir_basic_block->instrs.push_back(store_instr);
         }
     }
@@ -512,7 +512,7 @@ void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
                 exp_info.ir_value = trunc_instr;
                 std::cout << "For Assign Stmt Trunc Int to Char" << std::endl;
             }
-            auto store_instr = new StoreInstr(exp_info.ir_value, lval_symbol->ir_value);
+            auto store_instr = new StoreInstr(exp_info.ir_value, cur_ir_lval);
             cur_ir_basic_block->instrs.push_back(store_instr);
         }
     }
