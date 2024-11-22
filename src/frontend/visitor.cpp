@@ -192,7 +192,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                 if (auto exp_ptr = std::get_if<Exp>(&(*var_def.init_val))) {
                     exp_info = visit_exp(*exp_ptr);
                     if (type == &IR_CHAR && exp_info.type == Token::INTTK) { // number constant 
-                        exp_info.value = (char)exp_info.value;
+                        exp_info.ir_value = new CharConst((char)exp_info.value);
                         std::cout << "Local Non-Array Var Def : Int Trunc to Char, Value : " << (char)exp_info.value << std::endl;
                     } else if (type == &IR_CHAR && exp_info.ir_value->type == &IR_INT) { // identifier
                         auto trunc_instr = new TruncInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_CHAR);
