@@ -26,6 +26,7 @@ class Token {
         TokenType get_type();
         int get_line_number();
         std::string to_string();
+        char get_escape_char(const std::string &str);
 
 };
 

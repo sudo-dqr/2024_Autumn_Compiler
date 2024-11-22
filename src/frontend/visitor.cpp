@@ -843,7 +843,27 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
                         if (is_diff_type(fparam_type, rparam_info)) {
                             std::cout << "Function call parameter type mismatch" << std::endl;
                             ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'e');
-                        } else {
+                        } else { // int <-> char conversion
+                            auto f_type = fparam_type;
+                            auto r_type = rparam_info.ir_value->type;
+                            //TODO: 区分number constant 和 identifier
+                            if (f_type == &IR_CHAR && rparam_info.type == Token::INTTK) {
+                                std::cout << "Call Function : RParam Truncate!" << std::endl;
+                                rparam_info.ir_value = new CharConst((char)rparam_info.value);
+                            } else if (f_type == &IR_CHAR && r_type == &IR_INT) {
+                                std::cout << "Call Function : RParam Truncate!" << std::endl;
+                                auto trunc_instr = new TruncInstr(Utils::get_next_counter(), rparam_info.ir_value, &IR_CHAR);
+                                cur_ir_basic_block->instrs.push_back(trunc_instr);
+                                rparam_info.ir_value = trunc_instr;
+                            } else if (f_type == &IR_INT && rparam_info.type == Token::CHARTK) {
+                                std::cout << "Call Function : RParam Zext!" << std::endl;
+                                rparam_info.ir_value = new IntConst((int)rparam_info.value);
+                            } else if (f_type == &IR_INT && r_type == &IR_CHAR) {
+                                std::cout << "Call Function : RParam Zext!" << std::endl;
+                                auto zext_instr = new ZextInstr(Utils::get_next_counter(), rparam_info.ir_value, &IR_INT);
+                                cur_ir_basic_block->instrs.push_back(zext_instr);
+                                rparam_info.ir_value = zext_instr;
+                            }
                             ir_rparams.push_back(rparam_info.ir_value);
                         }
                     }

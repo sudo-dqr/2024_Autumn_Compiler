@@ -85,9 +85,12 @@ void CallInstr::print(std::ostream &os) const {
     }
     os << this->function->name << "(";
     for (int i = 0; i < args.size(); i++) {
-        if (auto constexp_ptr = dynamic_cast<IntConst*>(args[i])) {
+        if (auto intconst_ptr = dynamic_cast<IntConst*>(args[i])) {
             os << "i32 ";
-            constexp_ptr->print(os);
+            intconst_ptr->print(os);
+        } else if (auto charconst_ptr = dynamic_cast<CharConst*>(args[i])) {
+            os << "i8 ";
+            charconst_ptr->print(os);
         } else {
             args[i]->type->print(os);
             os << " %" << args[i]->id;

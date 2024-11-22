@@ -19,7 +19,25 @@ int Token::get_int() {
 }
 
 char Token::get_char() {
-    return this->token[0];
+    if (token.length() == 3) {
+        return token[1];
+    } else {
+        return get_escape_char(token);
+    }
+}
+
+char Token::get_escape_char(const std::string &str) {
+    if (str == "'\\a'") return '\a';
+    if (str == "'\\b'") return '\b';
+    if (str == "'\\t'") return '\t';
+    if (str == "'\\n'") return '\n';
+    if (str == "'\\v'") return '\v';
+    if (str == "'\\f'") return '\f';
+    if (str == "'\\\"'") return '\"';
+    if (str == "'\\''") return '\'';
+    if (str == "'\\\\'") return '\\';
+    if (str == "'\\0'") return '\0';
+    return '\0';
 }
 
 Token::TokenType Token::get_type() {
