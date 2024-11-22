@@ -10,7 +10,6 @@ Visitor::Visitor() {
     cur_scope = std::make_shared<SymbolTable>();
     loop_cnt = 0;
     is_void_func= false;
-    stmt_is_return_or_break = false;
     scope_cnt = 1; // global
     symbol_list = std::deque<Symbol>();
     cur_ir_function = nullptr;
@@ -441,7 +440,6 @@ void Visitor::visit_block_item(const BlockItem &block_item) {
 }
 
 void Visitor::visit_stmt(const Stmt &stmt) {
-    stmt_is_return_or_break = false;
     if (auto assign_ptr = std::get_if<AssignStmt>(&stmt)) {
         visit_assign_stmt(*assign_ptr);
     } else if (auto exp_ptr = std::get_if<ExpStmt>(&stmt)) {
@@ -453,10 +451,8 @@ void Visitor::visit_stmt(const Stmt &stmt) {
     } else if (auto for_stmt = std::get_if<ForStmt>(&stmt)) {
         visit_for_stmt(*for_stmt);
     } else if (auto break_stmt = std::get_if<BreakStmt>(&stmt)) {
-        stmt_is_return_or_break = true;
         visit_break_stmt(*break_stmt);
     } else if (auto continue_stmt = std::get_if<ContinueStmt>(&stmt)) {
-        stmt_is_return_or_break = true;
         visit_continue_stmt(*continue_stmt);
     } else if (auto return_stmt = std::get_if<ReturnStmt>(&stmt)) {
         visit_return_stmt(*return_stmt);
@@ -548,21 +544,22 @@ void Visitor::visit_if_stmt(const IfStmt &if_stmt) {
     if_stack.pop_back();
     cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
     visit_stmt(*if_stmt.if_stmt);
-    if (!stmt_is_return_or_break) { // 如果是解析return或break 最后跳转到的normal block已经由return或break指令处理
-        cur_ir_basic_block->instrs.push_back(new BrInstr(if_stack[0])); // jump to next normal block 这里是确定的
-    }
+    if (!if_stmt.else_stmt)
+        cur_ir_basic_block->instrs.push_back(new BrInstr(if_stack.back())); // jump to next normal block
+    else
+        cur_ir_basic_block->instrs.push_back(new BrInstr(if_stack[if_stack.size() - 2])); // jump to next normal block
     if (if_stmt.else_stmt) {
         cur_ir_basic_block = if_stack.back();
         if_stack.pop_back();
         cur_ir_basic_block->id = Utils::get_next_counter();
         cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
         visit_stmt(*if_stmt.else_stmt);
-        cur_ir_basic_block->instrs.push_back(new BrInstr(if_stack[0])); // jump to next normal block
+        cur_ir_basic_block->instrs.push_back(new BrInstr(if_stack.back())); // jump to next normal block
     }
-    cur_ir_basic_block = if_stack[0];
+    cur_ir_basic_block = if_stack.back();
+    if_stack.pop_back();
     cur_ir_basic_block->id = Utils::get_next_counter();
     cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
-    if_stack.pop_back();
 }
 
 void Visitor::visit_for_stmt(const ForStmt &for_stmt) {
@@ -590,16 +587,19 @@ void Visitor::visit_for_stmt(const ForStmt &for_stmt) {
     cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack[for_stack.size() - 3])); 
     this->loop_cnt--;
     if (for_stmt.assign2) {
-        cur_ir_basic_block = for_stack[1];
+        cur_ir_basic_block = for_stack[for_stack.size() - 3];
         cur_ir_basic_block->id = Utils::get_next_counter();
         cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
         visit_for_assign_stmt(*for_stmt.assign2);
-        cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack[0])); // jump to condition block
+        cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack[for_stack.size() - 4])); // jump to condition block
     }
     cur_ir_basic_block = for_stack.back();
     cur_ir_basic_block->id = Utils::get_next_counter();
     cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
-    for_stack.clear(); 
+    for_stack.pop_back();
+    for_stack.pop_back();
+    if (for_stmt.assign2) for_stack.pop_back();
+    for_stack.pop_back();
 }
 
 void Visitor::visit_break_stmt(const BreakStmt &break_stmt) {
@@ -607,6 +607,8 @@ void Visitor::visit_break_stmt(const BreakStmt &break_stmt) {
         ErrorList::report_error(break_stmt.break_token->get_line_number(), 'm');
     } else {
         cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack.back())); // jump to next normal block
+        cur_ir_basic_block = new BasicBlock(Utils::get_next_counter());
+        cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
     }
 }
 
@@ -615,6 +617,8 @@ void Visitor::visit_continue_stmt(const ContinueStmt &continue_stmt) {
         ErrorList::report_error(continue_stmt.continue_token->get_line_number(), 'm');
     } else {
         cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack[for_stack.size() - 3])); // cond block or assign2 block
+        cur_ir_basic_block = new BasicBlock(Utils::get_next_counter());
+        cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
     }
 }
 
@@ -629,6 +633,8 @@ void Visitor::visit_return_stmt(const ReturnStmt &return_stmt) {
     } else {
         cur_ir_basic_block->instrs.push_back(new RetInstr());
     }
+    cur_ir_basic_block = new BasicBlock(Utils::get_next_counter());
+    cur_ir_function->basic_blocks.push_back(cur_ir_basic_block);
 }
 
 void Visitor::visit_get_int_stmt(const GetIntStmt &get_int_stmt) {
