@@ -99,7 +99,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
             }
             symbol->ir_value = global_variable;
             Module::get_instance().global_variables.push_back(global_variable);
-        } else {
+        } else { // 局部常量数组
             auto alloc_instr = new AllocaInstr(Utils::get_next_counter(), array_type);
             symbol->ir_value = alloc_instr;
             cur_ir_basic_block->instrs.push_back(alloc_instr);
@@ -112,7 +112,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                     auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
                     cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                     ExpInfo exp_info = visit_constexp(*const_exps_ptr->const_exps[i]);
-                    if (btype == Token::CHARTK && exp_info.ir_value->type == &IR_INT) {
+                    if (btype == Token::CHARTK && exp_info.type == Token::INTTK) {
                         exp_info.ir_value = new CharConst((char)exp_info.value);
                         std::cout << "Local Const Array Def : Int Trunc to Char, Value : " << (char)exp_info.value << std::endl;
                     }
@@ -165,22 +165,20 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
     if (!var_def.const_exp) {
         SymbolType type = SymbolType(false, false, btype);
         symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
-        if (cur_scope->is_in_global_scope()) {
+        if (cur_scope->is_in_global_scope()) {  // 使用变量对global_variable进行初始化, 所使用的必须为const
+            ValueType* global_variable_type = (btype == Token::CHARTK) ? 
+                                            dynamic_cast<ValueType*>(&IR_CHAR) : dynamic_cast<ValueType*>(&IR_INT);
             if (var_def.init_val) {
                 if (auto exp_ptr = std::get_if<Exp>(&(*var_def.init_val))) {
                     exp_info = visit_exp(*exp_ptr);
-                    symbol->value = exp_info.value;
-                } else {
-                    std::cout << "VarDef : Invalid Non-Array Variable Initval!" << std::endl;
+                    if (exp_info.type == Token::INTTK && global_variable_type == &IR_CHAR) { // number constant
+                        exp_info.value = (char)exp_info.value;
+                        std::cout << "Global Non-Array Var Def : Int Trunc to Char, Value : " << (char)exp_info.value << std::endl;
+                    }
                 }
+                else std::cout << "VarDef : Invalid Non-Array Variable Initval!" << std::endl;
             } // else 全局变量未初始化默认为0
-            ValueType* global_variable_type = (btype == Token::CHARTK) ? 
-                                            dynamic_cast<ValueType*>(&IR_CHAR) : dynamic_cast<ValueType*>(&IR_INT);
-            if (btype == Token::CHARTK && exp_info.type == Token::INTTK) {
-                symbol->value = (char)symbol->value;
-                std::cout << "Global Non-Array Var Def : Int Trunc to Char, Value : " << (char)symbol->value << std::endl;
-            }
-            auto global_variable_value = (var_def.init_val) ? symbol->value : 0;
+            auto global_variable_value = (var_def.init_val) ? exp_info.value : 0;
             auto global_variable = new GlobalVariable(ident, global_variable_type, global_variable_value);
             symbol->ir_value = global_variable;
             Module::get_instance().global_variables.push_back(global_variable);
@@ -193,9 +191,14 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
             if (var_def.init_val) {
                 if (auto exp_ptr = std::get_if<Exp>(&(*var_def.init_val))) {
                     exp_info = visit_exp(*exp_ptr);
-                    if (btype == Token::CHARTK && exp_info.type == Token::INTTK) {
-                        exp_info.ir_value = new CharConst((char)exp_info.value);
+                    if (type == &IR_CHAR && exp_info.type == Token::INTTK) { // number constant 
+                        exp_info.value = (char)exp_info.value;
                         std::cout << "Local Non-Array Var Def : Int Trunc to Char, Value : " << (char)exp_info.value << std::endl;
+                    } else if (type == &IR_CHAR && exp_info.ir_value->type == &IR_INT) { // identifier
+                        auto trunc_instr = new TruncInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_CHAR);
+                        cur_ir_basic_block->instrs.push_back(trunc_instr);
+                        exp_info.ir_value = trunc_instr;
+                        std::cout << "Local Non-Array Var Def : Int Trunc to Char" << std::endl;
                     }
                     auto store_instr = new StoreInstr(exp_info.ir_value, symbol->ir_value);
                     cur_ir_basic_block->instrs.push_back(store_instr);
@@ -218,11 +221,16 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                 if (auto exps_ptr = std::get_if<Exps>(&(*var_def.init_val))) {
                     for (const auto &exp : exps_ptr->exps) {
                         exp_info = visit_exp(*exp);
-                        if (btype == Token::CHARTK && exp_info.type == Token::INTTK) {
+                        if (ir_element_type == &IR_CHAR && exp_info.type == Token::INTTK) { // number constant
                             exp_info.value = (char)exp_info.value;
                             std::cout << "Global Array Def : Int Trunc to Char, Value : " << (char)exp_info.value << std::endl;
                         }
                         symbol->array_values.push_back(exp_info.value);
+                    }
+                    if (symbol->array_values.size() < array_size) {
+                        for (int i = symbol->array_values.size(); i < array_size; i++) {
+                            symbol->array_values.push_back(0);
+                        }
                     }
                     global_variable = new GlobalVariable(ident, array_type, symbol->array_values);
                 } else {
@@ -249,9 +257,14 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                         auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
                         cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                         exp_info = visit_exp(*exps_ptr->exps[i]);
-                        if (btype == Token::CHARTK && exp_info.ir_value->type == &IR_INT) {
-                            exp_info.ir_value = new CharConst((char)exp_info.value);
+                        if (btype == Token::CHARTK && exp_info.type == Token::INTTK) { // number constant
+                            exp_info.value = (char)exp_info.value;
                             std::cout << "Local Array Def : Int Trunc to Char, Value : " << (char)exp_info.value << std::endl;
+                        } else if (btype == Token::CHARTK && exp_info.ir_value->type == &IR_INT) { // identifier
+                            std::cout << "Local Array Def : Int Trunc to Char" << std::endl;
+                            auto trunc_instr = new TruncInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_CHAR);
+                            cur_ir_basic_block->instrs.push_back(trunc_instr);
+                            exp_info.ir_value = trunc_instr;
                         }
                         auto store_instr = new StoreInstr(exp_info.ir_value, getelementptr_instr);
                         cur_ir_basic_block->instrs.push_back(store_instr);
@@ -461,11 +474,20 @@ void Visitor::visit_stmt(const Stmt &stmt) {
 void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
     ExpInfo exp_info;
     auto lval_symbol = visit_lval((*assign_stmt.lval));
+    std::cout << "Assign Stmt : " << lval_symbol->name << std::endl;
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
             ErrorList::report_error(assign_stmt.lval->ident->ident->get_line_number(), 'h');
         } else {
             exp_info = visit_exp(*assign_stmt.exp);
+            // lval_symbol is a pointer
+            auto deref_type = dynamic_cast<PointerType*>(lval_symbol->ir_value->type)->referenced_type;
+            if (exp_info.ir_value->type == &IR_INT && deref_type == &IR_CHAR) {
+                auto trunc_instr = new TruncInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_CHAR);
+                cur_ir_basic_block->instrs.push_back(trunc_instr);
+                exp_info.ir_value = trunc_instr;
+                std::cout << "Assign Stmt Trunc Int to Char" << std::endl;
+            }
             auto store_instr = new StoreInstr(exp_info.ir_value, lval_symbol->ir_value);
             cur_ir_basic_block->instrs.push_back(store_instr);
         }
@@ -475,11 +497,19 @@ void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
 void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
     ExpInfo exp_info;
     auto lval_symbol = visit_lval((*for_assign_stmt.lval));
+    std::cout << "For Assign Stmt : " << lval_symbol->name << std::endl;
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
             ErrorList::report_error(for_assign_stmt.lval->ident->ident->get_line_number(), 'h');
         } else {
             exp_info = visit_exp(*for_assign_stmt.exp);
+            auto deref_type = dynamic_cast<PointerType*>(lval_symbol->ir_value->type)->referenced_type;
+            if (exp_info.ir_value->type == &IR_INT && deref_type == &IR_CHAR) {
+                auto trunc_instr = new TruncInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_CHAR);
+                cur_ir_basic_block->instrs.push_back(trunc_instr);
+                exp_info.ir_value = trunc_instr;
+                std::cout << "For Assign Stmt Trunc Int to Char" << std::endl;
+            }
             auto store_instr = new StoreInstr(exp_info.ir_value, lval_symbol->ir_value);
             cur_ir_basic_block->instrs.push_back(store_instr);
         }
@@ -875,7 +905,11 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
     }
     if (!(ident_symbol->type.is_array)) { // ident (not array)
         if (ident_symbol->type.is_const) {
-            cur_ir_lval = new IntConst(ident_symbol->value);
+            if (ident_symbol->type.btype == Token::INTTK) {
+                cur_ir_lval = new IntConst(ident_symbol->value);
+            } else {
+                cur_ir_lval = new CharConst(ident_symbol->value);
+            }
         } else {
             cur_ir_lval = ident_symbol->ir_value;
         }
@@ -924,13 +958,14 @@ ExpInfo Visitor::visit_primary_exp(const PrimaryExp &primary_exp) {
         exp_info = ExpInfo(false, false, num_ptr->num->get_int(), Token::INTTK);
     } else if (auto char_ptr = std::get_if<Character>(&primary_exp)) {
         exp_info = ExpInfo(false, false, char_ptr->ch->get_char(), Token::CHARTK);
-    } else { // LVal -> ident[exp] | ident
+    } else { // LVal -> ident[exp] | ident 
+        // lval is a pointer
         auto lval_ptr = std::get_if<LVal>(&primary_exp);
         auto lval_symbol = visit_lval(*lval_ptr);
         if (lval_symbol) {
-            if (auto intconst_ptr = dynamic_cast<IntConst*>(lval_symbol->ir_value)) {
+            if (auto intconst_ptr = dynamic_cast<IntConst*>(cur_ir_lval)) {
                 exp_info = ExpInfo(false, false, intconst_ptr->value, Token::INTTK);
-            } else if (auto charconst_ptr = dynamic_cast<CharConst*>(lval_symbol->ir_value)) {
+            } else if (auto charconst_ptr = dynamic_cast<CharConst*>(cur_ir_lval)) {
                 exp_info = ExpInfo(false, false, charconst_ptr->value, Token::CHARTK);
             } else { // ident[exp] | ident
                 if (lval_symbol->type.is_array && lval_ptr->exp) { // array element
