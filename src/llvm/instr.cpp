@@ -66,6 +66,7 @@ void RetInstr::print(std::ostream &os) const {
         return_value->type->print(os);
         os << " ";
         if (auto intconst_ptr = dynamic_cast<IntConst*>(return_value)) intconst_ptr->print(os);
+        else if (auto charconst_ptr = dynamic_cast<CharConst*>(return_value)) charconst_ptr->print(os);
         else os << "%" << return_value->id;
     }
     else os << "void";
