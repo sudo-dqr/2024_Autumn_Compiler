@@ -482,7 +482,10 @@ void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
             exp_info = visit_exp(*assign_stmt.exp);
             // lval_symbol is a pointer
             auto deref_type = dynamic_cast<PointerType*>(lval_symbol->ir_value->type)->referenced_type;
-            if (exp_info.ir_value->type == &IR_INT && deref_type == &IR_CHAR) {
+            if (exp_info.type == Token::INTTK && deref_type == &IR_CHAR) { // number constant
+                exp_info.ir_value = new CharConst((char)exp_info.value);
+                std::cout << "Assign Stmt Trunc Int to Char" << std::endl;
+            } else if (exp_info.ir_value->type == &IR_INT && deref_type == &IR_CHAR) {
                 auto trunc_instr = new TruncInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_CHAR);
                 cur_ir_basic_block->instrs.push_back(trunc_instr);
                 exp_info.ir_value = trunc_instr;
@@ -504,7 +507,10 @@ void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
         } else {
             exp_info = visit_exp(*for_assign_stmt.exp);
             auto deref_type = dynamic_cast<PointerType*>(lval_symbol->ir_value->type)->referenced_type;
-            if (exp_info.ir_value->type == &IR_INT && deref_type == &IR_CHAR) {
+            if (exp_info.type == Token::INTTK && deref_type == &IR_CHAR) { // number constant
+                exp_info.ir_value = new CharConst((char)exp_info.value);
+                std::cout << "For Assign Stmt Trunc Int to Char" << std::endl;
+            } else if (exp_info.ir_value->type == &IR_INT && deref_type == &IR_CHAR) { // identifier
                 auto trunc_instr = new TruncInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_CHAR);
                 cur_ir_basic_block->instrs.push_back(trunc_instr);
                 exp_info.ir_value = trunc_instr;
