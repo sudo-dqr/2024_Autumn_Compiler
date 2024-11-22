@@ -258,7 +258,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                         cur_ir_basic_block->instrs.push_back(getelementptr_instr);
                         exp_info = visit_exp(*exps_ptr->exps[i]);
                         if (btype == Token::CHARTK && exp_info.type == Token::INTTK) { // number constant
-                            exp_info.value = (char)exp_info.value;
+                            exp_info.ir_value = new CharConst((char)exp_info.value);
                             std::cout << "Local Array Def : Int Trunc to Char, Value : " << (char)exp_info.value << std::endl;
                         } else if (btype == Token::CHARTK && exp_info.ir_value->type == &IR_INT) { // identifier
                             std::cout << "Local Array Def : Int Trunc to Char" << std::endl;
