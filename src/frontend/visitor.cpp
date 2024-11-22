@@ -769,6 +769,18 @@ ExpInfo Visitor::visit_add_exp(const AddExp &add_exp) {
             } else if (info2.is_const && info2.value == 0) { // info1 +/- 0
                 instr = info1.ir_value;
             } else {
+                if (info1.ir_value->type == &IR_CHAR) {
+                    std::cout << "Add Exp : Char Trunc Operand1 to Int" << std::endl;
+                    auto zext_instr = new ZextInstr(Utils::get_next_counter(), info1.ir_value, &IR_INT);
+                    cur_ir_basic_block->instrs.push_back(zext_instr);
+                    info1.ir_value = zext_instr;
+                }
+                if (info2.ir_value->type == &IR_CHAR) {
+                    std::cout << "Add Exp : Char Trunc Operand2 to Int" << std::endl;
+                    auto zext_instr = new ZextInstr(Utils::get_next_counter(), info2.ir_value, &IR_INT);
+                    cur_ir_basic_block->instrs.push_back(zext_instr);
+                    info2.ir_value = zext_instr;
+                }
                 if (add_exp.op->get_type() == Token::PLUS) {
                     instr = new ArithmeticInstr(Utils::get_next_counter(), ArithmeticInstr::ADD, info1.ir_value, info2.ir_value);
                 } else {
@@ -808,6 +820,18 @@ ExpInfo Visitor::visit_mul_exp(const MulExp &mul_exp) {
             } else if (mul_exp.op->get_type() == Token::MOD && info2.is_const && info2.value == 1) { // info1 % 1
                 return {false, false, 0, Token::INTTK};
             } else {
+                if (info1.ir_value->type == &IR_CHAR) {
+                    std::cout << "Mul Exp : Char Trunc Operand1 to Int" << std::endl;
+                    auto zext_instr = new ZextInstr(Utils::get_next_counter(), info1.ir_value, &IR_INT);
+                    cur_ir_basic_block->instrs.push_back(zext_instr);
+                    info1.ir_value = zext_instr;
+                }
+                if (info2.ir_value->type == &IR_CHAR) {
+                    std::cout << "Mul Exp : Char Trunc Operand2 to Int" << std::endl;
+                    auto zext_instr = new ZextInstr(Utils::get_next_counter(), info2.ir_value, &IR_INT);
+                    cur_ir_basic_block->instrs.push_back(zext_instr);
+                    info2.ir_value = zext_instr;
+                }
                 if (mul_exp.op->get_type() == Token::MULT) {
                     instr = new ArithmeticInstr(Utils::get_next_counter(), ArithmeticInstr::MUL, info1.ir_value, info2.ir_value);
                 } else if (mul_exp.op->get_type() == Token::DIV) {
@@ -894,11 +918,23 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
         } else if ((*unary_exp.unary_op->op).get_type() == Token::PLUS) {
             exp_info = unary_info;
         } else if ((*unary_exp.unary_op->op).get_type() == Token::MINU) {
+            if (unary_info.ir_value->type == &IR_CHAR) {
+                std::cout << "Unary Exp : Char Trunc Operand to Int" << std::endl;
+                auto zext_instr = new ZextInstr(Utils::get_next_counter(), unary_info.ir_value, &IR_INT);
+                cur_ir_basic_block->instrs.push_back(zext_instr);
+                unary_info.ir_value = zext_instr;
+            }
             auto instr = new ArithmeticInstr(Utils::get_next_counter(), ArithmeticInstr::SUB, new IntConst(0), unary_info.ir_value);
             cur_ir_basic_block->instrs.push_back(instr);
             exp_info = ExpInfo(false, false, instr);
         } else { // NOT
             // 运算指令中没有 ! 操作, 首先使用icmp指令判断是否为0, 然后使用zext将结果转换为int
+            if (unary_info.ir_value->type == &IR_CHAR) {
+                std::cout << "Unary Exp : Char Trunc Operand to Int" << std::endl;
+                auto zext_instr = new ZextInstr(Utils::get_next_counter(), unary_info.ir_value, &IR_INT);
+                cur_ir_basic_block->instrs.push_back(zext_instr);
+                unary_info.ir_value = zext_instr;
+            }
             auto icmp_instr = new IcmpInstr(Utils::get_next_counter(), IcmpInstr::EQ, unary_info.ir_value, new IntConst(0));
             cur_ir_basic_block->instrs.push_back(icmp_instr);
             auto zext_instr = new ZextInstr(Utils::get_next_counter(), icmp_instr, &IR_INT);
@@ -1048,7 +1084,13 @@ void Visitor::visit_land_exp(const LAndExp &land_exp) {
         else cur_ir_basic_block->instrs.push_back(new BrInstr(if_true_block));
     } else if (exp_info.is_bool) {
         cur_ir_basic_block->instrs.push_back(new BrInstr(exp_info.ir_value, if_true_block, if_false_block));
-    } else { // int -> bool
+    } else {
+        if (exp_info.ir_value->type == &IR_CHAR) {
+            std::cout << "Land Exp : Char Trunc Operand to Int" << std::endl;
+            auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
+            cur_ir_basic_block->instrs.push_back(zext_instr);
+            exp_info.ir_value = zext_instr;
+        }
         auto icmp_instr = new IcmpInstr(Utils::get_next_counter(), IcmpInstr::NE, exp_info.ir_value, new IntConst(0));
         cur_ir_basic_block->instrs.push_back(icmp_instr);
         cur_ir_basic_block->instrs.push_back(new BrInstr(icmp_instr, if_true_block, if_false_block));
@@ -1074,11 +1116,21 @@ ExpInfo Visitor::visit_eq_exp(const EqExp &eq_exp) { // == !=
             instr = new ZextInstr(Utils::get_next_counter(), expinfo1.ir_value, &IR_INT);
             cur_ir_basic_block->instrs.push_back(instr);
             expinfo1.ir_value = instr;
+        } else if (!expinfo1.is_const && expinfo1.ir_value->type == &IR_CHAR) {
+            std::cout << "Eq Exp : Char Trunc Operand1 to Int" << std::endl;
+            auto zext_instr = new ZextInstr(Utils::get_next_counter(), expinfo1.ir_value, &IR_INT);
+            cur_ir_basic_block->instrs.push_back(zext_instr);
+            expinfo1.ir_value = zext_instr;
         }
         if (!expinfo2.is_const && expinfo2.is_bool) {
             instr = new ZextInstr(Utils::get_next_counter(), expinfo2.ir_value, &IR_INT);
             cur_ir_basic_block->instrs.push_back(instr);
             expinfo2.ir_value = instr;
+        } else if (!expinfo2.is_const && expinfo2.ir_value->type == &IR_CHAR) {
+            std::cout << "Eq Exp : Char Trunc Operand2 to Int" << std::endl;
+            auto zext_instr = new ZextInstr(Utils::get_next_counter(), expinfo2.ir_value, &IR_INT);
+            cur_ir_basic_block->instrs.push_back(zext_instr);
+            expinfo2.ir_value = zext_instr;
         }
         instr = new IcmpInstr(Utils::get_next_counter(), (eq_exp.op->get_type() == Token::EQL) ? IcmpInstr::EQ : IcmpInstr::NE, expinfo1.ir_value, expinfo2.ir_value);
         cur_ir_basic_block->instrs.push_back(instr);
@@ -1113,6 +1165,11 @@ ExpInfo Visitor::visit_rel_exp(const RelExp &rel_exp) { // > < >= <=
                 auto instr = new ZextInstr(Utils::get_next_counter(), expinfo1.ir_value, &IR_INT);
                 cur_ir_basic_block->instrs.push_back(instr);
                 expinfo1.ir_value = instr;
+            } else if (!expinfo1.is_const && expinfo1.ir_value->type == &IR_CHAR) {
+                std::cout << "Rel Exp : Char Trunc Operand1 to Int" << std::endl;
+                auto zext_instr = new ZextInstr(Utils::get_next_counter(), expinfo1.ir_value, &IR_INT);
+                cur_ir_basic_block->instrs.push_back(zext_instr);
+                expinfo1.ir_value = zext_instr;
             }
             Instruction* instr = nullptr;
             switch (rel_exp.op->get_type()) {
