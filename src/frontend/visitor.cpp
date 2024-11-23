@@ -1203,6 +1203,16 @@ ExpInfo Visitor::visit_rel_exp(const RelExp &rel_exp) { // > < >= <=
                 cur_ir_basic_block->instrs.push_back(zext_instr);
                 expinfo1.ir_value = zext_instr;
             }
+            if (!expinfo2.is_const && expinfo2.is_bool) {
+                auto instr = new ZextInstr(Utils::get_next_counter(), expinfo2.ir_value, &IR_INT);
+                cur_ir_basic_block->instrs.push_back(instr);
+                expinfo2.ir_value = instr;
+            } else if (!expinfo2.is_const && expinfo2.ir_value->type == &IR_CHAR) {
+                std::cout << "Rel Exp : Char Trunc Operand2 to Int" << std::endl;
+                auto zext_instr = new ZextInstr(Utils::get_next_counter(), expinfo2.ir_value, &IR_INT);
+                cur_ir_basic_block->instrs.push_back(zext_instr);
+                expinfo2.ir_value = zext_instr;
+            }
             Instruction* instr = nullptr;
             switch (rel_exp.op->get_type()) {
                 case Token::LSS:
