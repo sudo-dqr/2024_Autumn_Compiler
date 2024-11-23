@@ -120,7 +120,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                 }
             } else { //局部字符数组则也需要通过 alloca 指令分配内存空间，逐个元素初始化
                 auto string_const_ptr = std::get_if<StringConst>(&(*const_def.const_init_val));
-                auto string_const = string_const_ptr->str->get_token();
+                auto string_const = string_const_ptr->str->get_token().substr(1, string_const_ptr->str->get_token().length() - 2);
                 auto pointer_type = new PointerType(&IR_CHAR);
                 for (int i = 0; i < string_const.length(); i++) { 
                     auto index = std::deque<Value*>{new IntConst(i)};
@@ -270,7 +270,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                     }
                 } else { // stringconst
                     auto string_const_ptr = std::get_if<StringConst>(&(*var_def.init_val));
-                    auto string_const = string_const_ptr->str->get_token();
+                    auto string_const = string_const_ptr->str->get_token().substr(1, string_const_ptr->str->get_token().length() - 2);
                     auto pointer_type = new PointerType(&IR_CHAR);
                     for (int i = 0; i < string_const.length(); i++) {
                         auto index = std::deque<Value*>{new IntConst(i)};
