@@ -629,6 +629,26 @@ void Visitor::visit_return_stmt(const ReturnStmt &return_stmt) {
             ErrorList::report_error(return_stmt.return_token->get_line_number(), 'f');
         } else {
             ExpInfo exp_info = visit_exp(*return_stmt.return_exp);
+            FunctionType* func_type = dynamic_cast<FunctionType*>(cur_ir_function->type);
+            if (exp_info.type == Token::INTTK && func_type->return_type == &IR_CHAR) {
+                exp_info.ir_value = new CharConst((char)exp_info.value);
+                std::cout << "Return Stmt : Int Trunc to Char" << std::endl;
+            } else if (exp_info.ir_value->type == &IR_INT && func_type->return_type == &IR_CHAR) {
+                auto trunc_instr = new TruncInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_CHAR);
+                cur_ir_basic_block->instrs.push_back(trunc_instr);
+                exp_info.ir_value = trunc_instr;
+                std::cout << "Return Stmt : Int Trunc to Char" << std::endl;
+            } else if (exp_info.type == Token::CHARTK && func_type->return_type == &IR_INT) {
+                auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
+                cur_ir_basic_block->instrs.push_back(zext_instr);
+                exp_info.ir_value = zext_instr;
+                std::cout << "Return Stmt : Char Zext to Int" << std::endl;
+            } else if (exp_info.ir_value->type == &IR_CHAR && func_type->return_type == &IR_INT) {
+                auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
+                cur_ir_basic_block->instrs.push_back(zext_instr);
+                exp_info.ir_value = zext_instr;
+                std::cout << "Return Stmt : Char Zext to Int" << std::endl;
+            }
             cur_ir_basic_block->instrs.push_back(new RetInstr(exp_info.ir_value));
         }
     } else {
