@@ -491,6 +491,16 @@ void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
                 cur_ir_basic_block->instrs.push_back(trunc_instr);
                 exp_info.ir_value = trunc_instr;
                 std::cout << "Assign Stmt Trunc Int to Char" << std::endl;
+            } else if (exp_info.type == Token::CHARTK && deref_type == &IR_INT) {
+                auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
+                cur_ir_basic_block->instrs.push_back(zext_instr);
+                exp_info.ir_value = zext_instr;
+                std::cout << "Assign Stmt Zext Char to Int" << std::endl;
+            } else if (exp_info.ir_value->type == &IR_CHAR && deref_type == &IR_INT) {
+                auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
+                cur_ir_basic_block->instrs.push_back(zext_instr);
+                exp_info.ir_value = zext_instr;
+                std::cout << "Assign Stmt Zext Char to Int" << std::endl;
             }
             auto store_instr = new StoreInstr(exp_info.ir_value, tmp_lval);
             cur_ir_basic_block->instrs.push_back(store_instr);
@@ -517,6 +527,16 @@ void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
                 cur_ir_basic_block->instrs.push_back(trunc_instr);
                 exp_info.ir_value = trunc_instr;
                 std::cout << "For Assign Stmt Trunc Int to Char" << std::endl;
+            } else if (exp_info.type == Token::CHARTK && deref_type == &IR_INT) {
+                auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
+                cur_ir_basic_block->instrs.push_back(zext_instr);
+                exp_info.ir_value = zext_instr;
+                std::cout << "For Assign Stmt Zext Char to Int" << std::endl;
+            } else if (exp_info.ir_value->type == &IR_CHAR && deref_type == &IR_INT) {
+                auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
+                cur_ir_basic_block->instrs.push_back(zext_instr);
+                exp_info.ir_value = zext_instr;
+                std::cout << "For Assign Stmt Sext Char to Int" << std::endl;
             }
             auto store_instr = new StoreInstr(exp_info.ir_value, tmp_lval);
             cur_ir_basic_block->instrs.push_back(store_instr);
