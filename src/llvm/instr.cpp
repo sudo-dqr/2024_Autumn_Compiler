@@ -151,11 +151,12 @@ void IcmpInstr::print(std::ostream &os) const {
     }
     op1->type->print(os);
     os << " ";
-    IntConst* intconst_ptr = nullptr;
-    if (intconst_ptr = dynamic_cast<IntConst*>(op1)) intconst_ptr->print(os);
+    if (auto intconst_ptr = dynamic_cast<IntConst*>(op1)) intconst_ptr->print(os);
+    else if (auto charconst_ptr = dynamic_cast<CharConst*>(op1)) charconst_ptr->print(os);
     else os << "%" << op1->id;
     os << ", ";
-    if (intconst_ptr = dynamic_cast<IntConst*>(op2)) intconst_ptr->print(os);
+    if (auto intconst_ptr = dynamic_cast<IntConst*>(op2)) intconst_ptr->print(os);
+    else if (auto charconst_ptr = dynamic_cast<CharConst*>(op2)) charconst_ptr->print(os);
     else os << "%" << op2->id;
 }
 
@@ -173,8 +174,7 @@ void StoreInstr::print(std::ostream &os) const {
     os << ", ";
     dst_ptr->type->print(os);
     os << " ";
-    GlobalVariable* global_ptr = nullptr;
-    if (global_ptr = dynamic_cast<GlobalVariable*>(dst_ptr)) os << "@" << dst_ptr->name;
+    if (auto global_ptr = dynamic_cast<GlobalVariable*>(dst_ptr)) os << "@" << dst_ptr->name;
     else os << "%" << dst_ptr->id;
 }
 
