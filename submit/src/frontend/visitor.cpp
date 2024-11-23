@@ -837,13 +837,19 @@ ExpInfo Visitor::visit_add_exp(const AddExp &add_exp) {
             } else if (info2.is_const && info2.value == 0) { // info1 +/- 0
                 instr = info1.ir_value;
             } else {
-                if (info1.ir_value->type == &IR_CHAR) {
+                if (info1.type == Token::CHARTK) {
+                    std::cout << "Add Exp : Char Trunc Operand1 to Int" << std::endl;
+                    info1.ir_value = new IntConst(info1.value);
+                } else if (info1.ir_value->type == &IR_CHAR) {
                     std::cout << "Add Exp : Char Trunc Operand1 to Int" << std::endl;
                     auto zext_instr = new ZextInstr(Utils::get_next_counter(), info1.ir_value, &IR_INT);
                     cur_ir_basic_block->instrs.push_back(zext_instr);
                     info1.ir_value = zext_instr;
                 }
-                if (info2.ir_value->type == &IR_CHAR) {
+                if (info2.type == Token::CHARTK) {
+                    std::cout << "Add Exp : Char Trunc Operand2 to Int" << std::endl;
+                    info2.ir_value = new IntConst(info2.value);
+                } else if (info2.ir_value->type == &IR_CHAR) {
                     std::cout << "Add Exp : Char Trunc Operand2 to Int" << std::endl;
                     auto zext_instr = new ZextInstr(Utils::get_next_counter(), info2.ir_value, &IR_INT);
                     cur_ir_basic_block->instrs.push_back(zext_instr);
@@ -888,13 +894,19 @@ ExpInfo Visitor::visit_mul_exp(const MulExp &mul_exp) {
             } else if (mul_exp.op->get_type() == Token::MOD && info2.is_const && info2.value == 1) { // info1 % 1
                 return {false, false, 0, Token::INTTK};
             } else {
-                if (info1.ir_value->type == &IR_CHAR) {
+                if (info1.type == Token::CHARTK) {
+                    std::cout << "Mul Exp : Char Trunc Operand1 to Int" << std::endl;
+                    info1.ir_value = new IntConst(info1.value);
+                } else if (info1.ir_value->type == &IR_CHAR) {
                     std::cout << "Mul Exp : Char Trunc Operand1 to Int" << std::endl;
                     auto zext_instr = new ZextInstr(Utils::get_next_counter(), info1.ir_value, &IR_INT);
                     cur_ir_basic_block->instrs.push_back(zext_instr);
                     info1.ir_value = zext_instr;
                 }
-                if (info2.ir_value->type == &IR_CHAR) {
+                if (info2.type == Token::CHARTK) {
+                    std::cout << "Mul Exp : Char Trunc Operand2 to Int" << std::endl;
+                    info2.ir_value = new IntConst(info2.value);
+                } if (info2.ir_value->type == &IR_CHAR) {
                     std::cout << "Mul Exp : Char Trunc Operand2 to Int" << std::endl;
                     auto zext_instr = new ZextInstr(Utils::get_next_counter(), info2.ir_value, &IR_INT);
                     cur_ir_basic_block->instrs.push_back(zext_instr);
