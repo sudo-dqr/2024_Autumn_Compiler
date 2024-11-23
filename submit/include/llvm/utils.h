@@ -14,6 +14,7 @@ struct Utils {
 
     static int control_cnt(const std::string &str);
     static int cut_str(const std::string &str, int start);
+    static char get_escape_char(const std::string &str, int i);
 };
 
 #endif

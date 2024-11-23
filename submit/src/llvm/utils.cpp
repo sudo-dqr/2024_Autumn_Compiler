@@ -25,3 +25,20 @@ int Utils::control_cnt(const std::string &str) { // %d | %c
     }
     return cnt;
 }
+
+char Utils::get_escape_char(const std::string &str, int i) {
+    switch (str[i])
+    {
+        case '0': return '\0';
+        case 'a': return '\a';
+        case 'b': return '\b';
+        case 'f': return '\f';
+        case 'v': return '\v';
+        case 't': return '\t';
+        case 'n': return '\n';
+        case '\'': return '\'';
+        case '\"': return '\"';
+        case '\\': return '\\';
+        default: return str[i];
+    }
+}

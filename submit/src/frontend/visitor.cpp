@@ -132,7 +132,14 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                     index.push_front(new IntConst(0));
                     auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
                     cur_ir_basic_block->instrs.push_back(getelementptr_instr);
-                    auto store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
+                    Instruction* store_instr = nullptr;
+                    if (string_const[i] == '\\') { // escaped character
+                        i++;
+                        char escape_char = Utils::get_escape_char(string_const, i);
+                        store_instr = new StoreInstr(new CharConst(escape_char), getelementptr_instr);
+                    } else {
+                        store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
+                    }
                     cur_ir_basic_block->instrs.push_back(store_instr);
                 }
                 // \0
@@ -243,7 +250,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                     std::string string_const = string_const_ptr->str->get_token().substr(1, string_const_ptr->str->get_token().length() - 2);
                     global_variable = new GlobalVariable(ident, array_type, string_const, false);
                 }
-            } else
+            } else // zeroinitializer
                 global_variable = new GlobalVariable(ident, array_type, std::vector<int>());
             symbol->ir_value = global_variable;
             Module::get_instance().global_variables.push_back(global_variable);
@@ -292,7 +299,14 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                         index.push_front(new IntConst(0));
                         auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
                         cur_ir_basic_block->instrs.push_back(getelementptr_instr);
-                        auto store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
+                        Instruction* store_instr = nullptr;
+                        if (string_const[i] == '\\') { // escaped character
+                            i++;
+                            char escape_char = Utils::get_escape_char(string_const, i);
+                            store_instr = new StoreInstr(new CharConst(escape_char), getelementptr_instr);
+                        } else {
+                            store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
+                        }
                         cur_ir_basic_block->instrs.push_back(store_instr);
                     }
                     // \0
