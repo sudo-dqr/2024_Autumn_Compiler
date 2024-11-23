@@ -1,9 +1,9 @@
 cd ../submit
 rm submit.zip
-rm CMakeLists.txt
 rm *.cpp
 rm *.h
-cp ../CMakeLists.txt ./CMakeLists.txts
-cp ../src/*.cpp ./
-cp ../include/*.h ./
+cp ../src/frontend/*.cpp ./
+cp ../src/llvm/*.cpp ./
+cp ../include/frontend/*.h ./
+cp ../include/llvm/*.h ./
 zip submit.zip *
