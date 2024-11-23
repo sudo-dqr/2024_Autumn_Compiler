@@ -149,8 +149,7 @@ void IcmpInstr::print(std::ostream &os) const {
         default:
             break;
     }
-    op1->type->print(os);
-    os << " ";
+    os << "i32 ";
     if (auto intconst_ptr = dynamic_cast<IntConst*>(op1)) intconst_ptr->print(os);
     else if (auto charconst_ptr = dynamic_cast<CharConst*>(op1)) charconst_ptr->print(os);
     else os << "%" << op1->id;
