@@ -89,6 +89,11 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                     }
                     symbol->array_values.push_back(exp_info.value);
                 }
+                if (symbol->array_values.size() < array_size) {
+                    for (int i = symbol->array_values.size(); i < array_size; i++) {
+                        symbol->array_values.push_back(0);
+                    }
+                }
                 global_variable = new GlobalVariable(ident, array_type, symbol->array_values);
             } else if (auto string_const_ptr = std::get_if<StringConst>(&(*const_def.const_init_val))) {
                 symbol->string_value = string_const_ptr->str->get_token().substr(1, string_const_ptr->str->get_token().length() - 2);
