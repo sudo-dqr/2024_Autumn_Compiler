@@ -477,8 +477,7 @@ void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
         } else {
             auto tmp_lval = cur_ir_lval;
             exp_info = visit_exp(*assign_stmt.exp);
-            // lval_symbol is a pointer
-            auto deref_type = dynamic_cast<PointerType*>(lval_symbol->ir_value->type)->referenced_type;
+            auto deref_type = dynamic_cast<PointerType*>(tmp_lval->type)->referenced_type;
             if (exp_info.type == Token::INTTK && deref_type == &IR_CHAR) { // number constant
                 exp_info.ir_value = new CharConst((char)exp_info.value);
                 std::cout << "Assign Stmt Trunc Int to Char" << std::endl;
@@ -504,7 +503,7 @@ void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
         } else {
             auto tmp_lval = cur_ir_lval;
             exp_info = visit_exp(*for_assign_stmt.exp);
-            auto deref_type = dynamic_cast<PointerType*>(lval_symbol->ir_value->type)->referenced_type;
+            auto deref_type = dynamic_cast<PointerType*>(tmp_lval->type)->referenced_type;
             if (exp_info.type == Token::INTTK && deref_type == &IR_CHAR) { // number constant
                 exp_info.ir_value = new CharConst((char)exp_info.value);
                 std::cout << "For Assign Stmt Trunc Int to Char" << std::endl;
