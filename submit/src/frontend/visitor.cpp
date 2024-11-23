@@ -273,6 +273,16 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                         auto store_instr = new StoreInstr(exp_info.ir_value, getelementptr_instr);
                         cur_ir_basic_block->instrs.push_back(store_instr);
                     }
+                    if (btype == Token::CHARTK && exps_ptr->exps.size() < array_size) {
+                        for (int i = exps_ptr->exps.size(); i < array_size; i++) {
+                            auto index = std::deque<Value*>{new IntConst(i)};
+                            index.push_front(new IntConst(0));
+                            auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
+                            cur_ir_basic_block->instrs.push_back(getelementptr_instr);
+                            auto store_instr = new StoreInstr(new CharConst('\0'), getelementptr_instr);
+                            cur_ir_basic_block->instrs.push_back(store_instr);
+                        }
+                    }
                 } else { // stringconst
                     auto string_const_ptr = std::get_if<StringConst>(&(*var_def.init_val));
                     auto string_const = string_const_ptr->str->get_token().substr(1, string_const_ptr->str->get_token().length() - 2);
