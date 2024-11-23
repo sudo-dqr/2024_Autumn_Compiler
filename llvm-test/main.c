@@ -1,12 +1,8 @@
-#include "libsysy.h"
 
-int dqr(int a, int b) {
-    return 0;
-}
+char c1[4] = "\n\n\n";
+const char c2[5] = "\n\n\0";
 
-int main() {
-    int a = 1;
-    int b = 2;
-    a = a + b;
+int main(){
+
     return 0;
 }
