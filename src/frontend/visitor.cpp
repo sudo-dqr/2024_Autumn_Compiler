@@ -728,7 +728,10 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
                 if (format_str[i] == '\\')
                     call_instr = new CallInstr(putch_func, std::vector<Value*>{new IntConst('\n')});
                 else if (format_str[i + 1] == 'd') { // 参数为i32 如果是char则需要zext
-                    if (auto char_ptr = dynamic_cast<CharType*>(exp_infos[pos].ir_value->type)) {
+                    if (exp_infos[pos].type == Token::CHARTK) {
+                        exp_infos[pos].ir_value = new IntConst(exp_infos[pos].value);
+                        call_instr = new CallInstr(putint_func, std::vector<Value*>{exp_infos[pos].ir_value});
+                    } else if (exp_infos[pos].ir_value->type == &IR_CHAR) {
                         auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_infos[pos].ir_value, &IR_INT);
                         cur_ir_basic_block->instrs.push_back(zext_instr);
                         call_instr = new CallInstr(putint_func, std::vector<Value*>{zext_instr});
@@ -738,7 +741,10 @@ void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
                     pos++;
                 }
                 else if (format_str[i + 1] == 'c') { // 参数为i32 如果是char则需要zext
-                    if (auto char_ptr = dynamic_cast<CharType*>(exp_infos[pos].ir_value->type)) {
+                    if (exp_infos[pos].type == Token::CHARTK) {
+                        exp_infos[pos].ir_value = new IntConst(exp_infos[pos].value);
+                        call_instr = new CallInstr(putch_func, std::vector<Value*>{exp_infos[pos].ir_value});
+                    } else if (exp_infos[pos].ir_value->type == &IR_CHAR) {
                         auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_infos[pos].ir_value, &IR_INT);
                         cur_ir_basic_block->instrs.push_back(zext_instr);
                         call_instr = new CallInstr(putch_func, std::vector<Value*>{zext_instr});
