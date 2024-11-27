@@ -22,6 +22,8 @@ int main() {
     visitor.visit(*comp_unit);
     //visitor.print_symbol_list();
     Module::get_instance().print_llvm_ir();
+    MipsBackend backend = MipsBackend();
+    backend.generate_mips_code(Module::get_instance());
     ErrorList::print_errors();
     return 0;
 }

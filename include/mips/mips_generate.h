@@ -5,6 +5,7 @@
 #include "value.h"
 
 struct MipsBackend {
+    MipsBackend() { manager = MipsManager();}
     void generate_mips_code(Module &module);
 
     private:
