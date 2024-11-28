@@ -1,7 +1,7 @@
+#include <ostream>
 #include "mips_data.h"
 #include "mips_instr.h"
-#include "mips_manager.h"
-#include <ostream>
+
 
 void MipsData::print(std::ostream &os) const {
     os << "\t";
@@ -40,4 +40,24 @@ void ByteData::print(std::ostream &os) const {
 void AsciizData::print(std::ostream &os) const {
     MipsData::print(os);
     os << name << ": .asciiz \"" << value << "\"";
+}
+
+void MipsInstr::print(std::ostream &os) const {
+    os << "\t";
+}
+
+void RTypeInstr::print(std::ostream &os) const {
+    MipsInstr::print(os);
+}
+
+void ITypeInstr::print(std::ostream &os) const {
+    MipsInstr::print(os);
+}
+
+void JTypeInstr::print(std::ostream &os) const {
+    MipsInstr::print(os);
+}
+
+void MipsLabel::print(std::ostream &os) const {
+    os << label << ":";
 }

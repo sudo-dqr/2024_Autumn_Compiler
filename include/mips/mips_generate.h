@@ -1,10 +1,7 @@
-#ifndef MIPS_H
-#define MIPS_H
-#include "mips_reg.h"
-#include "mips_instr.h"
-#include "mips_data.h"
-#include "mips_manager.h"
+#ifndef MIPS_GENERATE_H
+#define MIPS_GENERATE_H
 #include "value.h"
+#include "mips_manager.h"
 
 struct MipsBackend {
     MipsBackend() { manager = new MipsManager();}
@@ -17,4 +14,4 @@ struct MipsBackend {
         void generate_mips_code(Function &function);
 };
 
-#endif // MIPS_H
+#endif // MIPS_MANAGER_H

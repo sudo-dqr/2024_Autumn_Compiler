@@ -1,5 +1,4 @@
 #include "mips_generate.h"
-#include "mips_instr.h"
 
 void MipsBackend::generate_mips_code(Module &module) {
     for (auto &data : module.global_variables) {
@@ -52,7 +51,8 @@ void MipsBackend::generate_mips_code(GlobalVariable &data) {
 }
 
 void MipsBackend::generate_mips_code(Function &function) {
-
+    auto sw_instr = new ITypeInstr(Sw, manager->ra_reg, manager->sp_reg, -4);
+    manager->instr_list.push_back(sw_instr);
 }
 
 void MipsBackend::print_mips_code() const {
@@ -65,8 +65,8 @@ void MipsBackend::print_mips_code() const {
     mips_out << std::endl;
     mips_out << std::endl;
     mips_out << ".text" << std::endl;
-    // for (auto &instr : manager->instr_list) {
-    //     instr->print(os);
-    //     os << std::endl;
-    // }
+    for (auto &instr : manager->instr_list) {
+        instr->print(mips_out);
+        mips_out << std::endl;
+    }
 }
