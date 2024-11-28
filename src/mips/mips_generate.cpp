@@ -51,8 +51,87 @@ void MipsBackend::generate_mips_code(GlobalVariable &data) {
 }
 
 void MipsBackend::generate_mips_code(Function &function) {
+    auto label_instr = new MipsLabel(function.name);
+    manager->instr_list.push_back(label_instr);
+    cur_func_param_num = function.fparams.size();
     auto sw_instr = new ITypeInstr(Sw, manager->ra_reg, manager->sp_reg, -4);
     manager->instr_list.push_back(sw_instr);
+    cur_sp_offset -= 4;
+    for (const auto &basic_block : function.basic_blocks) {
+        generate_mips_code(*basic_block);
+    }
+}
+
+void MipsBackend::generate_mips_code(BasicBlock &basic_block) {
+    for (const auto &instr : basic_block.instrs) {
+        if (auto alloca_ir = dynamic_cast<AllocaInstr*>(instr)) {
+            generate_mips_code(*alloca_ir);
+        } else if (auto arith_ir = dynamic_cast<ArithmeticInstr*>(instr)) {
+            generate_mips_code(*arith_ir);
+        } else if (auto br_ir = dynamic_cast<BrInstr*>(instr)) {
+            generate_mips_code(*br_ir);
+        } else if (auto call_ir = dynamic_cast<CallInstr*>(instr)) {
+            generate_mips_code(*call_ir);
+        } else if (auto icmp_ir = dynamic_cast<IcmpInstr*>(instr)) {
+            generate_mips_code(*icmp_ir);
+        } else if (auto load_ir = dynamic_cast<LoadInstr*>(instr)) {
+            generate_mips_code(*load_ir);
+        } else if (auto store_ir = dynamic_cast<StoreInstr*>(instr)) {
+            generate_mips_code(*store_ir);
+        } else if (auto zext_ir = dynamic_cast<ZextInstr*>(instr)) {
+            generate_mips_code(*zext_ir);
+        } else if (auto trunc_ir = dynamic_cast<TruncInstr*>(instr)) {
+            generate_mips_code(*trunc_ir);
+        } else if (auto ret_ir = dynamic_cast<RetInstr*>(instr)) {
+            generate_mips_code(*ret_ir);
+        } else if (auto gep_ir = dynamic_cast<GetelementptrInstr*>(instr)) {
+            generate_mips_code(*gep_ir);
+        }
+    }
+}
+
+void MipsBackend::generate_mips_code(AllocaInstr &alloca_instr) {
+
+}
+
+void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
+
+}
+
+void MipsBackend::generate_mips_code(BrInstr &br_instr) {
+
+}
+
+void MipsBackend::generate_mips_code(RetInstr &ret_instr) {
+
+}
+
+void MipsBackend::generate_mips_code(CallInstr &call_instr) {
+
+}
+
+void MipsBackend::generate_mips_code(IcmpInstr &icmp_instr) {
+
+}
+
+void MipsBackend::generate_mips_code(LoadInstr &load_instr) {
+
+}
+
+void MipsBackend::generate_mips_code(StoreInstr &store_instr) {
+
+}
+
+void MipsBackend::generate_mips_code(GetelementptrInstr &gep_instr) {
+
+}
+
+void MipsBackend::generate_mips_code(ZextInstr &zext_instr) {
+
+}
+
+void MipsBackend::generate_mips_code(TruncInstr &trunc_instr) {
+
 }
 
 void MipsBackend::print_mips_code() const {
