@@ -1,118 +1,119 @@
 #ifndef MIPS_REG_H
 #define MIPS_REG_H
+#include <iostream>
 
 enum MipsRegType {
-    ZeroReg, // $0
-    AtReg, // $at
-    RetValReg, // $v0, $v1
-    ArgReg, // $a0-$a3s
-    TempReg, // $t0-$t9
-    SavedReg, // $s0-$s7
-    KernelReg, // $k0-$k1
-    GlobalPtrReg, // $gp
-    StackPtrReg, // $sp
-    FramePtrReg, // $fp
-    ReturnAddrReg, // $ra 
+    ZeroRegType, // $0
+    AtRegType, // $at
+    RetValRegType, // $v0, $v1
+    ArgRegType, // $a0-$a3s
+    TempRegType, // $t0-$t9
+    SavedRegType, // $s0-$s7
+    KernelRegType, // $k0-$k1
+    GlobalPtrRegType, // $gp
+    StackPtrRegType, // $sp
+    FramePtrRegType, // $fp
+    ReturnAddrRegType, // $ra 
 };
 
 struct MipsReg {
-    enum MipsRegType type;
+    MipsRegType type;
     int index;
 
-    MipsReg(enum MipsRegType type, int index) : type(type), index(index) {}
+    MipsReg(MipsRegType type, int index) : type(type), index(index) {}
     virtual void printReg(std::ostream &os) const = 0;
 };
 
 struct ZeroReg : public MipsReg {
-    ZeroReg() : MipsReg(ZeroReg, 0) {}
+    ZeroReg() : MipsReg(ZeroRegType, 0) {}
     void printReg(std::ostream &os) const override {
         os << "$zero";
     }
-}
+};
 
 struct AtReg : public MipsReg {
-    AtReg() : MipsReg(AtReg, 1) {}
+    AtReg() : MipsReg(AtRegType, 1) {}
     void printReg(std::ostream &os) const override {
         os << "$at";
     }
-}
+};
 
 struct RetValReg : public MipsReg {
-    RetValReg(int index) : MipsReg(RetValReg, index) {
+    RetValReg(int index) : MipsReg(RetValRegType, index) {
         if (index < 0 || index > 1) 
             std::cout << "Invalid index for RetValReg" << std::endl;
     }
     void printReg(std::ostream &os) const override {
         os << "$v" << index;
     }
-}
+};
 
 struct ArgReg : public MipsReg {
-    ArgReg(int index) : MipsReg(ArgReg, index) {
+    ArgReg(int index) : MipsReg(ArgRegType, index) {
         if (index < 0 || index > 3) 
             std::cout << "Invalid index for ArgReg" << std::endl;
     }
     void printReg(std::ostream &os) const override {
         os << "$a" << index;
     }
-}
+};
 
 struct TempReg : public MipsReg {
-    TempReg(int index) : MipsReg(TempReg, index) {
+    TempReg(int index) : MipsReg(TempRegType, index) {
         if (index < 0 || index > 9) 
             std::cout << "Invalid index for TempReg" << std::endl;
     }
     void printReg(std::ostream &os) const override {
         os << "$t" << index;
     }
-}
+};
 
 struct SavedReg : public MipsReg {
-    SavedReg(int index) : MipsReg(SavedReg, index) {
+    SavedReg(int index) : MipsReg(SavedRegType, index) {
         if (index < 0 || index > 7) 
             std::cout << "Invalid index for SavedReg" << std::endl;
     }
     void printReg(std::ostream &os) const override {
         os << "$s" << index;
     }
-}
+};
 
 struct KernelReg : public MipsReg {
-    KernelReg(int index) : MipsReg(KernelReg, index) {
+    KernelReg(int index) : MipsReg(KernelRegType, index) {
         if (index < 0 || index > 1) 
             std::cout << "Invalid index for KernelReg" << std::endl;
     }
     void printReg(std::ostream &os) const override {
         os << "$k" << index;
     }
-}
+};
 
 struct GlobalPtrReg : public MipsReg {
-    GlobalPtrReg() : MipsReg(GlobalPtrReg, 0) {}
+    GlobalPtrReg() : MipsReg(GlobalPtrRegType, 0) {}
     void printReg(std::ostream &os) const override {
         os << "$gp";
     }
-}
+};
 
 struct StackPtrReg : public MipsReg {
-    StackPtrReg() : MipsReg(StackPtrReg, 0) {}
+    StackPtrReg() : MipsReg(StackPtrRegType, 0) {}
     void printReg(std::ostream &os) const override {
         os << "$sp";
     }
-}
+};
 
 struct FramePtrReg : public MipsReg {
-    FramePtrReg() : MipsReg(FramePtrReg, 0) {}
+    FramePtrReg() : MipsReg(FramePtrRegType, 0) {}
     void printReg(std::ostream &os) const override {
         os << "$fp";
     }
-}
+};
 
 struct ReturnAddrReg : public MipsReg {
-    ReturnAddrReg() : MipsReg(ReturnAddrReg, 0) {}
+    ReturnAddrReg() : MipsReg(ReturnAddrRegType, 0) {}
     void printReg(std::ostream &os) const override {
         os << "$ra";
     }
-}
+};
 
 #endif
