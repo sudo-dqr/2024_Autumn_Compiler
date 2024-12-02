@@ -106,14 +106,14 @@ void RTypeInstr::print(std::ostream &os) const {
     }
     os << op_str << " ";
     if (op != Jr) {
-        rs->printReg(os);
+        rd->printReg(os);
         os << ", ";
-        rt->printReg(os);
+        rs->printReg(os);
         os << ", ";
         if (op == Sll || op == Srl) {
             os << shamt;
         } else {
-            rd->printReg(os);
+            rt->printReg(os);
         }
     } else {
         rs->printReg(os);
