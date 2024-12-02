@@ -37,7 +37,7 @@ struct RTypeInstr : public MipsInstr {
     MipsReg* rs;
     MipsReg* rt;
     int shamt;
-    RTypeInstr(OpType op, MipsReg* rs, MipsReg*rt, MipsReg* rd) 
+    RTypeInstr(OpType op, MipsReg* rd, MipsReg*rs, MipsReg* rt) 
     : MipsInstr(op), rd(rd), rs(rs), rt(rt), shamt(0) {}
     RTypeInstr(OpType op, MipsReg* rd, MipsReg* rt, int shamt)
     : MipsInstr(op), rd(rd), rt(rt), shamt(shamt) {}

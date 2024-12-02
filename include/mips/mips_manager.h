@@ -20,6 +20,7 @@ struct MipsManager {
     ZeroReg* zero_reg;
     AtReg* at_reg;
     StackPtrReg* sp_reg;
+    FramePtrReg* fp_reg;
     ReturnAddrReg* ra_reg;
 
     MipsManager();

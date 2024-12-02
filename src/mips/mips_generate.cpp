@@ -98,8 +98,7 @@ void MipsBackend::generate_mips_code(AllocaInstr &alloca_instr) {
     auto deref_type = ((PointerType*)alloca_instr.type)->referenced_type;
     int size = ir_type_size(deref_type);
     cur_sp_offset -= size;
-    auto addi_instr = new ITypeInstr(Addi, manager->sp_reg, manager->sp_reg, -size);
-    manager->instr_list.push_back(addi_instr);
+    cur_local_var_offset[alloca_instr.id] = cur_sp_offset;
 }
 
 int MipsBackend::ir_type_size(ValueType* ir_type) {
@@ -188,7 +187,62 @@ void MipsBackend::generate_mips_code(CallInstr &call_instr) {
         auto syscall_instr = new NonTypeInstr(Syscall);
         manager->instr_list.push_back(syscall_instr);
     } else {
-
+        int arg_num = call_instr.args.size();
+        //! $fp is the bottom of the stack, higher address
+        //! $sp is the top of the stack, lower address
+        //! a stack frame is like
+        //! | arg0 | arg... | saved regs | ra | local vars |
+        auto addu_instr = new RTypeInstr(Addu, manager->fp_reg, manager->sp_reg, manager->zero_reg);
+        manager->instr_list.push_back(addu_instr);
+        int stack_size = 4 * arg_num - cur_sp_offset;
+        auto addi_instr = new ITypeInstr(Addi, manager->sp_reg, manager->sp_reg, -stack_size);
+        manager->instr_list.push_back(addi_instr);
+        for (int i = 0; i < arg_num; i++) {
+            auto arg = call_instr.args[i];
+            if (i < 4) { // $a0-$a3
+                if (auto intconst_ptr = dynamic_cast<IntConst*>(arg)) {
+                    auto li_instr = new NonTypeInstr(Li, manager->arg_regs_pool[i], intconst_ptr->value);
+                    manager->instr_list.push_back(li_instr);
+                } else if (auto charconst_ptr = dynamic_cast<CharConst*>(arg)) {
+                    auto li_instr = new NonTypeInstr(Li, manager->arg_regs_pool[i], charconst_ptr->value);
+                    manager->instr_list.push_back(li_instr);
+                } else if ((auto vreg = cur_virtual_reg_offset.find(arg->id)) != cur_virtual_reg_offset.end()) {
+                    auto load_instr = new ITypeInstr(Lw, manager->arg_regs_pool[i], manager->fp_reg, vreg->second);
+                    manager->instr_list.push_back(load_instr);
+                } else {
+                    auto load_instr = new ITypeInstr(Lw, manager->arg_regs_pool[i], manager->sp_reg, cur_local_var_offset[arg->id]);
+                    manager->instr_list.push_back(load_instr);
+                }
+            } else { // $sp
+                if (auto intconst_ptr = dynamic_cast<IntConst*>(arg)) {
+                    auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[0], intconst_ptr->value);
+                    manager->instr_list.push_back(li_instr);
+                } else if (auto charconst_ptr = dynamic_cast<CharConst*>(arg)) {
+                    auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[0], charconst_ptr->value);
+                    manager->instr_list.push_back(li_instr);
+                } else if (auto vreg = cur_virtual_reg_offset.find(arg->id) != cur_virtual_reg_offset.end()) {
+                    auto load_instr = new ITypeInstr(Lw, manager->temp_regs_pool[0], manager->fp_reg, vreg->second);
+                    manager->instr_list.push_back(load_instr);
+                } else {
+                    auto load_instr = new ITypeInstr(Lw, manager->temp_regs_pool[0], manager->sp_reg, cur_local_var_offset[arg->id]);
+                    manager->instr_list.push_back(load_instr);
+                }
+                auto store_instr = new ITypeInstr(Sw, manager->temp_regs_pool[0], manager->sp_reg, 4 * i);
+            }
+        }
+        auto jal_instr = new JTypeInstr(Jal, "func_" + call_instr.function->name);
+        manager->instr_list.push_back(jal_instr);
+        // restore stack
+        addi_instr = new ITypeInstr(Addi, manager->sp_reg, manager->sp_reg, stack_size);
+        manager->instr_list.push_back(addi_instr);
+        // return value
+        auto return_type = ((FunctionType*)call_instr.function->type)->return_type;
+        if (return_type != &IR_VOID) {
+            cur_sp_offset -= 4;
+            cur_local_var_offset[call_instr.id] = cur_sp_offset;
+            auto load_instr = new ITypeInstr(Lw, manager->retval_regs_pool[0], manager->sp_reg, cur_sp_offset);
+            manager->instr_list.push_back(load_instr);
+        }
     }
 }
 
@@ -197,11 +251,25 @@ void MipsBackend::generate_mips_code(IcmpInstr &icmp_instr) {
 }
 
 void MipsBackend::generate_mips_code(LoadInstr &load_instr) {
+    auto deref_type = ((PointerType*)load_instr.type)->referenced_type;
+    if (auto gv_ptr = dynamic_cast<GlobalVariable*>(deref_type)) {
 
+    } else {
+        int ptr_id = load_instr.src_ptr->id;
+    }
 }
 
 void MipsBackend::generate_mips_code(StoreInstr &store_instr) {
-    
+    int value_id = store_instr.store_value->id;
+    int ptr_id = store_instr.dst_ptr->id;
+    if (value_id < cur_func_param_num) { // function params
+        if (value_id < 4) { // $a0-$a3
+            auto store_instr = new ITypeInstr(Sw, manager->arg_regs_pool[value_id], manager->sp_reg, cur_local_var_offset[ptr_id]);
+            manager->instr_list.push_back(store_instr);
+        }
+    } else {
+
+    }
 }
 
 void MipsBackend::generate_mips_code(GetelementptrInstr &gep_instr) {

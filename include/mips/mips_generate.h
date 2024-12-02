@@ -3,6 +3,7 @@
 #include "value.h"
 #include "instr.h"
 #include "mips_manager.h"
+#include <unordered_map>
 
 struct MipsBackend {
     MipsBackend() { this->manager = new MipsManager();}
@@ -14,6 +15,10 @@ struct MipsBackend {
         std::string cur_func_name;
         int cur_func_param_num = 0;
         int cur_sp_offset = 0;
+        // llvm ir local variable offset
+        std::unordered_map<int, int> cur_local_var_offset = {};
+        // llvm ir virtual register offset
+        std::unordered_map<int, int> cur_virtual_reg_offset = {};
         void generate_mips_code(GlobalVariable &data);
         void generate_mips_code(Function &function);
         void generate_mips_code(BasicBlock &basic_block);

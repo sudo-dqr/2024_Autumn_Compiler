@@ -5,6 +5,7 @@ MipsManager::MipsManager() {
     zero_reg = new ZeroReg();
     at_reg = new AtReg();
     sp_reg = new StackPtrReg();
+    fp_reg = new FramePtrReg();
     ra_reg = new ReturnAddrReg();
     for (int i = 0; i < 10; i++)
         temp_regs_pool[i] = new TempReg(i);
@@ -22,6 +23,7 @@ MipsManager::~MipsManager() {
     delete zero_reg;
     delete at_reg;
     delete sp_reg;
+    delete fp_reg;
     delete ra_reg;
     for (int i = 0; i < 10; i++)
         delete temp_regs_pool[i];
