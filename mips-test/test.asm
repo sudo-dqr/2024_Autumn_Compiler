@@ -1,9 +1,14 @@
-.data
-	a: .word 2
-	b: .word 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-	c: .byte 0
-	d: .byte 0:10
-	dqr0: .asciiz "This is a string"
-
-
 .text
+li $t0, 1
+sw $t0, 0($sp)
+addi $sp, $sp, -4
+li $t1, 2
+sw $t1, 0($sp)
+lw $k0, 0($sp)
+addi $sp, $sp, 4
+lw $k1, 0($sp)
+add $t0, $k0, $k1
+move $a0, $t0
+li $v0, 1
+syscall
+

@@ -5,18 +5,20 @@
 #include "mips_manager.h"
 
 struct MipsBackend {
-    MipsBackend() { manager = new MipsManager();}
+    MipsBackend() { this->manager = new MipsManager();}
     void generate_mips_code(Module &module);
     void print_mips_code() const;
 
     private:
         MipsManager* manager;
+        std::string cur_func_name;
         int cur_func_param_num = 0;
         int cur_sp_offset = 0;
         void generate_mips_code(GlobalVariable &data);
         void generate_mips_code(Function &function);
         void generate_mips_code(BasicBlock &basic_block);
         void generate_mips_code(AllocaInstr &alloca_instr);
+        int ir_type_size(ValueType* ir_type);
         void generate_mips_code(ArithmeticInstr &arith_instr);
         void generate_mips_code(BrInstr &br_instr);
         void generate_mips_code(RetInstr &ret_instr);

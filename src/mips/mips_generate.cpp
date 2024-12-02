@@ -51,9 +51,10 @@ void MipsBackend::generate_mips_code(GlobalVariable &data) {
 }
 
 void MipsBackend::generate_mips_code(Function &function) {
-    auto label_instr = new MipsLabel(function.name);
+    auto label_instr = new MipsLabel("func_" + function.name);
     manager->instr_list.push_back(label_instr);
     cur_func_param_num = function.fparams.size();
+    cur_func_name = function.name;
     auto sw_instr = new ITypeInstr(Sw, manager->ra_reg, manager->sp_reg, -4);
     manager->instr_list.push_back(sw_instr);
     cur_sp_offset -= 4;
@@ -63,6 +64,9 @@ void MipsBackend::generate_mips_code(Function &function) {
 }
 
 void MipsBackend::generate_mips_code(BasicBlock &basic_block) {
+    if (basic_block.instrs.empty()) return;
+    auto label_instr = new MipsLabel("func_" + cur_func_name + "_block_" + std::to_string(basic_block.id));
+    manager->instr_list.push_back(label_instr);
     for (const auto &instr : basic_block.instrs) {
         if (auto alloca_ir = dynamic_cast<AllocaInstr*>(instr)) {
             generate_mips_code(*alloca_ir);
@@ -91,11 +95,48 @@ void MipsBackend::generate_mips_code(BasicBlock &basic_block) {
 }
 
 void MipsBackend::generate_mips_code(AllocaInstr &alloca_instr) {
+    auto deref_type = ((PointerType*)alloca_instr.type)->referenced_type;
+    int size = ir_type_size(deref_type);
+    cur_sp_offset -= size;
+    auto addi_instr = new ITypeInstr(Addi, manager->sp_reg, manager->sp_reg, -size);
+    manager->instr_list.push_back(addi_instr);
+}
 
+int MipsBackend::ir_type_size(ValueType* ir_type) {
+    if (auto int_type = dynamic_cast<IntType*>(ir_type)) {
+        return 4;
+    } else if (auto char_type = dynamic_cast<CharType*>(ir_type)) {
+        return 4;
+    } else if (auto array_type = dynamic_cast<ArrayType*>(ir_type)) {
+        return array_type->size * ir_type_size(array_type->element_type);
+    } else if (auto pointer_type = dynamic_cast<PointerType*>(ir_type)) {
+        return 4;
+    } else {
+        std::cout << "MIPS Alloca : Invalid Type!" << std::endl;
+        return 0;
+    }
 }
 
 void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
-
+    switch (arith_instr.arith_type) {
+    case ArithmeticInstr::ADD:
+        /* code */
+        break;
+    case ArithmeticInstr::SUB:
+        /* code */
+        break;
+    case ArithmeticInstr::MUL:
+        /* code */
+        break;
+    case ArithmeticInstr::SDIV:
+        /* code */
+        break;
+    case ArithmeticInstr::SREM:
+        /* code */
+        break;
+    default: 
+        break;
+    }
 }
 
 void MipsBackend::generate_mips_code(BrInstr &br_instr) {
@@ -107,7 +148,48 @@ void MipsBackend::generate_mips_code(RetInstr &ret_instr) {
 }
 
 void MipsBackend::generate_mips_code(CallInstr &call_instr) {
+    if (call_instr.function->name == "getint") {
+        auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 5);
+        manager->instr_list.push_back(li_instr);
+        auto syscall_instr = new NonTypeInstr(Syscall);
+        manager->instr_list.push_back(syscall_instr);
+    } else if (call_instr.function->name == "getch") {
+        auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 12);
+        manager->instr_list.push_back(li_instr);
+        auto syscall_instr = new NonTypeInstr(Syscall);
+        manager->instr_list.push_back(syscall_instr);
+    } else if (call_instr.function->name == "putint") {
+        auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 1);
+        manager->instr_list.push_back(li_instr);
+        auto arg = call_instr.args[0];
+        if (auto intconst_ptr = dynamic_cast<IntConst*>(arg)) {
+            auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], intconst_ptr->value);
+            manager->instr_list.push_back(li_instr);
+        } else {
 
+        }
+        auto syscall_instr = new NonTypeInstr(Syscall);
+        manager->instr_list.push_back(syscall_instr);
+    } else if (call_instr.function->name == "putch") {
+        auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 11);
+        manager->instr_list.push_back(li_instr);
+        if (auto charconst_ptr = dynamic_cast<CharConst*>(call_instr.args[0])) {
+            auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], charconst_ptr->value);
+            manager->instr_list.push_back(li_instr);
+        } else {
+
+        }
+        auto syscall_instr = new NonTypeInstr(Syscall);
+        manager->instr_list.push_back(syscall_instr);
+    } else if (call_instr.function->name == "putstr") {
+        auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 4);
+        manager->instr_list.push_back(li_instr);
+        //$a0
+        auto syscall_instr = new NonTypeInstr(Syscall);
+        manager->instr_list.push_back(syscall_instr);
+    } else {
+
+    }
 }
 
 void MipsBackend::generate_mips_code(IcmpInstr &icmp_instr) {
@@ -119,7 +201,7 @@ void MipsBackend::generate_mips_code(LoadInstr &load_instr) {
 }
 
 void MipsBackend::generate_mips_code(StoreInstr &store_instr) {
-
+    
 }
 
 void MipsBackend::generate_mips_code(GetelementptrInstr &gep_instr) {
@@ -144,6 +226,16 @@ void MipsBackend::print_mips_code() const {
     mips_out << std::endl;
     mips_out << std::endl;
     mips_out << ".text" << std::endl;
+    auto jal_instr = new JTypeInstr(Jal, "func_main");
+    jal_instr->print(mips_out);
+    mips_out << std::endl;
+    auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 10);
+    li_instr->print(mips_out);
+    mips_out << std::endl;
+    auto syscall_instr = new NonTypeInstr(Syscall);
+    syscall_instr->print(mips_out);
+    mips_out << std::endl;
+    mips_out << std::endl;
     for (auto &instr : manager->instr_list) {
         instr->print(mips_out);
         mips_out << std::endl;
