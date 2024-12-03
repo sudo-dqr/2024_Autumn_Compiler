@@ -23,7 +23,6 @@ struct MipsBackend {
         void generate_mips_code(Function &function);
         void generate_mips_code(BasicBlock &basic_block);
         void generate_mips_code(AllocaInstr &alloca_instr);
-        int ir_type_size(ValueType* ir_type);
         void generate_mips_code(ArithmeticInstr &arith_instr);
         void generate_mips_code(BrInstr &br_instr);
         void generate_mips_code(RetInstr &ret_instr);

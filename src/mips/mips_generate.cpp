@@ -1,4 +1,5 @@
 #include "mips_generate.h"
+#include "mips_utils.h"
 
 void MipsBackend::generate_mips_code(Module &module) {
     for (auto &data : module.global_variables) {
@@ -105,25 +106,9 @@ void MipsBackend::generate_mips_code(AllocaInstr &alloca_instr) {
     std::cout << "Alloca : " << alloca_instr.id << " " << cur_sp_offset << std::endl;
 }
 
-int MipsBackend::ir_type_size(ValueType* ir_type) {
-    if (auto int_type = dynamic_cast<IntType*>(ir_type)) {
-        return 4;
-    } else if (auto char_type = dynamic_cast<CharType*>(ir_type)) {
-        return 4;
-    } else if (auto array_type = dynamic_cast<ArrayType*>(ir_type)) {
-        return array_type->size * ir_type_size(array_type->element_type);
-    } else if (auto pointer_type = dynamic_cast<PointerType*>(ir_type)) {
-        return 4;
-    } else {
-        std::cout << "MIPS Alloca : Invalid Type!" << std::endl;
-        return 0;
-    }
-}
-
 void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
     switch (arith_instr.arith_type) {
     case ArithmeticInstr::ADD:
-        /* code */
         break;
     case ArithmeticInstr::SUB:
         /* code */
@@ -143,11 +128,37 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
 }
 
 void MipsBackend::generate_mips_code(BrInstr &br_instr) {
-
+    if (br_instr.condition) {
+        
+    } else {
+        auto j_instr = new JTypeInstr(J, "func_" + cur_func_name + "_block_" + std::to_string(br_instr.true_block->id));
+        manager->instr_list.push_back(j_instr);
+    }
 }
 
 void MipsBackend::generate_mips_code(RetInstr &ret_instr) {
-
+    if (ret_instr.return_value) {
+        if (auto intconst_ptr = dynamic_cast<IntConst*>(ret_instr.return_value)) {
+            auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], intconst_ptr->value);
+            manager->instr_list.push_back(li_instr);
+        } else if (auto charconst_ptr = dynamic_cast<CharConst*>(ret_instr.return_value)) {
+            auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], charconst_ptr->value);
+            manager->instr_list.push_back(li_instr);
+        } else if (cur_virtual_reg_offset.find(ret_instr.return_value->id) != cur_virtual_reg_offset.end()) {
+            auto lw_instr = new ITypeInstr(Lw, manager->retval_regs_pool[0], manager->sp_reg, cur_virtual_reg_offset[ret_instr.return_value->id]);
+            manager->instr_list.push_back(lw_instr);
+        } else if (cur_local_var_offset.find(ret_instr.return_value->id) != cur_local_var_offset.end()) {
+            auto lw_instr = new ITypeInstr(Lw, manager->retval_regs_pool[0], manager->sp_reg, cur_local_var_offset[ret_instr.return_value->id]);
+            manager->instr_list.push_back(lw_instr);
+        } else {
+            std::cout << "ReturnInstr : Invalid Return Value!" << std::endl;
+            return;
+        }
+    }
+    auto lw_instr = new ITypeInstr(Lw, manager->ra_reg, manager->sp_reg, -4);
+    manager->instr_list.push_back(lw_instr);
+    auto jr_instr = new RTypeInstr(Jr, manager->ra_reg);
+    manager->instr_list.push_back(jr_instr);
 }
 
 void MipsBackend::generate_mips_code(CallInstr &call_instr) {
