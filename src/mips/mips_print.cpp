@@ -56,6 +56,12 @@ void RTypeInstr::print(std::ostream &os) const {
     case Addu:
         op_str = "addu";
         break;
+    case Addi:
+        op_str = "addi";
+        break;
+    case Addiu:
+        op_str = "addiu";
+        break;
     case Sub:
         op_str = "sub";
         break;
@@ -208,6 +214,21 @@ void NonTypeInstr::print(std::ostream &os) const {
             os << "la ";
             rt->printReg(os);
             os << ", " << imm;    
+            break;
+        case Rem:
+            os << "rem ";
+            if (rd) {
+                rd->printReg(os);
+                os << ", ";
+                rs->printReg(os);
+                os << ", ";
+                rt->printReg(os);
+            } else {
+                rt->printReg(os);
+                os << ", ";
+                rs->printReg(os);
+                os << ", " << imm;
+            }
             break;
         default:
             break;

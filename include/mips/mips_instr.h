@@ -3,9 +3,11 @@
 #include "mips_reg.h"
 
 enum OpType {
-    Add, Addu, Addi,
+    Add, Addu, 
+    Addi, Addiu,
     Sub, Subu,
     Mul, Div,
+    Rem, // pesudo instruction
     Sll, Srl,
     Slt, Sle,
     Seq, Sne,
@@ -81,7 +83,9 @@ struct MipsLabel : public MipsInstr {
 };
 
 struct NonTypeInstr : public MipsInstr {
+    MipsReg* rs;
     MipsReg* rt;
+    MipsReg* rd;
     int imm;
     std::string label;
     // syscall
@@ -92,6 +96,12 @@ struct NonTypeInstr : public MipsInstr {
     // la
     NonTypeInstr(OpType op, MipsReg* rt, std::string label)
     : MipsInstr(op), rt(rt), label(label) {}
+    // rem
+    NonTypeInstr(OpType op, MipsReg* rd, MipsReg* rs, MipsReg* rt)
+    : MipsInstr(op), rd(rd), rs(rs), rt(rt) {}
+    NonTypeInstr(OpType op, MipsReg* rs, MipsReg* rt, int imm)
+    : MipsInstr(op), rs(rs), rt(rt), imm(imm), rd(nullptr) {}
+
     void print(std::ostream &os) const override;
 };
 

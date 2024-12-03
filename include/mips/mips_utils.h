@@ -26,4 +26,15 @@ bool is_const_value(Value* value) {
     }
 }
 
+int get_const_value(Value* value) {
+    if (auto intconst_ptr = dynamic_cast<IntConst*>(value)) {
+        return intconst_ptr->value;
+    } else if (auto charconst_ptr = dynamic_cast<CharConst*>(value)) {
+        return charconst_ptr->value;
+    } else {
+        std::cout << "Get Const Value : Invalid Value!" << std::endl;
+        return -1;
+    }
+}
+
 #endif // MIPS_UTILS_H

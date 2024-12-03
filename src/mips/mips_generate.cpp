@@ -106,24 +106,118 @@ void MipsBackend::generate_mips_code(AllocaInstr &alloca_instr) {
     std::cout << "Alloca : " << alloca_instr.id << " " << cur_sp_offset << std::endl;
 }
 
+
+// 算数运算操作 每一种操作至多使用三种寄存器
+// 使用$v1存储结果, 使用$t8存储op1, 使用$t9存储op2
 void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
     switch (arith_instr.arith_type) {
     case ArithmeticInstr::ADD:
+        if ((!is_const_value(arith_instr.op1)) && (!is_const_value(arith_instr.op2))) {
+            load_to_tx(arith_instr.op1->id, 8);
+            load_to_tx(arith_instr.op2->id, 9);
+            auto addu_instr = new RTypeInstr(Addu, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
+            manager->instr_list.push_back(addu_instr);
+        } else if (is_const_value(arith_instr.op1)) {
+            load_to_tx(arith_instr.op2->id, 9);
+            int op1 = get_const_value(arith_instr.op1);
+            auto addiu_instr = new ITypeInstr(Addiu, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
+            manager->instr_list.push_back(addiu_instr);
+        } else {
+            load_to_tx(arith_instr.op1->id, 8);
+            int op2 = get_const_value(arith_instr.op2);
+            auto addiu_instr = new ITypeInstr(Addiu, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
+            manager->instr_list.push_back(addiu_instr);
+        }
         break;
     case ArithmeticInstr::SUB:
-        /* code */
+        if ((!is_const_value(arith_instr.op1)) && (!is_const_value(arith_instr.op2))) {
+            load_to_tx(arith_instr.op1->id, 8);
+            load_to_tx(arith_instr.op2->id, 9);
+            auto subu_instr = new RTypeInstr(Subu, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
+            manager->instr_list.push_back(subu_instr);
+        } else if (is_const_value(arith_instr.op1)) {
+            load_to_tx(arith_instr.op2->id, 9);
+            int op1 = get_const_value(arith_instr.op1);
+            auto subu_instr = new ITypeInstr(Subu, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
+            manager->instr_list.push_back(subu_instr);
+        } else {
+            load_to_tx(arith_instr.op1->id, 8);
+            int op2 = get_const_value(arith_instr.op2);
+            auto subu_instr = new ITypeInstr(Subu, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
+            manager->instr_list.push_back(subu_instr);
+        }
         break;
     case ArithmeticInstr::MUL:
-        /* code */
+        if ((!is_const_value(arith_instr.op1)) && (!is_const_value(arith_instr.op2))) {
+            load_to_tx(arith_instr.op1->id, 8);
+            load_to_tx(arith_instr.op2->id, 9);
+            auto mul_instr = new RTypeInstr(Mul, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
+            manager->instr_list.push_back(mul_instr);
+        } else if (is_const_value(arith_instr.op1)) {
+            load_to_tx(arith_instr.op2->id, 9);
+            int op1 = get_const_value(arith_instr.op1);
+            auto mul_instr = new ITypeInstr(Mul, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
+            manager->instr_list.push_back(mul_instr);
+        } else {
+            load_to_tx(arith_instr.op1->id, 8);
+            int op2 = get_const_value(arith_instr.op2);
+            auto mul_instr = new ITypeInstr(Mul, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
+            manager->instr_list.push_back(mul_instr);
+        }
         break;
     case ArithmeticInstr::SDIV:
-        /* code */
+        if ((!is_const_value(arith_instr.op1)) && (!is_const_value(arith_instr.op2))) {
+            load_to_tx(arith_instr.op1->id, 8);
+            load_to_tx(arith_instr.op2->id, 9);
+            auto div_instr = new RTypeInstr(Div, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
+            manager->instr_list.push_back(div_instr);
+        } else if (is_const_value(arith_instr.op1)) {
+            load_to_tx(arith_instr.op2->id, 9);
+            int op1 = get_const_value(arith_instr.op1);
+            auto div_instr = new ITypeInstr(Div, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
+            manager->instr_list.push_back(div_instr);
+        } else {
+            load_to_tx(arith_instr.op1->id, 8);
+            int op2 = get_const_value(arith_instr.op2);
+            auto div_instr = new ITypeInstr(Div, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
+            manager->instr_list.push_back(div_instr);
+        }
         break;
     case ArithmeticInstr::SREM:
-        /* code */
+        //! mips中没有求余指令 可以通过div指令得到余数
+        //! 商在lo寄存器中 余数在hi寄存器中
+        //! but pesudo instruction REM is provided by MARS
+        if ((!is_const_value(arith_instr.op1)) && (!is_const_value(arith_instr.op2))) {
+            load_to_tx(arith_instr.op1->id, 8);
+            load_to_tx(arith_instr.op2->id, 9);
+            auto rem_instr = new NonTypeInstr(Rem, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
+            manager->instr_list.push_back(rem_instr);
+        } else if (is_const_value(arith_instr.op1)) {
+            load_to_tx(arith_instr.op2->id, 9);
+            int op1 = get_const_value(arith_instr.op1);
+            auto rem_instr = new NonTypeInstr(Rem, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
+            manager->instr_list.push_back(rem_instr);
+        } else {
+            load_to_tx(arith_instr.op1->id, 8);
+            int op2 = get_const_value(arith_instr.op2);
+            auto rem_instr = new NonTypeInstr(Rem, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
+            manager->instr_list.push_back(rem_instr);
+        }
         break;
     default: 
         break;
+    }
+}
+
+void MipsBackend::load_to_tx(int value_id, int reg_id) {
+    if (cur_virtual_reg_offset.find(value_id) != cur_virtual_reg_offset.end()) {
+        auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[reg_id], manager->sp_reg, cur_virtual_reg_offset[value_id]);
+        manager->instr_list.push_back(lw_instr);
+    } else if (cur_local_var_offset.find(value_id) != cur_local_var_offset.end()) {
+        auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[reg_id], manager->sp_reg, cur_local_var_offset[value_id]);
+        manager->instr_list.push_back(lw_instr);
+    } else {
+        std::cout << "LoadInstr : WHAT THE HELL! can't find virtual register!"<< " id : " << value_id << std::endl;
     }
 }
 
