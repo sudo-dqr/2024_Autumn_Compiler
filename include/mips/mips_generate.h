@@ -27,7 +27,7 @@ struct MipsBackend {
         void generate_mips_code(BasicBlock &basic_block);
         void generate_mips_code(AllocaInstr &alloca_instr);
         void generate_mips_code(ArithmeticInstr &arith_instr);
-        void load_to_register(int value_id, MipsReg* reg);
+        void load_to_register(int value_id, MipsReg* dst_reg, MipsReg* addr_reg = nullptr);
         void generate_mips_code(BrInstr &br_instr);
         void generate_mips_code(RetInstr &ret_instr);
         void generate_mips_code(CallInstr &call_instr);

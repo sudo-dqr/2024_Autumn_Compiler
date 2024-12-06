@@ -1,16 +1,22 @@
 .data
 	g_x: .word 0
-	g_dqr0: .asciiz "21373457\n"
-	g_dqr1: .asciiz "Empty for pass!\n"
-	g_dqr2: .asciiz "One stmt for pass!\n"
-	g_dqr3: .asciiz "Basic for and no params function pass!\n"
-	g_dqr4: .asciiz "Please input 5 number (no zero)\n"
-	g_dqr5: .asciiz "Basic for and one params function pass!\n"
-	g_dqr6: .asciiz "Basic for and multiple params function pass!\n"
-	g_dqr7: .asciiz "Recursive Success, count = "
-	g_dqr8: .asciiz "\n"
-	g_dqr9: .asciiz "This C level file include decl, if, for ,continue, break, basic cond. No block\n"
-	g_dqr10: .asciiz "Pass Success!"
+	g_dqr0: .asciiz "a is "
+	g_dqr1: .asciiz ", b is "
+	g_dqr2: .asciiz ", c is "
+	g_dqr3: .asciiz "\n"
+	g_dqr4: .asciiz "21373457\n"
+	g_dqr5: .asciiz "Empty for pass!\n"
+	g_dqr6: .asciiz "One stmt for pass!\n"
+	g_dqr7: .asciiz "Basic for and no params function pass!\n"
+	g_dqr8: .asciiz "Please input 5 number (no zero)\n"
+	g_dqr9: .asciiz "Basic for and one params function pass!\n"
+	g_dqr10: .asciiz "f5(i,j,k) is "
+	g_dqr11: .asciiz "\n"
+	g_dqr12: .asciiz "Basic for and multiple params function pass!\n"
+	g_dqr13: .asciiz "Recursive Success, count = "
+	g_dqr14: .asciiz "\n"
+	g_dqr15: .asciiz "This C level file include decl, if, for ,continue, break, basic cond. No block\n"
+	g_dqr16: .asciiz "Pass Success!"
 
 
 .text
@@ -137,137 +143,172 @@ func_f5_block_3:
 	sw $t8, -32($sp)
 	lw $t8, -12($sp)
 	sw $t8, -36($sp)
-	lw $t8, -32($sp)
-	lw $t9, -36($sp)
-	sgt $v1, $t8, $t9
-	sw $v1, -40($sp)
-	lw $t8, -40($sp)
-	beq $t8, $zero, func_f5_block_21
-	j func_f5_block_10
-func_f5_block_10:
-	lw $t8, -8($sp)
+	lw $t8, -16($sp)
+	sw $t8, -40($sp)
+	la $t8, g_dqr0($zero)
 	sw $t8, -44($sp)
-	lw $t8, -16($sp)
+	la $a0, g_dqr0($zero)
+	li $v0, 4
+	syscall
+	lw $a0, -32($sp)
+	li $v0, 1
+	syscall
+	la $t8, g_dqr1($zero)
 	sw $t8, -48($sp)
-	lw $t8, -44($sp)
-	lw $t9, -48($sp)
-	sgt $v1, $t8, $t9
-	sw $v1, -52($sp)
-	lw $t8, -52($sp)
-	beq $t8, $zero, func_f5_block_17
-	j func_f5_block_14
-func_f5_block_14:
-	lw $t8, -8($sp)
+	la $a0, g_dqr1($zero)
+	li $v0, 4
+	syscall
+	lw $a0, -36($sp)
+	li $v0, 1
+	syscall
+	la $t8, g_dqr2($zero)
+	sw $t8, -52($sp)
+	la $a0, g_dqr2($zero)
+	li $v0, 4
+	syscall
+	lw $a0, -40($sp)
+	li $v0, 1
+	syscall
+	la $t8, g_dqr3($zero)
 	sw $t8, -56($sp)
-	lw $v0, -56($sp)
-	lw $ra, -4($sp)
-	jr $ra
-func_f5_block_16:
-	j func_f5_block_20
-func_f5_block_17:
-	lw $t8, -16($sp)
+	la $a0, g_dqr3($zero)
+	li $v0, 4
+	syscall
+	lw $t8, -8($sp)
 	sw $t8, -60($sp)
-	lw $v0, -60($sp)
-	lw $ra, -4($sp)
-	jr $ra
-func_f5_block_19:
-	j func_f5_block_20
-func_f5_block_20:
-	j func_f5_block_21
-func_f5_block_21:
 	lw $t8, -12($sp)
 	sw $t8, -64($sp)
-	lw $t8, -16($sp)
-	sw $t8, -68($sp)
-	lw $t8, -64($sp)
-	lw $t9, -68($sp)
+	lw $t8, -60($sp)
+	lw $t9, -64($sp)
 	sgt $v1, $t8, $t9
-	sw $v1, -72($sp)
-	lw $t8, -72($sp)
-	beq $t8, $zero, func_f5_block_36
-	j func_f5_block_25
-func_f5_block_25:
-	lw $t8, -12($sp)
-	sw $t8, -76($sp)
+	sw $v1, -68($sp)
+	lw $t8, -68($sp)
+	beq $t8, $zero, func_f5_block_28
+	j func_f5_block_17
+func_f5_block_17:
 	lw $t8, -8($sp)
-	sw $t8, -80($sp)
-	lw $t8, -76($sp)
-	lw $t9, -80($sp)
+	sw $t8, -72($sp)
+	lw $t8, -16($sp)
+	sw $t8, -76($sp)
+	lw $t8, -72($sp)
+	lw $t9, -76($sp)
 	sgt $v1, $t8, $t9
-	sw $v1, -84($sp)
-	lw $t8, -84($sp)
-	beq $t8, $zero, func_f5_block_32
-	j func_f5_block_29
-func_f5_block_29:
-	lw $t8, -12($sp)
+	sw $v1, -80($sp)
+	lw $t8, -80($sp)
+	beq $t8, $zero, func_f5_block_24
+	j func_f5_block_21
+func_f5_block_21:
+	lw $t8, -8($sp)
+	sw $t8, -84($sp)
+	lw $v0, -84($sp)
+	lw $ra, -4($sp)
+	jr $ra
+func_f5_block_23:
+	j func_f5_block_27
+func_f5_block_24:
+	lw $t8, -16($sp)
 	sw $t8, -88($sp)
 	lw $v0, -88($sp)
 	lw $ra, -4($sp)
 	jr $ra
-func_f5_block_31:
-	j func_f5_block_35
-func_f5_block_32:
-	lw $t8, -8($sp)
+func_f5_block_26:
+	j func_f5_block_27
+func_f5_block_27:
+	j func_f5_block_28
+func_f5_block_28:
+	lw $t8, -12($sp)
 	sw $t8, -92($sp)
-	lw $v0, -92($sp)
-	lw $ra, -4($sp)
-	jr $ra
-func_f5_block_34:
-	j func_f5_block_35
-func_f5_block_35:
-	j func_f5_block_36
-func_f5_block_36:
 	lw $t8, -16($sp)
 	sw $t8, -96($sp)
-	lw $t8, -8($sp)
-	sw $t8, -100($sp)
-	lw $t8, -96($sp)
-	lw $t9, -100($sp)
+	lw $t8, -92($sp)
+	lw $t9, -96($sp)
 	sgt $v1, $t8, $t9
-	sw $v1, -104($sp)
-	lw $t8, -104($sp)
-	beq $t8, $zero, func_f5_block_51
-	j func_f5_block_40
-func_f5_block_40:
-	lw $t8, -16($sp)
-	sw $t8, -108($sp)
+	sw $v1, -100($sp)
+	lw $t8, -100($sp)
+	beq $t8, $zero, func_f5_block_43
+	j func_f5_block_32
+func_f5_block_32:
 	lw $t8, -12($sp)
-	sw $t8, -112($sp)
-	lw $t8, -108($sp)
-	lw $t9, -112($sp)
+	sw $t8, -104($sp)
+	lw $t8, -8($sp)
+	sw $t8, -108($sp)
+	lw $t8, -104($sp)
+	lw $t9, -108($sp)
 	sgt $v1, $t8, $t9
-	sw $v1, -116($sp)
-	lw $t8, -116($sp)
-	beq $t8, $zero, func_f5_block_47
-	j func_f5_block_44
-func_f5_block_44:
-	lw $t8, -16($sp)
+	sw $v1, -112($sp)
+	lw $t8, -112($sp)
+	beq $t8, $zero, func_f5_block_39
+	j func_f5_block_36
+func_f5_block_36:
+	lw $t8, -12($sp)
+	sw $t8, -116($sp)
+	lw $v0, -116($sp)
+	lw $ra, -4($sp)
+	jr $ra
+func_f5_block_38:
+	j func_f5_block_42
+func_f5_block_39:
+	lw $t8, -8($sp)
 	sw $t8, -120($sp)
 	lw $v0, -120($sp)
 	lw $ra, -4($sp)
 	jr $ra
-func_f5_block_46:
-	j func_f5_block_50
-func_f5_block_47:
-	lw $t8, -12($sp)
+func_f5_block_41:
+	j func_f5_block_42
+func_f5_block_42:
+	j func_f5_block_43
+func_f5_block_43:
+	lw $t8, -16($sp)
 	sw $t8, -124($sp)
-	lw $v0, -124($sp)
-	lw $ra, -4($sp)
-	jr $ra
-func_f5_block_49:
-	j func_f5_block_50
-func_f5_block_50:
-	j func_f5_block_51
-func_f5_block_51:
 	lw $t8, -8($sp)
 	sw $t8, -128($sp)
+	lw $t8, -124($sp)
+	lw $t9, -128($sp)
+	sgt $v1, $t8, $t9
+	sw $v1, -132($sp)
+	lw $t8, -132($sp)
+	beq $t8, $zero, func_f5_block_58
+	j func_f5_block_47
+func_f5_block_47:
+	lw $t8, -16($sp)
+	sw $t8, -136($sp)
+	lw $t8, -12($sp)
+	sw $t8, -140($sp)
+	lw $t8, -136($sp)
+	lw $t9, -140($sp)
+	sgt $v1, $t8, $t9
+	sw $v1, -144($sp)
+	lw $t8, -144($sp)
+	beq $t8, $zero, func_f5_block_54
+	j func_f5_block_51
+func_f5_block_51:
+	lw $t8, -16($sp)
+	sw $t8, -148($sp)
+	lw $v0, -148($sp)
+	lw $ra, -4($sp)
+	jr $ra
+func_f5_block_53:
+	j func_f5_block_57
+func_f5_block_54:
+	lw $t8, -12($sp)
+	sw $t8, -152($sp)
+	lw $v0, -152($sp)
+	lw $ra, -4($sp)
+	jr $ra
+func_f5_block_56:
+	j func_f5_block_57
+func_f5_block_57:
+	j func_f5_block_58
+func_f5_block_58:
+	lw $t8, -8($sp)
+	sw $t8, -156($sp)
 	addu $fp, $sp, $zero
-	addi $sp, $sp, -132
-	lw $a0, -128($sp)
+	addi $sp, $sp, -160
+	lw $a0, -156($fp)
 	jal func_f4
-	addi $sp, $sp, 132
-	lw $v0, -132($sp)
-	lw $v0, -132($sp)
+	addi $sp, $sp, 160
+	sw $v0, -160($sp)
+	lw $v0, -160($sp)
 	lw $ra, -4($sp)
 	jr $ra
 func_f6:
@@ -307,19 +348,19 @@ func_f6_block_10:
 	sw $v1, -40($sp)
 	addu $fp, $sp, $zero
 	addi $sp, $sp, -44
-	lw $a0, -40($sp)
+	lw $a0, -40($fp)
 	jal func_f6
 	addi $sp, $sp, 44
-	lw $v0, -44($sp)
+	sw $v0, -44($sp)
 	lw $v0, -44($sp)
 	lw $ra, -4($sp)
 	jr $ra
 func_main:
 	sw $ra, -4($sp)
 func_main_block_0:
-	la $t8, g_dqr0($zero)
+	la $t8, g_dqr4($zero)
 	sw $t8, -8($sp)
-	la $a0, g_dqr0($zero)
+	la $a0, g_dqr4($zero)
 	li $v0, 4
 	syscall
 	li $t8, 5
@@ -357,9 +398,9 @@ func_main_block_12:
 	beq $t8, $zero, func_main_block_17
 	j func_main_block_15
 func_main_block_15:
-	la $t8, g_dqr1($zero)
+	la $t8, g_dqr5($zero)
 	sw $t8, -48($sp)
-	la $a0, g_dqr1($zero)
+	la $a0, g_dqr5($zero)
 	li $v0, 4
 	syscall
 	j func_main_block_17
@@ -554,9 +595,9 @@ func_main_block_80:
 	beq $t8, $zero, func_main_block_88
 	j func_main_block_85
 func_main_block_85:
-	la $t8, g_dqr2($zero)
+	la $t8, g_dqr6($zero)
 	sw $t8, -180($sp)
-	la $a0, g_dqr2($zero)
+	la $a0, g_dqr6($zero)
 	li $v0, 4
 	syscall
 	j func_main_block_89
@@ -569,7 +610,7 @@ func_main_block_89:
 	addi $sp, $sp, -180
 	jal func_f1
 	addi $sp, $sp, 180
-	lw $v0, -184($sp)
+	sw $v0, -184($sp)
 	lw $t8, g_x($zero)
 	sw $t8, -188($sp)
 	lw $t8, -188($sp)
@@ -583,7 +624,7 @@ func_main_block_92:
 	addi $sp, $sp, -192
 	jal func_f2
 	addi $sp, $sp, 192
-	lw $v0, -196($sp)
+	sw $v0, -196($sp)
 	lw $t8, -196($sp)
 	seq $v1, $t8, -1
 	sw $v1, -200($sp)
@@ -591,18 +632,18 @@ func_main_block_92:
 	beq $t8, $zero, func_main_block_97
 	j func_main_block_95
 func_main_block_95:
-	la $t8, g_dqr3($zero)
+	la $t8, g_dqr7($zero)
 	sw $t8, -204($sp)
-	la $a0, g_dqr3($zero)
+	la $a0, g_dqr7($zero)
 	li $v0, 4
 	syscall
 	j func_main_block_97
 func_main_block_97:
 	j func_main_block_98
 func_main_block_98:
-	la $t8, g_dqr4($zero)
+	la $t8, g_dqr8($zero)
 	sw $t8, -208($sp)
-	la $a0, g_dqr4($zero)
+	la $a0, g_dqr8($zero)
 	li $v0, 4
 	syscall
 	li $t8, -1
@@ -644,16 +685,16 @@ func_main_block_108:
 	sw $t8, -244($sp)
 	addu $fp, $sp, $zero
 	addi $sp, $sp, -248
-	lw $a0, -244($sp)
+	lw $a0, -244($fp)
 	jal func_f4
 	addi $sp, $sp, 248
-	lw $v0, -248($sp)
+	sw $v0, -248($sp)
 	addu $fp, $sp, $zero
 	addi $sp, $sp, -252
-	lw $a0, -248($sp)
+	lw $a0, -248($fp)
 	jal func_f3
 	addi $sp, $sp, 252
-	lw $v0, -252($sp)
+	sw $v0, -252($sp)
 	lw $t8, g_x($zero)
 	sw $t8, -256($sp)
 	lw $t8, -256($sp)
@@ -707,9 +748,9 @@ func_main_block_127:
 	beq $t8, $zero, func_main_block_132
 	j func_main_block_130
 func_main_block_130:
-	la $t8, g_dqr5($zero)
+	la $t8, g_dqr9($zero)
 	sw $t8, -296($sp)
-	la $a0, g_dqr5($zero)
+	la $a0, g_dqr9($zero)
 	li $v0, 4
 	syscall
 	j func_main_block_132
@@ -728,60 +769,87 @@ func_main_block_132:
 	sw $t8, -308($sp)
 	addu $fp, $sp, $zero
 	addi $sp, $sp, -320
-	lw $a0, -300($sp)
-	lw $a1, -304($sp)
-	lw $a2, -308($sp)
+	lw $a0, -300($fp)
+	lw $a1, -304($fp)
+	lw $a2, -308($fp)
 	jal func_f5
 	addi $sp, $sp, 320
-	lw $v0, -312($sp)
-	lw $t8, -12($sp)
+	sw $v0, -312($sp)
+	la $t8, g_dqr10($zero)
 	sw $t8, -316($sp)
-	lw $t8, -312($sp)
-	lw $t9, -316($sp)
-	seq $v1, $t8, $t9
-	sw $v1, -320($sp)
-	lw $t8, -320($sp)
-	beq $t8, $zero, func_main_block_141
-	j func_main_block_139
-func_main_block_139:
-	la $t8, g_dqr6($zero)
-	sw $t8, -324($sp)
-	la $a0, g_dqr6($zero)
+	la $a0, g_dqr10($zero)
 	li $v0, 4
 	syscall
-	j func_main_block_141
-func_main_block_141:
+	lw $a0, -312($sp)
+	li $v0, 1
+	syscall
+	la $t8, g_dqr11($zero)
+	sw $t8, -320($sp)
+	la $a0, g_dqr11($zero)
+	li $v0, 4
+	syscall
+	lw $t8, -12($sp)
+	sw $t8, -324($sp)
+	lw $t8, -16($sp)
+	sw $t8, -328($sp)
+	lw $t8, -20($sp)
+	sw $t8, -332($sp)
+	addu $fp, $sp, $zero
+	addi $sp, $sp, -344
+	lw $a0, -324($fp)
+	lw $a1, -328($fp)
+	lw $a2, -332($fp)
+	jal func_f5
+	addi $sp, $sp, 344
+	sw $v0, -336($sp)
+	lw $t8, -12($sp)
+	sw $t8, -340($sp)
+	lw $t8, -336($sp)
+	lw $t9, -340($sp)
+	seq $v1, $t8, $t9
+	sw $v1, -344($sp)
+	lw $t8, -344($sp)
+	beq $t8, $zero, func_main_block_147
+	j func_main_block_145
+func_main_block_145:
+	la $t8, g_dqr12($zero)
+	sw $t8, -348($sp)
+	la $a0, g_dqr12($zero)
+	li $v0, 4
+	syscall
+	j func_main_block_147
+func_main_block_147:
 	li $t8, 0
 	sw $t8, g_x($zero)
 	addu $fp, $sp, $zero
-	addi $sp, $sp, -328
+	addi $sp, $sp, -352
 	li $a0, 10
 	jal func_f6
-	addi $sp, $sp, 328
-	lw $v0, -328($sp)
+	addi $sp, $sp, 352
+	sw $v0, -352($sp)
 	lw $t8, g_x($zero)
-	sw $t8, -332($sp)
-	la $t8, g_dqr7($zero)
-	sw $t8, -336($sp)
-	la $a0, g_dqr7($zero)
+	sw $t8, -356($sp)
+	la $t8, g_dqr13($zero)
+	sw $t8, -360($sp)
+	la $a0, g_dqr13($zero)
 	li $v0, 4
 	syscall
-	lw $a0, -332($sp)
+	lw $a0, -356($sp)
 	li $v0, 1
 	syscall
-	la $t8, g_dqr8($zero)
-	sw $t8, -340($sp)
-	la $a0, g_dqr8($zero)
+	la $t8, g_dqr14($zero)
+	sw $t8, -364($sp)
+	la $a0, g_dqr14($zero)
 	li $v0, 4
 	syscall
-	la $t8, g_dqr9($zero)
-	sw $t8, -344($sp)
-	la $a0, g_dqr9($zero)
+	la $t8, g_dqr15($zero)
+	sw $t8, -368($sp)
+	la $a0, g_dqr15($zero)
 	li $v0, 4
 	syscall
-	la $t8, g_dqr10($zero)
-	sw $t8, -348($sp)
-	la $a0, g_dqr10($zero)
+	la $t8, g_dqr16($zero)
+	sw $t8, -372($sp)
+	la $a0, g_dqr16($zero)
 	li $v0, 4
 	syscall
 	li $v0, 0

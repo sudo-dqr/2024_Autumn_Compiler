@@ -103,7 +103,7 @@ void MipsBackend::generate_mips_code(AllocaInstr &alloca_instr) {
     int size = ir_type_size(deref_type);
     cur_sp_offset -= size;
     cur_local_var_offset[alloca_instr.id] = cur_sp_offset;
-    std::cout << "Alloca : " << alloca_instr.id << " " << cur_sp_offset << std::endl;
+    // std::cout << "Alloca : " << alloca_instr.id << " " << cur_sp_offset << std::endl;
 }
 
 
@@ -214,12 +214,13 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
     manager->instr_list.push_back(sw_instr);
 }
 
-void MipsBackend::load_to_register(int value_id, MipsReg* reg) {
+void MipsBackend::load_to_register(int value_id, MipsReg* dst_reg, MipsReg* addr_reg) {
+    if (addr_reg == nullptr) addr_reg = manager->sp_reg;
     if (cur_virtual_reg_offset.find(value_id) != cur_virtual_reg_offset.end()) {
-        auto lw_instr = new ITypeInstr(Lw, reg, manager->sp_reg, cur_virtual_reg_offset[value_id]);
+        auto lw_instr = new ITypeInstr(Lw, dst_reg, addr_reg, cur_virtual_reg_offset[value_id]);
         manager->instr_list.push_back(lw_instr);
     } else if (cur_local_var_offset.find(value_id) != cur_local_var_offset.end()) {
-        auto lw_instr = new ITypeInstr(Lw, reg, manager->sp_reg, cur_local_var_offset[value_id]);
+        auto lw_instr = new ITypeInstr(Lw, dst_reg, addr_reg, cur_local_var_offset[value_id]);
         manager->instr_list.push_back(lw_instr);
     } else {
         std::cout << "Cur Func : " << cur_func_name << std::endl;
@@ -316,12 +317,12 @@ void MipsBackend::generate_mips_code(CallInstr &call_instr) {
                 if (is_const_value(arg)) {
                     auto li_instr = new NonTypeInstr(Li, manager->arg_regs_pool[i], get_const_value(arg));
                     manager->instr_list.push_back(li_instr);
-                } else load_to_register(arg->id, manager->arg_regs_pool[i]);
+                } else load_to_register(arg->id, manager->arg_regs_pool[i], manager->fp_reg);
             } else { // $sp
                 if (is_const_value(arg)) {
                     auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[8], get_const_value(arg));
                     manager->instr_list.push_back(li_instr);
-                } else load_to_register(arg->id, manager->temp_regs_pool[8]);
+                } else load_to_register(arg->id, manager->temp_regs_pool[8], manager->fp_reg);
                 auto sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->sp_reg, 4 * i);
                 manager->instr_list.push_back(sw_instr);
             }
@@ -336,7 +337,7 @@ void MipsBackend::generate_mips_code(CallInstr &call_instr) {
         if (return_type != &IR_VOID) {
             cur_sp_offset -= 4;
             cur_local_var_offset[call_instr.id] = cur_sp_offset;
-            auto load_instr = new ITypeInstr(Lw, manager->retval_regs_pool[0], manager->sp_reg, cur_sp_offset);
+            auto load_instr = new ITypeInstr(Sw, manager->retval_regs_pool[0], manager->sp_reg, cur_sp_offset);
             manager->instr_list.push_back(load_instr);
         }
     }
@@ -374,6 +375,7 @@ void MipsBackend::generate_mips_code(StoreInstr &store_instr) {
         if (value_id < cur_func_param_num) {
             if (value_id < 4) {
                 cur_sp_offset -= 4;
+                std::cout << "Store Param : " << value_id << " " << cur_sp_offset << std::endl;
                 cur_virtual_reg_offset[value_id] = cur_sp_offset;
                 auto store_instr = new ITypeInstr(Sw, manager->arg_regs_pool[value_id], manager->sp_reg, cur_sp_offset);
                 manager->instr_list.push_back(store_instr);
