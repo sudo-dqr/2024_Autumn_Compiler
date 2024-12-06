@@ -205,8 +205,13 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
         }
         break;
     default: 
+        std::cout << "Undefined ArithmeticInstr!" << std::endl;
         break;
     }
+    cur_sp_offset -= 4;
+    cur_virtual_reg_offset[arith_instr.id] = cur_sp_offset;
+    auto sw_instr = new ITypeInstr(Sw, manager->retval_regs_pool[1], manager->sp_reg, cur_sp_offset);
+    manager->instr_list.push_back(sw_instr);
 }
 
 void MipsBackend::load_to_register(int value_id, MipsReg* reg) {
