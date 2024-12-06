@@ -217,6 +217,7 @@ void MipsBackend::load_to_register(int value_id, MipsReg* reg) {
         auto lw_instr = new ITypeInstr(Lw, reg, manager->sp_reg, cur_local_var_offset[value_id]);
         manager->instr_list.push_back(lw_instr);
     } else {
+        std::cout << "Cur Func : " << cur_func_name << std::endl;
         std::cout << "LoadInstr : WHAT THE HELL! can't find virtual register!"<< " id : " << value_id << std::endl;
     }
 }
@@ -346,22 +347,17 @@ void MipsBackend::generate_mips_code(CallInstr &call_instr) {
     }
 }
 
-void MipsBackend::generate_mips_code(IcmpInstr &icmp_instr) {
-
-}
-
 void MipsBackend::generate_mips_code(LoadInstr &load_instr) {
-    auto deref_type = ((PointerType*)load_instr.src_ptr->type)->referenced_type;
     ITypeInstr* lw_instr = nullptr;
-    if (auto gv_ptr = dynamic_cast<GlobalVariable*>(deref_type)) {
+    if (auto gv_ptr = dynamic_cast<GlobalVariable*>(load_instr.src_ptr)) {
         lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->zero_reg, "g_" + gv_ptr->name);
     } else if (cur_local_var_offset.find(load_instr.src_ptr->id) != cur_local_var_offset.end()) {
         lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, cur_local_var_offset[load_instr.src_ptr->id]);
     } else if (cur_virtual_reg_offset.find(load_instr.src_ptr->id) != cur_virtual_reg_offset.end()) {
         auto vreg = cur_virtual_reg_offset.find(load_instr.src_ptr->id);
-        lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[9], manager->sp_reg, vreg->second);
+        lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, vreg->second);
         manager->instr_list.push_back(lw_instr);
-        lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[9], manager->temp_regs_pool[8], 0);
+        lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->temp_regs_pool[8], 0);
     } else {
         std::cout << "Invalid Load Instruction!" << std::endl;
     }
@@ -376,11 +372,8 @@ void MipsBackend::generate_mips_code(StoreInstr &store_instr) {
     int value_id = store_instr.store_value->id;
     int ptr_id = store_instr.dst_ptr->id;
     //! 需要先把存的值load进reg  $t8
-    if (auto intconst_ptr = dynamic_cast<IntConst*>(store_instr.store_value)) {
-        auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[8], intconst_ptr->value);
-        manager->instr_list.push_back(li_instr);
-    } else if (auto charconst_ptr = dynamic_cast<CharConst*>(store_instr.store_value)) {
-        auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[8], charconst_ptr->value);
+    if (is_const_value(store_instr.store_value)) {
+        auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[8], get_const_value(store_instr.store_value));
         manager->instr_list.push_back(li_instr);
     } else {
         if (value_id < cur_func_param_num) {
@@ -388,26 +381,23 @@ void MipsBackend::generate_mips_code(StoreInstr &store_instr) {
                 cur_sp_offset -= 4;
                 cur_virtual_reg_offset[value_id] = cur_sp_offset;
                 auto store_instr = new ITypeInstr(Sw, manager->arg_regs_pool[value_id], manager->sp_reg, cur_sp_offset);
-                return;
+                manager->instr_list.push_back(store_instr);
+            } else {
+                int offset = 4 * value_id;
+                auto load_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, offset);
+                manager->instr_list.push_back(load_instr);
             }
-            auto load_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, cur_virtual_reg_offset[value_id]);
-        } else if (cur_virtual_reg_offset.find(value_id) != cur_virtual_reg_offset.end()) {
-            auto vreg = cur_virtual_reg_offset.find(value_id);
-            auto load_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, vreg->second);
-            manager->instr_list.push_back(load_instr);
-        } else {
-            auto load_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, cur_local_var_offset[value_id]);
-            manager->instr_list.push_back(load_instr);
-        }
+        } else load_to_register(value_id, manager->temp_regs_pool[8]);
     }
     //! 然后把ptr load进reg
     ITypeInstr* sw_instr = nullptr;
-    if (auto gv_ptr = dynamic_cast<GlobalVariable*>(store_instr.store_value)) {
+    if (auto gv_ptr = dynamic_cast<GlobalVariable*>(store_instr.dst_ptr)) {
         sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->zero_reg, "g_" + gv_ptr->name);
     } else if (cur_local_var_offset.find(ptr_id) != cur_local_var_offset.end()) {
         sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->sp_reg, cur_local_var_offset[ptr_id]);
     } else if (cur_virtual_reg_offset.find(ptr_id) != cur_virtual_reg_offset.end()) {
         auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[9], manager->sp_reg, cur_virtual_reg_offset[ptr_id]);
+        manager->instr_list.push_back(lw_instr);
         sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->temp_regs_pool[9], 0);
     } else {
         std::cout << "Invalid Store Instruction!" << std::endl;
@@ -424,6 +414,10 @@ void MipsBackend::generate_mips_code(ZextInstr &zext_instr) {
 }
 
 void MipsBackend::generate_mips_code(TruncInstr &trunc_instr) {
+
+}
+
+void MipsBackend::generate_mips_code(IcmpInstr &icmp_instr) {
 
 }
 
