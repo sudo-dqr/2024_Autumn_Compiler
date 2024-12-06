@@ -92,8 +92,7 @@ func_f2_block_7:
 func_f3:
 	sw $ra, -4($sp)
 func_f3_block_1:
-	sw $a0, -12($sp)
-	sw $t8, -8($sp)
+	sw $a0, -8($sp)
 	lw $t8, -8($sp)
 	sw $t8, -16($sp)
 	lw $t8, -16($sp)
@@ -103,8 +102,7 @@ func_f3_block_1:
 func_f4:
 	sw $ra, -4($sp)
 func_f4_block_1:
-	sw $a0, -12($sp)
-	sw $t8, -8($sp)
+	sw $a0, -8($sp)
 	lw $t8, -8($sp)
 	sw $t8, -16($sp)
 	lw $t8, -16($sp)
@@ -133,12 +131,9 @@ func_f4_block_8:
 func_f5:
 	sw $ra, -4($sp)
 func_f5_block_3:
-	sw $a0, -20($sp)
-	sw $t8, -8($sp)
-	sw $a1, -24($sp)
-	sw $t8, -12($sp)
-	sw $a2, -28($sp)
-	sw $t8, -16($sp)
+	sw $a0, -8($sp)
+	sw $a1, -12($sp)
+	sw $a2, -16($sp)
 	lw $t8, -8($sp)
 	sw $t8, -32($sp)
 	lw $t8, -12($sp)
@@ -314,8 +309,7 @@ func_f5_block_58:
 func_f6:
 	sw $ra, -4($sp)
 func_f6_block_1:
-	sw $a0, -12($sp)
-	sw $t8, -8($sp)
+	sw $a0, -8($sp)
 	lw $t8, g_x($zero)
 	sw $t8, -16($sp)
 	lw $t8, -8($sp)

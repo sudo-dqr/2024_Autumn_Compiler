@@ -53,7 +53,7 @@ void MipsBackend::generate_mips_code(GlobalVariable &data) {
 
 void MipsBackend::generate_mips_code(Function &function) {
     auto label_instr = new MipsLabel("func_" + function.name);
-    std::cout << "Function Name : " << function.name << std::endl;
+    // std::cout << "Function Name : " << function.name << std::endl;
     manager->instr_list.push_back(label_instr);
     cur_func_param_num = function.fparams.size();
     cur_func_name = function.name;
@@ -347,17 +347,19 @@ void MipsBackend::generate_mips_code(LoadInstr &load_instr) {
     ITypeInstr* lw_instr = nullptr;
     if (auto gv_ptr = dynamic_cast<GlobalVariable*>(load_instr.src_ptr)) {
         lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->zero_reg, "g_" + gv_ptr->name);
+        manager->instr_list.push_back(lw_instr);
     } else if (cur_local_var_offset.find(load_instr.src_ptr->id) != cur_local_var_offset.end()) {
         lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, cur_local_var_offset[load_instr.src_ptr->id]);
+        manager->instr_list.push_back(lw_instr);
     } else if (cur_virtual_reg_offset.find(load_instr.src_ptr->id) != cur_virtual_reg_offset.end()) {
         auto vreg = cur_virtual_reg_offset.find(load_instr.src_ptr->id);
         lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, vreg->second);
         manager->instr_list.push_back(lw_instr);
         lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->temp_regs_pool[8], 0);
+        manager->instr_list.push_back(lw_instr);
     } else {
         std::cout << "Invalid Load Instruction!" << std::endl;
     }
-    manager->instr_list.push_back(lw_instr);
     cur_sp_offset -= 4;
     cur_local_var_offset[load_instr.id] = cur_sp_offset;    
     auto sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->sp_reg, cur_sp_offset);
@@ -375,10 +377,11 @@ void MipsBackend::generate_mips_code(StoreInstr &store_instr) {
         if (value_id < cur_func_param_num) {
             if (value_id < 4) {
                 cur_sp_offset -= 4;
-                std::cout << "Store Param : " << value_id << " " << cur_sp_offset << std::endl;
-                cur_virtual_reg_offset[value_id] = cur_sp_offset;
-                auto store_instr = new ITypeInstr(Sw, manager->arg_regs_pool[value_id], manager->sp_reg, cur_sp_offset);
+                cur_virtual_reg_offset[ptr_id] = cur_sp_offset;
+                int ptr_offset = cur_local_var_offset[ptr_id];
+                auto store_instr = new ITypeInstr(Sw, manager->arg_regs_pool[value_id], manager->sp_reg, ptr_offset);
                 manager->instr_list.push_back(store_instr);
+                return;
             } else {
                 int offset = 4 * value_id;
                 auto load_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, offset);
