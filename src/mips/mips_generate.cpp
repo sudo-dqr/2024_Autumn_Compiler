@@ -138,12 +138,12 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
         } else if (is_const_value(arith_instr.op1)) {
             load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             int op1 = get_const_value(arith_instr.op1);
-            auto subu_instr = new ITypeInstr(Subu, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
+            auto subu_instr = new NonTypeInstr(Subu, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
             manager->instr_list.push_back(subu_instr);
         } else {
             load_to_register(arith_instr.op1->id, manager->temp_regs_pool[8]);
             int op2 = get_const_value(arith_instr.op2);
-            auto subu_instr = new ITypeInstr(Subu, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
+            auto subu_instr = new NonTypeInstr(Subu, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
             manager->instr_list.push_back(subu_instr);
         }
         break;
@@ -237,22 +237,10 @@ void MipsBackend::generate_mips_code(BrInstr &br_instr) {
 
 void MipsBackend::generate_mips_code(RetInstr &ret_instr) {
     if (ret_instr.return_value) {
-        if (auto intconst_ptr = dynamic_cast<IntConst*>(ret_instr.return_value)) {
-            auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], intconst_ptr->value);
+        if (is_const_value(ret_instr.return_value)) {
+            auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], get_const_value(ret_instr.return_value));
             manager->instr_list.push_back(li_instr);
-        } else if (auto charconst_ptr = dynamic_cast<CharConst*>(ret_instr.return_value)) {
-            auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], charconst_ptr->value);
-            manager->instr_list.push_back(li_instr);
-        } else if (cur_virtual_reg_offset.find(ret_instr.return_value->id) != cur_virtual_reg_offset.end()) {
-            auto lw_instr = new ITypeInstr(Lw, manager->retval_regs_pool[0], manager->sp_reg, cur_virtual_reg_offset[ret_instr.return_value->id]);
-            manager->instr_list.push_back(lw_instr);
-        } else if (cur_local_var_offset.find(ret_instr.return_value->id) != cur_local_var_offset.end()) {
-            auto lw_instr = new ITypeInstr(Lw, manager->retval_regs_pool[0], manager->sp_reg, cur_local_var_offset[ret_instr.return_value->id]);
-            manager->instr_list.push_back(lw_instr);
-        } else {
-            std::cout << "ReturnInstr : Invalid Return Value!" << std::endl;
-            return;
-        }
+        } else load_to_register(ret_instr.return_value->id, manager->retval_regs_pool[0]);
     }
     auto lw_instr = new ITypeInstr(Lw, manager->ra_reg, manager->sp_reg, -4);
     manager->instr_list.push_back(lw_instr);
@@ -430,7 +418,63 @@ void MipsBackend::generate_mips_code(TruncInstr &trunc_instr) {
 }
 
 void MipsBackend::generate_mips_code(IcmpInstr &icmp_instr) {
-    
+    OpType op_type;
+    switch (icmp_instr.compare_type) {
+        case IcmpInstr::EQ: op_type = Seq; break;
+        case IcmpInstr::NE: op_type = Sne; break;
+        case IcmpInstr::SGT: op_type = Sgt; break;
+        case IcmpInstr::SGE: op_type = Sge; break;
+        case IcmpInstr::SLT: op_type = Slt; break;
+        case IcmpInstr::SLE: op_type = Sle; break;
+        default: break;
+    }
+    if ((!is_const_value(icmp_instr.op1)) && (!is_const_value(icmp_instr.op2))) {
+        load_to_register(icmp_instr.op1->id, manager->temp_regs_pool[8]);
+        load_to_register(icmp_instr.op2->id, manager->temp_regs_pool[9]);
+        auto instr = new RTypeInstr(op_type, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
+        manager->instr_list.push_back(instr);
+    } else if (is_const_value(icmp_instr.op1)) {
+        switch (icmp_instr.compare_type) {
+            case IcmpInstr::SGT: op_type = Slti; break;
+            case IcmpInstr::SGE: op_type = Sle; break;
+            case IcmpInstr::SLE: op_type = Sge; break;
+            case IcmpInstr::SLT: op_type = Sgt; break;
+            //! 这里除了slt之外都是伪指令 slt不支持立即数 转换为伪指令sgt
+            //! sgt支持16/32位立即数
+            default: break;
+        }
+        load_to_register(icmp_instr.op2->id, manager->temp_regs_pool[9]);
+        int op1 = get_const_value(icmp_instr.op1);
+        if (icmp_instr.compare_type == IcmpInstr::SLT && (op1 < XBIT_MIN || op1 > XBIT_MAX)) {
+            auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[8], op1);
+            manager->instr_list.push_back(li_instr);
+            op_type = Slt;
+            auto instr = new RTypeInstr(op_type, manager->retval_regs_pool[1], manager->temp_regs_pool[9], manager->temp_regs_pool[8]);
+            manager->instr_list.push_back(instr);
+        } else {
+            auto instr = new ITypeInstr(op_type, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
+            manager->instr_list.push_back(instr);
+        }
+    } else {
+        //! slt不支持立即数 转换为slti后也只能支持16位立即数
+        if (icmp_instr.compare_type == IcmpInstr::SLT) op_type = Slti;
+        load_to_register(icmp_instr.op1->id, manager->temp_regs_pool[8]);
+        int op2 = get_const_value(icmp_instr.op2);
+        if (icmp_instr.compare_type == IcmpInstr::SLT && (op2 < XBIT_MIN || op2 > XBIT_MAX)) { //! 超出slti立即数范围
+            auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[9], op2);
+            manager->instr_list.push_back(li_instr);
+            op_type = Slt;
+            auto instr = new RTypeInstr(op_type, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
+            manager->instr_list.push_back(instr);
+        } else {
+            auto instr = new ITypeInstr(op_type, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
+            manager->instr_list.push_back(instr);
+        }
+    }
+    cur_sp_offset -= 4;
+    cur_local_var_offset[icmp_instr.id] = cur_sp_offset;
+    auto sw_instr = new ITypeInstr(Sw, manager->retval_regs_pool[1], manager->sp_reg, cur_sp_offset);
+    manager->instr_list.push_back(sw_instr);
 }
 
 void MipsBackend::print_mips_code() const {

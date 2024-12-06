@@ -5,6 +5,9 @@
 #include "mips_manager.h"
 #include <unordered_map>
 
+#define XBIT_MAX 32767
+#define XBIT_MIN -32768
+
 struct MipsBackend {
     MipsBackend() { this->manager = new MipsManager();}
     void generate_mips_code(Module &module);

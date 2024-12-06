@@ -3,22 +3,19 @@
 #include "mips_reg.h"
 
 enum OpType {
-    Add, Addu, 
+    Addu,
     Addi, Addiu,
-    Sub, Subu,
+    Subu, // R type or pseudo instruction
     Mul, Div,
     Rem, // pesudo instruction
     Sll, Srl,
-    Slt, Sle,
+    Slt, Slti,
+    Sle, // pseudo instruction
     Seq, Sne,
     Sgt, Sge,
-    And, Or,
-    Andi, Ori,
     Sw, Lw,
     Li, La,
-    Beq, Bne,
-    Bgt, Blt,
-    Bge, Ble,
+    Beq,
     J, Jal, Jr,
     Label,
     Syscall
@@ -33,7 +30,6 @@ struct MipsInstr {
 
 // R type is like
 // | op | rs | rt | rd | shamt | funct |
-// Instrs: add, addu, sub, subu, mul, div, sll, srl, and, or, jr
 struct RTypeInstr : public MipsInstr {
     MipsReg* rd;
     MipsReg* rs;
@@ -51,7 +47,6 @@ struct RTypeInstr : public MipsInstr {
 
 // I type is like
 // | op | rs | rt | imm(16) |
-// Instrs: addi, sw, lw, beq, bne, bgt, blt, bge, ble, andi, ori
 struct ITypeInstr : public MipsInstr{
     MipsReg* rt;
     MipsReg* rs;
@@ -96,12 +91,11 @@ struct NonTypeInstr : public MipsInstr {
     // la
     NonTypeInstr(OpType op, MipsReg* rt, std::string label)
     : MipsInstr(op), rt(rt), label(label) {}
-    // rem
+    // rem,sle seq sne sgt sge(1,2) subu(2)
     NonTypeInstr(OpType op, MipsReg* rd, MipsReg* rs, MipsReg* rt)
     : MipsInstr(op), rd(rd), rs(rs), rt(rt) {}
     NonTypeInstr(OpType op, MipsReg* rs, MipsReg* rt, int imm)
     : MipsInstr(op), rs(rs), rt(rt), imm(imm), rd(nullptr) {}
-
     void print(std::ostream &os) const override;
 };
 
