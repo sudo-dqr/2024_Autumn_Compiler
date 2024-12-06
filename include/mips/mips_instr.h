@@ -53,7 +53,7 @@ struct ITypeInstr : public MipsInstr{
     MipsReg* rt;
     MipsReg* rs;
     int imm;
-    std::string label;
+    std::string label = "";
     ITypeInstr(OpType op, MipsReg* rs, MipsReg* rt, int imm)
     : MipsInstr(op), rt(rt), rs(rs), imm(imm) {}
     ITypeInstr(OpType op, MipsReg* rs, MipsReg* rt, std::string label)

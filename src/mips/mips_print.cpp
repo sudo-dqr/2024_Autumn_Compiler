@@ -70,11 +70,19 @@ void ITypeInstr::print(std::ostream &os) const {
     std::string op_str = transfer_op_to_string(op);
     os << op_str << " ";
     if (op == Sw || op == Lw) {
-        rs->printReg(os);
-        os << ", ";
-        os << imm << "(";
-        rt->printReg(os);
-        os << ")";
+        if (label != "") {
+            rt->printReg(os);
+            os << ", " << label;
+            os << "(";
+            rs->printReg(os);
+            os << ")";
+        } else {
+            rt->printReg(os);
+            os << ", " << imm;
+            os << "(";
+            rs->printReg(os);
+            os << ")";
+        }
     } else if (op == Beq) {
         rs->printReg(os);
         os << ", ";
