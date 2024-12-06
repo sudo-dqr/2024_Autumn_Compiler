@@ -113,17 +113,17 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
     switch (arith_instr.arith_type) {
     case ArithmeticInstr::ADD:
         if ((!is_const_value(arith_instr.op1)) && (!is_const_value(arith_instr.op2))) {
-            load_to_tx(arith_instr.op1->id, 8);
-            load_to_tx(arith_instr.op2->id, 9);
+            load_to_register(arith_instr.op1->id, manager->temp_regs_pool[8]);
+            load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             auto addu_instr = new RTypeInstr(Addu, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
             manager->instr_list.push_back(addu_instr);
         } else if (is_const_value(arith_instr.op1)) {
-            load_to_tx(arith_instr.op2->id, 9);
+            load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             int op1 = get_const_value(arith_instr.op1);
             auto addiu_instr = new ITypeInstr(Addiu, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
             manager->instr_list.push_back(addiu_instr);
         } else {
-            load_to_tx(arith_instr.op1->id, 8);
+            load_to_register(arith_instr.op1->id, manager->temp_regs_pool[8]);
             int op2 = get_const_value(arith_instr.op2);
             auto addiu_instr = new ITypeInstr(Addiu, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
             manager->instr_list.push_back(addiu_instr);
@@ -131,17 +131,17 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
         break;
     case ArithmeticInstr::SUB:
         if ((!is_const_value(arith_instr.op1)) && (!is_const_value(arith_instr.op2))) {
-            load_to_tx(arith_instr.op1->id, 8);
-            load_to_tx(arith_instr.op2->id, 9);
+            load_to_register(arith_instr.op1->id, manager->temp_regs_pool[8]);
+            load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             auto subu_instr = new RTypeInstr(Subu, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
             manager->instr_list.push_back(subu_instr);
         } else if (is_const_value(arith_instr.op1)) {
-            load_to_tx(arith_instr.op2->id, 9);
+            load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             int op1 = get_const_value(arith_instr.op1);
             auto subu_instr = new ITypeInstr(Subu, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
             manager->instr_list.push_back(subu_instr);
         } else {
-            load_to_tx(arith_instr.op1->id, 8);
+            load_to_register(arith_instr.op1->id, manager->temp_regs_pool[8]);
             int op2 = get_const_value(arith_instr.op2);
             auto subu_instr = new ITypeInstr(Subu, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
             manager->instr_list.push_back(subu_instr);
@@ -149,17 +149,17 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
         break;
     case ArithmeticInstr::MUL:
         if ((!is_const_value(arith_instr.op1)) && (!is_const_value(arith_instr.op2))) {
-            load_to_tx(arith_instr.op1->id, 8);
-            load_to_tx(arith_instr.op2->id, 9);
+            load_to_register(arith_instr.op1->id, manager->temp_regs_pool[8]);
+            load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             auto mul_instr = new RTypeInstr(Mul, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
             manager->instr_list.push_back(mul_instr);
         } else if (is_const_value(arith_instr.op1)) {
-            load_to_tx(arith_instr.op2->id, 9);
+            load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             int op1 = get_const_value(arith_instr.op1);
             auto mul_instr = new ITypeInstr(Mul, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
             manager->instr_list.push_back(mul_instr);
         } else {
-            load_to_tx(arith_instr.op1->id, 8);
+            load_to_register(arith_instr.op1->id, manager->temp_regs_pool[8]);
             int op2 = get_const_value(arith_instr.op2);
             auto mul_instr = new ITypeInstr(Mul, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
             manager->instr_list.push_back(mul_instr);
@@ -167,17 +167,17 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
         break;
     case ArithmeticInstr::SDIV:
         if ((!is_const_value(arith_instr.op1)) && (!is_const_value(arith_instr.op2))) {
-            load_to_tx(arith_instr.op1->id, 8);
-            load_to_tx(arith_instr.op2->id, 9);
+            load_to_register(arith_instr.op1->id, manager->temp_regs_pool[8]);
+            load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             auto div_instr = new RTypeInstr(Div, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
             manager->instr_list.push_back(div_instr);
         } else if (is_const_value(arith_instr.op1)) {
-            load_to_tx(arith_instr.op2->id, 9);
+            load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             int op1 = get_const_value(arith_instr.op1);
             auto div_instr = new ITypeInstr(Div, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
             manager->instr_list.push_back(div_instr);
         } else {
-            load_to_tx(arith_instr.op1->id, 8);
+            load_to_register(arith_instr.op1->id, manager->temp_regs_pool[8]);
             int op2 = get_const_value(arith_instr.op2);
             auto div_instr = new ITypeInstr(Div, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
             manager->instr_list.push_back(div_instr);
@@ -188,17 +188,17 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
         //! 商在lo寄存器中 余数在hi寄存器中
         //! but pesudo instruction REM is provided by MARS
         if ((!is_const_value(arith_instr.op1)) && (!is_const_value(arith_instr.op2))) {
-            load_to_tx(arith_instr.op1->id, 8);
-            load_to_tx(arith_instr.op2->id, 9);
+            load_to_register(arith_instr.op1->id, manager->temp_regs_pool[8]);
+            load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             auto rem_instr = new NonTypeInstr(Rem, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
             manager->instr_list.push_back(rem_instr);
         } else if (is_const_value(arith_instr.op1)) {
-            load_to_tx(arith_instr.op2->id, 9);
+            load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             int op1 = get_const_value(arith_instr.op1);
             auto rem_instr = new NonTypeInstr(Rem, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
             manager->instr_list.push_back(rem_instr);
         } else {
-            load_to_tx(arith_instr.op1->id, 8);
+            load_to_register(arith_instr.op1->id, manager->temp_regs_pool[8]);
             int op2 = get_const_value(arith_instr.op2);
             auto rem_instr = new NonTypeInstr(Rem, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
             manager->instr_list.push_back(rem_instr);
@@ -209,12 +209,12 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
     }
 }
 
-void MipsBackend::load_to_tx(int value_id, int reg_id) {
+void MipsBackend::load_to_register(int value_id, MipsReg* reg) {
     if (cur_virtual_reg_offset.find(value_id) != cur_virtual_reg_offset.end()) {
-        auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[reg_id], manager->sp_reg, cur_virtual_reg_offset[value_id]);
+        auto lw_instr = new ITypeInstr(Lw, reg, manager->sp_reg, cur_virtual_reg_offset[value_id]);
         manager->instr_list.push_back(lw_instr);
     } else if (cur_local_var_offset.find(value_id) != cur_local_var_offset.end()) {
-        auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[reg_id], manager->sp_reg, cur_local_var_offset[value_id]);
+        auto lw_instr = new ITypeInstr(Lw, reg, manager->sp_reg, cur_local_var_offset[value_id]);
         manager->instr_list.push_back(lw_instr);
     } else {
         std::cout << "LoadInstr : WHAT THE HELL! can't find virtual register!"<< " id : " << value_id << std::endl;
@@ -223,7 +223,11 @@ void MipsBackend::load_to_tx(int value_id, int reg_id) {
 
 void MipsBackend::generate_mips_code(BrInstr &br_instr) {
     if (br_instr.condition) {
-        
+        load_to_register(br_instr.condition->id, manager->temp_regs_pool[8]);
+        auto beq_instr = new ITypeInstr(Beq, manager->temp_regs_pool[8], manager->zero_reg, "func_" + cur_func_name + "_block_" + std::to_string(br_instr.false_block->id));
+        manager->instr_list.push_back(beq_instr);
+        auto j_instr = new JTypeInstr(J, "func_" + cur_func_name + "_block_" + std::to_string(br_instr.true_block->id));
+        manager->instr_list.push_back(j_instr);
     } else {
         auto j_instr = new JTypeInstr(J, "func_" + cur_func_name + "_block_" + std::to_string(br_instr.true_block->id));
         manager->instr_list.push_back(j_instr);
@@ -261,38 +265,42 @@ void MipsBackend::generate_mips_code(CallInstr &call_instr) {
         manager->instr_list.push_back(li_instr);
         auto syscall_instr = new NonTypeInstr(Syscall);
         manager->instr_list.push_back(syscall_instr);
+        cur_sp_offset -= 4;
+        cur_virtual_reg_offset[call_instr.id] = cur_sp_offset;
+        auto sw_instr = new ITypeInstr(Sw, manager->retval_regs_pool[0], manager->sp_reg, cur_sp_offset);
+        manager->instr_list.push_back(sw_instr);
     } else if (call_instr.function->name == "getch") {
         auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 12);
         manager->instr_list.push_back(li_instr);
         auto syscall_instr = new NonTypeInstr(Syscall);
         manager->instr_list.push_back(syscall_instr);
+        cur_sp_offset -= 4;
+        cur_virtual_reg_offset[call_instr.id] = cur_sp_offset;
+        auto sw_instr = new ITypeInstr(Sw, manager->retval_regs_pool[0], manager->sp_reg, cur_sp_offset);
+        manager->instr_list.push_back(sw_instr);
     } else if (call_instr.function->name == "putint") {
+        if (is_const_value(call_instr.args[0])) {
+            auto li_instr = new NonTypeInstr(Li, manager->arg_regs_pool[0], get_const_value(call_instr.args[0]));
+            manager->instr_list.push_back(li_instr);
+        } else load_to_register(call_instr.args[0]->id, manager->arg_regs_pool[0]);
         auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 1);
         manager->instr_list.push_back(li_instr);
-        auto arg = call_instr.args[0];
-        if (auto intconst_ptr = dynamic_cast<IntConst*>(arg)) {
-            auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], intconst_ptr->value);
-            manager->instr_list.push_back(li_instr);
-        } else {
-
-        }
         auto syscall_instr = new NonTypeInstr(Syscall);
         manager->instr_list.push_back(syscall_instr);
     } else if (call_instr.function->name == "putch") {
+        if (is_const_value(call_instr.args[0])) {
+            auto li_instr = new NonTypeInstr(Li, manager->arg_regs_pool[0], get_const_value(call_instr.args[0]));
+            manager->instr_list.push_back(li_instr);
+        } else load_to_register(call_instr.args[0]->id, manager->arg_regs_pool[0]);
         auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 11);
         manager->instr_list.push_back(li_instr);
-        if (auto charconst_ptr = dynamic_cast<CharConst*>(call_instr.args[0])) {
-            auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], charconst_ptr->value);
-            manager->instr_list.push_back(li_instr);
-        } else {
-
-        }
         auto syscall_instr = new NonTypeInstr(Syscall);
         manager->instr_list.push_back(syscall_instr);
     } else if (call_instr.function->name == "putstr") {
+        auto la_instr = new NonTypeInstr(La, manager->arg_regs_pool[0], "g_" + call_instr.args[0]->name);
+        manager->instr_list.push_back(la_instr);
         auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 4);
         manager->instr_list.push_back(li_instr);
-        //$a0
         auto syscall_instr = new NonTypeInstr(Syscall);
         manager->instr_list.push_back(syscall_instr);
     } else {
@@ -309,38 +317,15 @@ void MipsBackend::generate_mips_code(CallInstr &call_instr) {
         for (int i = 0; i < arg_num; i++) {
             auto arg = call_instr.args[i];
             if (i < 4) { // $a0-$a3
-                if (auto intconst_ptr = dynamic_cast<IntConst*>(arg)) {
-                    auto li_instr = new NonTypeInstr(Li, manager->arg_regs_pool[i], intconst_ptr->value);
+                if (is_const_value(arg)) {
+                    auto li_instr = new NonTypeInstr(Li, manager->arg_regs_pool[i], get_const_value(arg));
                     manager->instr_list.push_back(li_instr);
-                } else if (auto charconst_ptr = dynamic_cast<CharConst*>(arg)) {
-                    auto li_instr = new NonTypeInstr(Li, manager->arg_regs_pool[i], charconst_ptr->value);
-                    manager->instr_list.push_back(li_instr);
-                } else if (cur_virtual_reg_offset.find(arg->id) != cur_virtual_reg_offset.end()) {
-                    auto lw_instr = new ITypeInstr(Lw, manager->arg_regs_pool[i], manager->fp_reg, cur_virtual_reg_offset[arg->id]);
-                    manager->instr_list.push_back(lw_instr);
-                } else if (cur_local_var_offset.find(arg->id) != cur_local_var_offset.end()) {
-                    auto lw_instr = new ITypeInstr(Lw, manager->arg_regs_pool[i], manager->fp_reg, cur_local_var_offset[arg->id]);
-                    manager->instr_list.push_back(lw_instr);
-                } else {
-                    std::cout << "CallInstr $ax :Invalid Argument!" << "Id is " << arg->id << std::endl;
-                    return;
-                }
+                } else load_to_register(arg->id, manager->arg_regs_pool[i]);
             } else { // $sp
-                if (auto intconst_ptr = dynamic_cast<IntConst*>(arg)) {
-                    auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[8], intconst_ptr->value);
+                if (is_const_value(arg)) {
+                    auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[8], get_const_value(arg));
                     manager->instr_list.push_back(li_instr);
-                } else if (auto charconst_ptr = dynamic_cast<CharConst*>(arg)) {
-                    auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[8], charconst_ptr->value);
-                    manager->instr_list.push_back(li_instr);
-                } else if (cur_virtual_reg_offset.find(arg->id) != cur_virtual_reg_offset.end()) {
-                    auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->fp_reg, cur_virtual_reg_offset[arg->id]);
-                    manager->instr_list.push_back(lw_instr);
-                } else if (cur_local_var_offset.find(arg->id) != cur_local_var_offset.end()) {
-                    auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, cur_local_var_offset[arg->id]);
-                    manager->instr_list.push_back(lw_instr);
-                } else {
-                    std::cout << "CallInstr $sp :Invalid Argument!" << "Id is " << arg->id << std::endl;
-                }
+                } else load_to_register(arg->id, manager->temp_regs_pool[8]);
                 auto sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->sp_reg, 4 * i);
                 manager->instr_list.push_back(sw_instr);
             }
