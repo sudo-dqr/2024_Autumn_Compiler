@@ -89,9 +89,9 @@ struct NonTypeInstr : public MipsInstr {
     NonTypeInstr(OpType op, MipsReg* rt, int imm)
     : MipsInstr(op), rt(rt), imm(imm) {}
     // la
-    NonTypeInstr(OpType op, MipsReg* rt, std::string label)
-    : MipsInstr(op), rt(rt), label(label) {}
-    // rem,sle seq sne sgt sge(1,2) subu(2)
+    NonTypeInstr(OpType op, MipsReg* rt, MipsReg* rs, std::string label)
+    : MipsInstr(op), rt(rt), rs(rs), label(label) {}
+    // rem,sle seq sne sgt sge(1,2) subu(2) la(2) Mul(2)
     NonTypeInstr(OpType op, MipsReg* rd, MipsReg* rs, MipsReg* rt)
     : MipsInstr(op), rd(rd), rs(rs), rt(rt) {}
     NonTypeInstr(OpType op, MipsReg* rs, MipsReg* rt, int imm)

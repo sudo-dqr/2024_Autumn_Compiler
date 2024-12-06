@@ -268,6 +268,13 @@ void NonTypeInstr::print(std::ostream &os) const {
             rs->printReg(os);
             os << ", " << imm;
             break;
+        case Mul:
+            os << "mul ";
+            rt->printReg(os);
+            os << ", ";
+            rs->printReg(os);
+            os << ", " << imm;
+            break;
         default:
             std::cout << "Undefined NonTypeInstr!" << std::endl;
             break;

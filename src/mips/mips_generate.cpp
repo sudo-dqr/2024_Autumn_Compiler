@@ -286,7 +286,7 @@ void MipsBackend::generate_mips_code(CallInstr &call_instr) {
         auto syscall_instr = new NonTypeInstr(Syscall);
         manager->instr_list.push_back(syscall_instr);
     } else if (call_instr.function->name == "putstr") {
-        auto la_instr = new NonTypeInstr(La, manager->arg_regs_pool[0], "g_" + call_instr.args[0]->name);
+        auto la_instr = new NonTypeInstr(La, manager->arg_regs_pool[0], manager->zero_reg, "g_" + call_instr.args[0]->name);
         manager->instr_list.push_back(la_instr);
         auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 4);
         manager->instr_list.push_back(li_instr);
@@ -394,7 +394,38 @@ void MipsBackend::generate_mips_code(StoreInstr &store_instr) {
 }
 
 void MipsBackend::generate_mips_code(GetelementptrInstr &gep_instr) {
-
+    if (auto gv_array = dynamic_cast<GlobalVariable*>(gep_instr.array)) {
+        auto la_instr = new NonTypeInstr(La, manager->temp_regs_pool[8], manager->zero_reg, "g_" + gv_array->name);
+        manager->instr_list.push_back(la_instr);
+    } else if (cur_local_var_offset.find(gep_instr.array->id) != cur_local_var_offset.end()) {
+        auto la_instr = new NonTypeInstr(La, manager->temp_regs_pool[8], manager->sp_reg, cur_local_var_offset[gep_instr.array->id]);
+        manager->instr_list.push_back(la_instr);
+    } else if (cur_virtual_reg_offset.find(gep_instr.array->id) != cur_virtual_reg_offset.end()) {
+        auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, cur_virtual_reg_offset[gep_instr.array->id]);
+        manager->instr_list.push_back(lw_instr);
+    } else {
+        std::cout << "Invalid Getelementptr Instruction!" << std::endl;
+    }
+    int offset = 0;
+    ValueType* cur_type = ((PointerType*)gep_instr.array->type)->referenced_type;
+    for (int i = 0; i < gep_instr.indices.size(); i++) {
+        int cur_size = ir_type_size(cur_type);
+        if (is_const_value(gep_instr.indices[i])) {
+            offset += get_const_value(gep_instr.indices[i]) * cur_size;
+        } else {
+            load_to_register(gep_instr.indices[i]->id, manager->temp_regs_pool[9]);
+            auto mul_instr = new NonTypeInstr(Mul, manager->temp_regs_pool[9], manager->temp_regs_pool[9], cur_size);
+            manager->instr_list.push_back(mul_instr);
+            auto addu_instr = new RTypeInstr(Addu, manager->temp_regs_pool[8], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
+            manager->instr_list.push_back(addu_instr);
+        }
+        if (auto array_type = dynamic_cast<ArrayType*>(cur_type))
+            cur_type = array_type->element_type;
+    }
+    cur_sp_offset -= 4;
+    cur_virtual_reg_offset[gep_instr.id] = cur_sp_offset;
+    auto sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->sp_reg, cur_sp_offset);
+    manager->instr_list.push_back(sw_instr);
 }
 
 void MipsBackend::generate_mips_code(ZextInstr &zext_instr) {
