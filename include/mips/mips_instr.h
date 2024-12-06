@@ -54,9 +54,9 @@ struct ITypeInstr : public MipsInstr{
     MipsReg* rs;
     int imm;
     std::string label = "";
-    ITypeInstr(OpType op, MipsReg* rs, MipsReg* rt, int imm)
+    ITypeInstr(OpType op, MipsReg* rt, MipsReg* rs, int imm)
     : MipsInstr(op), rt(rt), rs(rs), imm(imm) {}
-    ITypeInstr(OpType op, MipsReg* rs, MipsReg* rt, std::string label)
+    ITypeInstr(OpType op, MipsReg* rt, MipsReg* rs, std::string label)
     : MipsInstr(op), rt(rt), rs(rs), label(label) {}
     void print(std::ostream &os) const override;
 };
@@ -96,7 +96,7 @@ struct NonTypeInstr : public MipsInstr {
     // rem,sle seq sne sgt sge(1,2) subu(2) la(2) Mul(2)
     NonTypeInstr(OpType op, MipsReg* rd, MipsReg* rs, MipsReg* rt)
     : MipsInstr(op), rd(rd), rs(rs), rt(rt) {}
-    NonTypeInstr(OpType op, MipsReg* rs, MipsReg* rt, int imm)
+    NonTypeInstr(OpType op, MipsReg* rt, MipsReg* rs, int imm)
     : MipsInstr(op), rs(rs), rt(rt), imm(imm), rd(nullptr) {}
     void print(std::ostream &os) const override;
 };

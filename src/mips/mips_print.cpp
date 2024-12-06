@@ -84,14 +84,14 @@ void ITypeInstr::print(std::ostream &os) const {
             os << ")";
         }
     } else if (op == Beq) {
-        rs->printReg(os);
-        os << ", ";
         rt->printReg(os);
+        os << ", ";
+        rs->printReg(os);
         os << ", " << label;
     } else {
-        rs->printReg(os);
-        os << ", ";
         rt->printReg(os);
+        os << ", ";
+        rs->printReg(os);
         os << ", " << imm;
     }
 }
