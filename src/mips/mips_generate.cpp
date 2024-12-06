@@ -291,7 +291,9 @@ void MipsBackend::generate_mips_code(CallInstr &call_instr) {
         auto syscall_instr = new NonTypeInstr(Syscall);
         manager->instr_list.push_back(syscall_instr);
     } else if (call_instr.function->name == "putstr") {
-        auto la_instr = new NonTypeInstr(La, manager->arg_regs_pool[0], manager->zero_reg, "g_" + call_instr.args[0]->name);
+        auto gep_instr = (GetelementptrInstr*)call_instr.args[0];
+        auto gv_name = ((GlobalVariable*)gep_instr->array)->name;
+        auto la_instr = new NonTypeInstr(La, manager->arg_regs_pool[0], manager->zero_reg, "g_" + gv_name);
         manager->instr_list.push_back(la_instr);
         auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 4);
         manager->instr_list.push_back(li_instr);

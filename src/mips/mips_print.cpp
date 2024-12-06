@@ -169,7 +169,17 @@ void NonTypeInstr::print(std::ostream &os) const {
         case La:
             os << "la ";
             rt->printReg(os);
-            os << ", " << imm;    
+            if (label != "") {
+                os << ", " << label;
+                os << "(";
+                rs->printReg(os);
+                os << ")";
+            } else {
+                os << ", " << imm;
+                os << "(";
+                rs->printReg(os);
+                os << ")";
+            }
             break;
         case Rem:
             os << "rem ";

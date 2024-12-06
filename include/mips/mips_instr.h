@@ -82,7 +82,7 @@ struct NonTypeInstr : public MipsInstr {
     MipsReg* rt;
     MipsReg* rd;
     int imm;
-    std::string label;
+    std::string label = "";
     // syscall
     NonTypeInstr(OpType op) : MipsInstr(op) {}
     // li
