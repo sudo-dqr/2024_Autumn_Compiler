@@ -48,36 +48,7 @@ void MipsInstr::print(std::ostream &os) const {
 
 void RTypeInstr::print(std::ostream &os) const {
     MipsInstr::print(os);
-    std::string op_str;
-    switch (op) {
-    case Addu:
-        op_str = "addu";
-        break;
-    case Subu:
-        op_str = "subu";
-        break;
-    case Mul:
-        op_str = "mul";
-        break;
-    case Div:
-        op_str = "div";
-        break;
-    case Sll:
-        op_str = "sll";
-        break;
-    case Srl:
-        op_str = "srl";
-        break;
-    case Jr:
-        op_str = "jr";
-        break;  
-    case Slt:
-        op_str = "slt";
-        break;
-    default:
-        std::cout << "Undefined RTypeInstr!" << std::endl;
-        break;
-    }
+    std::string op_str = transfer_op_to_string(op);
     os << op_str << " ";
     if (op != Jr) {
         rd->printReg(os);
@@ -96,30 +67,7 @@ void RTypeInstr::print(std::ostream &os) const {
 
 void ITypeInstr::print(std::ostream &os) const {
     MipsInstr::print(os);
-    std::string op_str;
-    switch (op) {
-        case Addi:
-            op_str = "addi";
-            break;
-        case Addiu:
-            op_str = "addiu";
-            break;
-        case Sw:
-            op_str = "sw";
-            break;
-        case Lw:
-            op_str = "lw";
-            break;
-        case Beq:
-            op_str = "beq";
-            break;
-        case Slti:
-            op_str = "slti";
-            break;
-        default:
-            std::cout << "Undefined ITypeInstr!" << std::endl;
-            break;
-    }
+    std::string op_str = transfer_op_to_string(op);
     os << op_str << " ";
     if (op == Sw || op == Lw) {
         rs->printReg(os);
@@ -182,82 +130,12 @@ void NonTypeInstr::print(std::ostream &os) const {
             }
             break;
         case Rem:
-            os << "rem ";
-            if (rd) {
-                rd->printReg(os);
-                os << ", ";
-                rs->printReg(os);
-                os << ", ";
-                rt->printReg(os);
-            } else {
-                rt->printReg(os);
-                os << ", ";
-                rs->printReg(os);
-                os << ", " << imm;
-            }
-            break;
         case Sle:
-            os << "sle ";
-            if (rd) {
-                rd->printReg(os);
-                os << ", ";
-                rs->printReg(os);
-                os << ", ";
-                rt->printReg(os);
-            } else {
-                rt->printReg(os);
-                os << ", ";
-                rs->printReg(os);
-                os << ", " << imm;
-            }
-            break;
         case Seq:
-            os << "seq ";
-            if (rd) {
-                rd->printReg(os);
-                os << ", ";
-                rs->printReg(os);
-                os << ", ";
-                rt->printReg(os);
-            } else {
-                rt->printReg(os);
-                os << ", ";
-                rs->printReg(os);
-                os << ", " << imm;
-            }
-            break;
         case Sne:
-            os << "sne ";
-            if (rd) {
-                rd->printReg(os);
-                os << ", ";
-                rs->printReg(os);
-                os << ", ";
-                rt->printReg(os);
-            } else {
-                rt->printReg(os);
-                os << ", ";
-                rs->printReg(os);
-                os << ", " << imm;
-            }
-            break;
         case Sge:
-            os << "sge ";
-            if (rd) {
-                rd->printReg(os);
-                os << ", ";
-                rs->printReg(os);
-                os << ", ";
-                rt->printReg(os);
-            } else {
-                rt->printReg(os);
-                os << ", ";
-                rs->printReg(os);
-                os << ", " << imm;
-            }
-            break;
         case Sgt:
-            os << "sgt ";
+            os << transfer_op_to_string(op) << " ";
             if (rd) {
                 rd->printReg(os);
                 os << ", ";
@@ -272,14 +150,8 @@ void NonTypeInstr::print(std::ostream &os) const {
             }
             break;
         case Subu:
-            os << "subu ";
-            rt->printReg(os);
-            os << ", ";
-            rs->printReg(os);
-            os << ", " << imm;
-            break;
         case Mul:
-            os << "mul ";
+            os << transfer_op_to_string(op) << " ";
             rt->printReg(os);
             os << ", ";
             rs->printReg(os);
@@ -288,5 +160,37 @@ void NonTypeInstr::print(std::ostream &os) const {
         default:
             std::cout << "Undefined NonTypeInstr!" << std::endl;
             break;
+    }
+}
+
+std::string transfer_op_to_string(OpType op) {
+    switch (op) {
+        case Addu: return "addu"; break;
+        case Addi: return "addi"; break;
+        case Addiu: return "addiu"; break;
+        case Subu: return "subu"; break;
+        case Mul: return "mul"; break;
+        case Div: return "div"; break;
+        case Rem: return "rem"; break;
+        case Sll: return "sll"; break;
+        case Srl: return "srl"; break;
+        case Slt: return "slt"; break;
+        case Slti: return "slti"; break;
+        case Sle: return "sle"; break;
+        case Seq: return "seq"; break;
+        case Sne: return "sne"; break;
+        case Sgt: return "sgt"; break;
+        case Sge: return "sge"; break;
+        case Sw: return "sw"; break;
+        case Lw: return "lw"; break;
+        case Li: return "li"; break;
+        case La: return "la"; break;
+        case Beq: return "beq"; break;
+        case J: return "j"; break;
+        case Jal: return "jal"; break;
+        case Jr: return "jr"; break;
+        case Label: return "label"; break;
+        case Syscall: return "syscall"; break;
+        default: return "Undefined MIPS Instr"; break;
     }
 }

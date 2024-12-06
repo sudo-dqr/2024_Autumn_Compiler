@@ -21,6 +21,8 @@ enum OpType {
     Syscall
 };
 
+std::string transfer_op_to_string(OpType op);
+
 struct MipsInstr {
     OpType op;
 
