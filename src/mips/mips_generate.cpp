@@ -410,15 +410,27 @@ void MipsBackend::generate_mips_code(GetelementptrInstr &gep_instr) {
 }
 
 void MipsBackend::generate_mips_code(ZextInstr &zext_instr) {
-
+    if (cur_virtual_reg_offset[zext_instr.operand->id])
+        cur_virtual_reg_offset[zext_instr.id] = cur_virtual_reg_offset[zext_instr.operand->id];
+    else if (cur_local_var_offset[zext_instr.operand->id])
+        cur_local_var_offset[zext_instr.id] = cur_local_var_offset[zext_instr.operand->id];
+    else {
+        std::cout << "ZextInstr : Invalid Operand!" << std::endl;
+    }
 }
 
 void MipsBackend::generate_mips_code(TruncInstr &trunc_instr) {
-
+    if (cur_virtual_reg_offset[trunc_instr.operand->id])
+        cur_virtual_reg_offset[trunc_instr.id] = cur_virtual_reg_offset[trunc_instr.operand->id];
+    else if (cur_local_var_offset[trunc_instr.operand->id])
+        cur_local_var_offset[trunc_instr.id] = cur_local_var_offset[trunc_instr.operand->id];
+    else {
+        std::cout << "TruncInstr : Invalid Operand!" << std::endl;
+    }
 }
 
 void MipsBackend::generate_mips_code(IcmpInstr &icmp_instr) {
-
+    
 }
 
 void MipsBackend::print_mips_code() const {
