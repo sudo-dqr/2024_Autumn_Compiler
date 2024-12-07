@@ -138,7 +138,9 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
         } else if (is_const_value(arith_instr.op1)) {
             load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             int op1 = get_const_value(arith_instr.op1);
-            auto subu_instr = new NonTypeInstr(Subu, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
+            auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[8], op1);
+            manager->instr_list.push_back(li_instr);
+            auto subu_instr = new RTypeInstr(Subu, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
             manager->instr_list.push_back(subu_instr);
         } else {
             load_to_register(arith_instr.op1->id, manager->temp_regs_pool[8]);
