@@ -177,6 +177,7 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
             load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             int op1 = get_const_value(arith_instr.op1);
             auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[8], op1);
+            manager->instr_list.push_back(li_instr);
             auto div_instr = new RTypeInstr(Div, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
             manager->instr_list.push_back(div_instr);
         } else {
