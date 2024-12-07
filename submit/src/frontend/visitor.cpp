@@ -52,7 +52,7 @@ void Visitor::visit_const_decl(const ConstDecl &const_decl) {
 
 void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype) {
     auto ident = const_def.ident->ident->get_token();
-    std::cout << "Const Def : " << ident << std::endl;
+    // std::cout << "Const Def : " << ident << std::endl;
     int line_number = const_def.ident->ident->get_line_number();
     ExpInfo exp_info;
     std::shared_ptr<Symbol> symbol = nullptr;
@@ -169,7 +169,7 @@ void Visitor::visit_var_decl(const VarDecl &var_decl) {
 
 void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
     auto ident = var_def.ident->ident->get_token();
-    std::cout << "Var Def : " << ident << std::endl;
+    // std::cout << "Var Def : " << ident << std::endl;
     int line_number = var_def.ident->ident->get_line_number();
     ExpInfo exp_info;
     std::shared_ptr<Symbol> symbol = nullptr;
@@ -499,7 +499,7 @@ void Visitor::visit_stmt(const Stmt &stmt) {
 void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
     ExpInfo exp_info;
     auto lval_symbol = visit_lval((*assign_stmt.lval));
-    std::cout << "Assign Stmt : " << lval_symbol->name << std::endl;
+    // std::cout << "Assign Stmt : " << lval_symbol->name << std::endl;
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
             ErrorList::report_error(assign_stmt.lval->ident->ident->get_line_number(), 'h');
@@ -535,7 +535,7 @@ void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
 void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
     ExpInfo exp_info;
     auto lval_symbol = visit_lval((*for_assign_stmt.lval));
-    std::cout << "For Assign Stmt : " << lval_symbol->name << std::endl;
+    // std::cout << "For Assign Stmt : " << lval_symbol->name << std::endl;
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
             ErrorList::report_error(for_assign_stmt.lval->ident->ident->get_line_number(), 'h');

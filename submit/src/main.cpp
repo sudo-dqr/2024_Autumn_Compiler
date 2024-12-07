@@ -5,6 +5,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "visitor.h"
+#include "mips_generate.h"
 
 int main() {
     std::ifstream file("testfile.txt");
@@ -22,6 +23,9 @@ int main() {
     visitor.visit(*comp_unit);
     //visitor.print_symbol_list();
     Module::get_instance().print_llvm_ir();
+    MipsBackend backend = MipsBackend();
+    backend.generate_mips_code(Module::get_instance());
+    backend.print_mips_code();
     ErrorList::print_errors();
     return 0;
 }
