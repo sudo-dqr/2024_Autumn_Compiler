@@ -1,13 +1,14 @@
 #ifndef MIPS_UTILS_H
 #define MIPS_UTILS_H
 
-int ir_type_size(ValueType* ir_type) {
+int ir_type_size(ValueType* ir_type, bool is_global) {
     if (auto int_type = dynamic_cast<IntType*>(ir_type)) {
         return 4;
     } else if (auto char_type = dynamic_cast<CharType*>(ir_type)) {
-        return 4;
+        if (is_global) return 1;
+        else return 4;
     } else if (auto array_type = dynamic_cast<ArrayType*>(ir_type)) {
-        return array_type->size * ir_type_size(array_type->element_type);
+        return array_type->size * ir_type_size(array_type->element_type, is_global);
     } else if (auto pointer_type = dynamic_cast<PointerType*>(ir_type)) {
         return 4;
     } else {

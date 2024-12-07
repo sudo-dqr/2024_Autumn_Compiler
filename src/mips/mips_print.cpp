@@ -158,6 +158,7 @@ void NonTypeInstr::print(std::ostream &os) const {
             }
             break;
         case Subu:
+        case Div:
         case Mul:
             os << transfer_op_to_string(op) << " ";
             rt->printReg(os);

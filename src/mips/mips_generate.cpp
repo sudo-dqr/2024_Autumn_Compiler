@@ -101,7 +101,7 @@ void MipsBackend::generate_mips_code(BasicBlock &basic_block) {
 //! 在栈中存储为避免手动对齐 为char同样分配4字节
 void MipsBackend::generate_mips_code(AllocaInstr &alloca_instr) {
     auto deref_type = ((PointerType*)alloca_instr.type)->referenced_type;
-    int size = ir_type_size(deref_type);
+    int size = ir_type_size(deref_type, false);
     cur_sp_offset -= size;
     cur_local_var_offset[alloca_instr.id] = cur_sp_offset;
     // std::cout << "Alloca : " << alloca_instr.id << " " << cur_sp_offset << std::endl;
@@ -369,8 +369,14 @@ void MipsBackend::generate_mips_code(LoadInstr &load_instr) {
         auto vreg = cur_virtual_reg_offset.find(load_instr.src_ptr->id);
         auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, vreg->second);
         manager->instr_list.push_back(lw_instr);
-        lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->temp_regs_pool[8], 0);
-        manager->instr_list.push_back(lw_instr);
+        auto deref_type = ((PointerType*)load_instr.src_ptr->type)->referenced_type;
+        if (auto char_type = dynamic_cast<CharType*>(deref_type)) {
+            auto lbu_instr = new ITypeInstr(Lbu, manager->temp_regs_pool[8], manager->temp_regs_pool[8], 0);
+            manager->instr_list.push_back(lbu_instr);
+        } else {
+            lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->temp_regs_pool[8], 0);
+            manager->instr_list.push_back(lw_instr);
+        }
     } else {
         std::cout << "Invalid Load Instruction!" << std::endl;
     }
@@ -425,15 +431,23 @@ void MipsBackend::generate_mips_code(StoreInstr &store_instr) {
     } else if (cur_virtual_reg_offset.find(ptr_id) != cur_virtual_reg_offset.end()) {
         auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[9], manager->sp_reg, cur_virtual_reg_offset[ptr_id]);
         manager->instr_list.push_back(lw_instr);
-        auto sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->temp_regs_pool[9], 0);
-        manager->instr_list.push_back(sw_instr);
+        auto deref_type = ((PointerType*)store_instr.dst_ptr->type)->referenced_type;
+        if (auto char_type = dynamic_cast<CharType*>(deref_type)) {
+            auto sb_instr = new ITypeInstr(Sb, manager->temp_regs_pool[8], manager->temp_regs_pool[9], 0);
+            manager->instr_list.push_back(sb_instr);
+        } else {
+            auto sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->temp_regs_pool[9], 0);
+            manager->instr_list.push_back(sw_instr);
+        }
     } else {
         std::cout << "Invalid Store Instruction!" << std::endl;
     }
 }
 
 void MipsBackend::generate_mips_code(GetelementptrInstr &gep_instr) {
+    bool is_global = false;
     if (auto gv_array = dynamic_cast<GlobalVariable*>(gep_instr.array)) {
+        is_global = true;
         auto la_instr = new NonTypeInstr(La, manager->temp_regs_pool[8], manager->zero_reg, "g_" + gv_array->name);
         manager->instr_list.push_back(la_instr);
     } else if (cur_local_var_offset.find(gep_instr.array->id) != cur_local_var_offset.end()) {
@@ -448,18 +462,28 @@ void MipsBackend::generate_mips_code(GetelementptrInstr &gep_instr) {
     int offset = 0;
     ValueType* cur_type = ((PointerType*)gep_instr.array->type)->referenced_type;
     for (int i = 0; i < gep_instr.indices.size(); i++) {
-        int cur_size = ir_type_size(cur_type);
+        int cur_size = ir_type_size(cur_type, is_global);
         if (is_const_value(gep_instr.indices[i])) {
             offset += get_const_value(gep_instr.indices[i]) * cur_size;
         } else {
-            load_to_register(gep_instr.indices[i]->id, manager->temp_regs_pool[9]);
-            auto mul_instr = new NonTypeInstr(Mul, manager->temp_regs_pool[9], manager->temp_regs_pool[9], cur_size);
-            manager->instr_list.push_back(mul_instr);
-            auto addu_instr = new RTypeInstr(Addu, manager->temp_regs_pool[8], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
-            manager->instr_list.push_back(addu_instr);
+            if (is_global && cur_type == &IR_CHAR) { // alignment = 1, no need to multiply
+                load_to_register(gep_instr.indices[i]->id, manager->temp_regs_pool[9]);
+                auto addu_instr = new RTypeInstr(Addu, manager->temp_regs_pool[8], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
+                manager->instr_list.push_back(addu_instr);
+            } else {
+                load_to_register(gep_instr.indices[i]->id, manager->temp_regs_pool[9]);
+                auto mul_instr = new NonTypeInstr(Mul, manager->temp_regs_pool[9], manager->temp_regs_pool[9], cur_size);
+                manager->instr_list.push_back(mul_instr);
+                auto addu_instr = new RTypeInstr(Addu, manager->temp_regs_pool[8], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
+                manager->instr_list.push_back(addu_instr);
+            }
         }
         if (auto array_type = dynamic_cast<ArrayType*>(cur_type))
             cur_type = array_type->element_type;
+    }
+    if (offset != 0) {
+        auto addiu_instr = new ITypeInstr(Addiu, manager->temp_regs_pool[8], manager->temp_regs_pool[8], offset);
+        manager->instr_list.push_back(addiu_instr);
     }
     cur_sp_offset -= 4;
     cur_virtual_reg_offset[gep_instr.id] = cur_sp_offset;
