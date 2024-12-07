@@ -69,7 +69,7 @@ void ITypeInstr::print(std::ostream &os) const {
     MipsInstr::print(os);
     std::string op_str = transfer_op_to_string(op);
     os << op_str << " ";
-    if (op == Sw || op == Lw) {
+    if (op == Sw || op == Lw || op == Sb || op == Lbu) {
         if (label != "") {
             rt->printReg(os);
             os << ", " << label;
@@ -191,6 +191,8 @@ std::string transfer_op_to_string(OpType op) {
         case Sge: return "sge"; break;
         case Sw: return "sw"; break;
         case Lw: return "lw"; break;
+        case Sb: return "sb"; break;
+        case Lbu: return "lbu"; break;
         case Li: return "li"; break;
         case La: return "la"; break;
         case Beq: return "beq"; break;

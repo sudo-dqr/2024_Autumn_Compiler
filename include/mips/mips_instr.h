@@ -14,6 +14,7 @@ enum OpType {
     Seq, Sne,
     Sgt, Sge,
     Sw, Lw,
+    Sb, Lbu,
     Li, La,
     Beq,
     J, Jal, Jr,

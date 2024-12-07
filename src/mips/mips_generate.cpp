@@ -98,6 +98,7 @@ void MipsBackend::generate_mips_code(BasicBlock &basic_block) {
     }
 }
 
+//! 在栈中存储为避免手动对齐 为char同样分配4字节
 void MipsBackend::generate_mips_code(AllocaInstr &alloca_instr) {
     auto deref_type = ((PointerType*)alloca_instr.type)->referenced_type;
     int size = ir_type_size(deref_type);
@@ -218,13 +219,11 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
     manager->instr_list.push_back(sw_instr);
 }
 
+//! this function is used to load value stored in virtual register (memory) to a physical register
 void MipsBackend::load_to_register(int value_id, MipsReg* dst_reg, MipsReg* addr_reg) {
     if (addr_reg == nullptr) addr_reg = manager->sp_reg;
     if (cur_virtual_reg_offset.find(value_id) != cur_virtual_reg_offset.end()) {
         auto lw_instr = new ITypeInstr(Lw, dst_reg, addr_reg, cur_virtual_reg_offset[value_id]);
-        manager->instr_list.push_back(lw_instr);
-    } else if (cur_local_var_offset.find(value_id) != cur_local_var_offset.end()) {
-        auto lw_instr = new ITypeInstr(Lw, dst_reg, addr_reg, cur_local_var_offset[value_id]);
         manager->instr_list.push_back(lw_instr);
     } else {
         std::cout << "Cur Func : " << cur_func_name << std::endl;
@@ -268,7 +267,7 @@ void MipsBackend::generate_mips_code(CallInstr &call_instr) {
         cur_virtual_reg_offset[call_instr.id] = cur_sp_offset;
         auto sw_instr = new ITypeInstr(Sw, manager->retval_regs_pool[0], manager->sp_reg, cur_sp_offset);
         manager->instr_list.push_back(sw_instr);
-    } else if (call_instr.function->name == "getch") {
+    } else if (call_instr.function->name == "getchar") {
         auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 12);
         manager->instr_list.push_back(li_instr);
         auto syscall_instr = new NonTypeInstr(Syscall);
@@ -340,7 +339,7 @@ void MipsBackend::generate_mips_code(CallInstr &call_instr) {
         auto return_type = ((FunctionType*)call_instr.function->type)->return_type;
         if (return_type != &IR_VOID) {
             cur_sp_offset -= 4;
-            cur_local_var_offset[call_instr.id] = cur_sp_offset;
+            cur_virtual_reg_offset[call_instr.id] = cur_sp_offset;
             auto load_instr = new ITypeInstr(Sw, manager->retval_regs_pool[0], manager->sp_reg, cur_sp_offset);
             manager->instr_list.push_back(load_instr);
         }
@@ -348,16 +347,27 @@ void MipsBackend::generate_mips_code(CallInstr &call_instr) {
 }
 
 void MipsBackend::generate_mips_code(LoadInstr &load_instr) {
-    ITypeInstr* lw_instr = nullptr;
     if (auto gv_ptr = dynamic_cast<GlobalVariable*>(load_instr.src_ptr)) {
-        lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->zero_reg, "g_" + gv_ptr->name);
-        manager->instr_list.push_back(lw_instr);
+        auto deref_type = ((PointerType*)load_instr.src_ptr->type)->referenced_type;
+        if (auto char_type = dynamic_cast<CharType*>(deref_type)) {
+            auto lbu_instr = new ITypeInstr(Lbu, manager->temp_regs_pool[8], manager->zero_reg, "g_" + gv_ptr->name);
+            manager->instr_list.push_back(lbu_instr);
+        } else {
+            auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->zero_reg, "g_" + gv_ptr->name);
+            manager->instr_list.push_back(lw_instr);
+        }
     } else if (cur_local_var_offset.find(load_instr.src_ptr->id) != cur_local_var_offset.end()) {
-        lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, cur_local_var_offset[load_instr.src_ptr->id]);
-        manager->instr_list.push_back(lw_instr);
+        auto deref_type = ((PointerType*)load_instr.src_ptr->type)->referenced_type;
+        if (auto char_type = dynamic_cast<CharType*>(deref_type)) {
+            auto lbu_instr = new ITypeInstr(Lbu, manager->temp_regs_pool[8], manager->sp_reg, cur_local_var_offset[load_instr.src_ptr->id]);
+            manager->instr_list.push_back(lbu_instr);
+        } else {
+            auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, cur_local_var_offset[load_instr.src_ptr->id]);
+            manager->instr_list.push_back(lw_instr);
+        }
     } else if (cur_virtual_reg_offset.find(load_instr.src_ptr->id) != cur_virtual_reg_offset.end()) {
         auto vreg = cur_virtual_reg_offset.find(load_instr.src_ptr->id);
-        lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, vreg->second);
+        auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->sp_reg, vreg->second);
         manager->instr_list.push_back(lw_instr);
         lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[8], manager->temp_regs_pool[8], 0);
         manager->instr_list.push_back(lw_instr);
@@ -365,7 +375,7 @@ void MipsBackend::generate_mips_code(LoadInstr &load_instr) {
         std::cout << "Invalid Load Instruction!" << std::endl;
     }
     cur_sp_offset -= 4;
-    cur_local_var_offset[load_instr.id] = cur_sp_offset;    
+    cur_virtual_reg_offset[load_instr.id] = cur_sp_offset;
     auto sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->sp_reg, cur_sp_offset);
     manager->instr_list.push_back(sw_instr);
 }
@@ -394,19 +404,32 @@ void MipsBackend::generate_mips_code(StoreInstr &store_instr) {
         } else load_to_register(value_id, manager->temp_regs_pool[8]);
     }
     //! 然后把ptr load进reg
-    ITypeInstr* sw_instr = nullptr;
     if (auto gv_ptr = dynamic_cast<GlobalVariable*>(store_instr.dst_ptr)) {
-        sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->zero_reg, "g_" + gv_ptr->name);
+        auto deref_type = ((PointerType*)store_instr.dst_ptr->type)->referenced_type;
+        if (auto char_type = dynamic_cast<CharType*>(deref_type)) {
+            auto sb_instr = new ITypeInstr(Sb, manager->temp_regs_pool[8], manager->zero_reg, "g_" + gv_ptr->name);
+            manager->instr_list.push_back(sb_instr);
+        } else {
+            auto sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->zero_reg, "g_" + gv_ptr->name);
+            manager->instr_list.push_back(sw_instr);
+        }
     } else if (cur_local_var_offset.find(ptr_id) != cur_local_var_offset.end()) {
-        sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->sp_reg, cur_local_var_offset[ptr_id]);
+        auto deref_type = ((PointerType*)store_instr.dst_ptr->type)->referenced_type;
+        if (auto char_type = dynamic_cast<CharType*>(deref_type)) {
+            auto sb_instr = new ITypeInstr(Sb, manager->temp_regs_pool[8], manager->sp_reg, cur_local_var_offset[ptr_id]);
+            manager->instr_list.push_back(sb_instr);
+        } else {
+            auto sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->sp_reg, cur_local_var_offset[ptr_id]);
+            manager->instr_list.push_back(sw_instr);
+        }
     } else if (cur_virtual_reg_offset.find(ptr_id) != cur_virtual_reg_offset.end()) {
         auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[9], manager->sp_reg, cur_virtual_reg_offset[ptr_id]);
         manager->instr_list.push_back(lw_instr);
-        sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->temp_regs_pool[9], 0);
+        auto sw_instr = new ITypeInstr(Sw, manager->temp_regs_pool[8], manager->temp_regs_pool[9], 0);
+        manager->instr_list.push_back(sw_instr);
     } else {
         std::cout << "Invalid Store Instruction!" << std::endl;
     }
-    manager->instr_list.push_back(sw_instr);
 }
 
 void MipsBackend::generate_mips_code(GetelementptrInstr &gep_instr) {
@@ -447,21 +470,13 @@ void MipsBackend::generate_mips_code(GetelementptrInstr &gep_instr) {
 void MipsBackend::generate_mips_code(ZextInstr &zext_instr) {
     if (cur_virtual_reg_offset[zext_instr.operand->id])
         cur_virtual_reg_offset[zext_instr.id] = cur_virtual_reg_offset[zext_instr.operand->id];
-    else if (cur_local_var_offset[zext_instr.operand->id])
-        cur_local_var_offset[zext_instr.id] = cur_local_var_offset[zext_instr.operand->id];
-    else {
-        std::cout << "ZextInstr : Invalid Operand!" << std::endl;
-    }
+    else std::cout << "ZextInstr : Invalid Operand!" << std::endl;
 }
 
 void MipsBackend::generate_mips_code(TruncInstr &trunc_instr) {
     if (cur_virtual_reg_offset[trunc_instr.operand->id])
         cur_virtual_reg_offset[trunc_instr.id] = cur_virtual_reg_offset[trunc_instr.operand->id];
-    else if (cur_local_var_offset[trunc_instr.operand->id])
-        cur_local_var_offset[trunc_instr.id] = cur_local_var_offset[trunc_instr.operand->id];
-    else {
-        std::cout << "TruncInstr : Invalid Operand!" << std::endl;
-    }
+    else std::cout << "TruncInstr : Invalid Operand!" << std::endl;
 }
 
 void MipsBackend::generate_mips_code(IcmpInstr &icmp_instr) {
@@ -519,7 +534,7 @@ void MipsBackend::generate_mips_code(IcmpInstr &icmp_instr) {
         }
     }
     cur_sp_offset -= 4;
-    cur_local_var_offset[icmp_instr.id] = cur_sp_offset;
+    cur_virtual_reg_offset[icmp_instr.id] = cur_sp_offset;
     auto sw_instr = new ITypeInstr(Sw, manager->retval_regs_pool[1], manager->sp_reg, cur_sp_offset);
     manager->instr_list.push_back(sw_instr);
 }

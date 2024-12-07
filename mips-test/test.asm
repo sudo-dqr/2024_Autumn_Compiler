@@ -1,8 +1,26 @@
 .data
-	g_dqr0: .asciiz "->"
-	g_dqr1: .asciiz "\n"
-	g_dqr2: .asciiz "21371119\n"
-	g_dqr3: .asciiz "fun1:\n"
+	g_varInt: .word 0
+	g_varIntB: .word 5
+	g_varIntC: .word 15
+	g_varChar: .byte 0
+	g_dqr0: .asciiz "Function with no parameters\n"
+	g_dqr1: .asciiz "Function with single parameter, x = "
+	g_dqr2: .asciiz "\n"
+	g_dqr3: .asciiz "Function with parameters: a = "
+	g_dqr4: .asciiz ", b = "
+	g_dqr5: .asciiz "\n"
+	g_dqr6: .asciiz "Function returning a character\n"
+	g_dqr7: .asciiz "22373141\n"
+	g_dqr8: .asciiz "Result of functionWithParams: "
+	g_dqr9: .asciiz "\n"
+	g_dqr10: .asciiz "Character returned: "
+	g_dqr11: .asciiz "\n"
+	g_dqr12: .asciiz "Result of functionSingleParam: "
+	g_dqr13: .asciiz "\n"
+	g_dqr14: .asciiz "Input integer: "
+	g_dqr15: .asciiz "\n"
+	g_dqr16: .asciiz "Input character: "
+	g_dqr17: .asciiz "\n"
 
 
 .text
@@ -10,154 +28,255 @@
 	li $v0, 10
 	syscall
 
-func_move:
+func_functionNoParam:
 	sw $ra, -4($sp)
-func_move_block_2:
-	sw $a0, -8($sp)
-	sw $a1, -12($sp)
-	lw $t8, -8($sp)
-	sw $t8, -24($sp)
-	lw $t8, -12($sp)
-	sw $t8, -28($sp)
-	lw $a0, -24($sp)
-	li $v0, 1
-	syscall
+func_functionNoParam_block_0:
 	la $t8, g_dqr0($zero)
-	sw $t8, -32($sp)
+	sw $t8, -8($sp)
 	la $a0, g_dqr0($zero)
-	li $v0, 4
-	syscall
-	lw $a0, -28($sp)
-	li $v0, 1
-	syscall
-	la $t8, g_dqr1($zero)
-	sw $t8, -36($sp)
-	la $a0, g_dqr1($zero)
 	li $v0, 4
 	syscall
 	lw $ra, -4($sp)
 	jr $ra
-func_hanoi:
+func_functionSingleParam:
 	sw $ra, -4($sp)
-func_hanoi_block_4:
+func_functionSingleParam_block_1:
+	sw $a0, -8($sp)
+	lw $t8, -8($sp)
+	sw $t8, -16($sp)
+	la $t8, g_dqr1($zero)
+	sw $t8, -20($sp)
+	la $a0, g_dqr1($zero)
+	li $v0, 4
+	syscall
+	lw $a0, -16($sp)
+	li $v0, 1
+	syscall
+	la $t8, g_dqr2($zero)
+	sw $t8, -24($sp)
+	la $a0, g_dqr2($zero)
+	li $v0, 4
+	syscall
+	lw $t8, -8($sp)
+	sw $t8, -28($sp)
+	lw $t8, -8($sp)
+	sw $t8, -32($sp)
+	lw $t8, -28($sp)
+	lw $t9, -32($sp)
+	subu $v1, $t8, $t9
+	sw $v1, -36($sp)
+	lw $t8, -36($sp)
+	addiu $v1, $t8, 8
+	sw $v1, -40($sp)
+	lw $v0, -40($sp)
+	lw $ra, -4($sp)
+	jr $ra
+func_functionWithParams:
+	sw $ra, -4($sp)
+func_functionWithParams_block_2:
 	sw $a0, -8($sp)
 	sw $a1, -12($sp)
-	sw $a2, -16($sp)
-	sw $a3, -20($sp)
 	lw $t8, -8($sp)
+	sw $t8, -24($sp)
+	lbu $t8, -12($sp)
+	sw $t8, -28($sp)
+	la $t8, g_dqr3($zero)
+	sw $t8, -32($sp)
+	la $a0, g_dqr3($zero)
+	li $v0, 4
+	syscall
+	lw $a0, -24($sp)
+	li $v0, 1
+	syscall
+	la $t8, g_dqr4($zero)
+	sw $t8, -36($sp)
+	la $a0, g_dqr4($zero)
+	li $v0, 4
+	syscall
+	lw $a0, -28($sp)
+	li $v0, 11
+	syscall
+	la $t8, g_dqr5($zero)
 	sw $t8, -40($sp)
-	lw $t8, -40($sp)
-	seq $v1, $t8, 1
-	sw $v1, -44($sp)
-	lw $t8, -44($sp)
-	beq $t8, $zero, func_hanoi_block_14
-	j func_hanoi_block_11
-func_hanoi_block_11:
-	lw $t8, -12($sp)
+	la $a0, g_dqr5($zero)
+	li $v0, 4
+	syscall
+	lw $t8, -8($sp)
+	sw $t8, -44($sp)
+	lbu $t8, -12($sp)
 	sw $t8, -48($sp)
-	lw $t8, -20($sp)
-	sw $t8, -52($sp)
-	addu $fp, $sp, $zero
-	addi $sp, $sp, -60
-	lw $a0, -48($fp)
-	lw $a1, -52($fp)
-	jal func_move
-	addi $sp, $sp, 60
-	sw $v0, -56($sp)
-	j func_hanoi_block_27
-func_hanoi_block_14:
-	lw $t8, -8($sp)
-	sw $t8, -60($sp)
-	lw $t8, -60($sp)
-	subu $v1, $t8, 1
-	sw $v1, -64($sp)
-	lw $t8, -12($sp)
-	sw $t8, -68($sp)
-	lw $t8, -20($sp)
-	sw $t8, -72($sp)
-	lw $t8, -16($sp)
-	sw $t8, -76($sp)
-	addu $fp, $sp, $zero
-	addi $sp, $sp, -92
-	lw $a0, -64($fp)
-	lw $a1, -68($fp)
-	lw $a2, -72($fp)
-	lw $a3, -76($fp)
-	jal func_hanoi
-	addi $sp, $sp, 92
-	sw $v0, -80($sp)
-	lw $t8, -12($sp)
-	sw $t8, -84($sp)
-	lw $t8, -20($sp)
-	sw $t8, -88($sp)
-	addu $fp, $sp, $zero
-	addi $sp, $sp, -96
-	lw $a0, -84($fp)
-	lw $a1, -88($fp)
-	jal func_move
-	addi $sp, $sp, 96
-	sw $v0, -92($sp)
-	lw $t8, -8($sp)
-	sw $t8, -96($sp)
-	lw $t8, -96($sp)
-	subu $v1, $t8, 1
-	sw $v1, -100($sp)
-	lw $t8, -16($sp)
-	sw $t8, -104($sp)
-	lw $t8, -12($sp)
-	sw $t8, -108($sp)
-	lw $t8, -20($sp)
-	sw $t8, -112($sp)
-	addu $fp, $sp, $zero
-	addi $sp, $sp, -128
-	lw $a0, -100($fp)
-	lw $a1, -104($fp)
-	lw $a2, -108($fp)
-	lw $a3, -112($fp)
-	jal func_hanoi
-	addi $sp, $sp, 128
-	sw $v0, -116($sp)
-	j func_hanoi_block_27
-func_hanoi_block_27:
+	lw $t8, -44($sp)
+	lw $t9, -48($sp)
+	addu $v1, $t8, $t9
+	sw $v1, -52($sp)
+	lw $v0, -52($sp)
+	lw $ra, -4($sp)
+	jr $ra
+func_functionReturnChar:
+	sw $ra, -4($sp)
+func_functionReturnChar_block_0:
+	la $t8, g_dqr6($zero)
+	sw $t8, -8($sp)
+	la $a0, g_dqr6($zero)
+	li $v0, 4
+	syscall
+	li $v0, 67
 	lw $ra, -4($sp)
 	jr $ra
 func_main:
 	sw $ra, -4($sp)
 func_main_block_0:
-	li $t8, 0
+	la $t8, g_dqr7($zero)
 	sw $t8, -8($sp)
+	la $a0, g_dqr7($zero)
+	li $v0, 4
+	syscall
+	lw $t8, g_varIntB($zero)
+	sw $t8, -16($sp)
+	lw $t9, -16($sp)
+	addiu $v1, $t9, 10
+	sw $v1, -20($sp)
+	lw $t8, -20($sp)
+	sw $t8, -12($sp)
+	lw $t8, -12($sp)
+	sw $t8, -24($sp)
+	lw $t8, g_varIntC($zero)
+	sw $t8, -28($sp)
+	lw $t8, -24($sp)
+	lw $t9, -28($sp)
+	mul $v1, $t8, $t9
+	sw $v1, -32($sp)
+	lw $t8, -32($sp)
+	sw $t8, g_varInt($zero)
+	li $t8, 65
+	sb $t8, g_varChar($zero)
+	lw $t8, -12($sp)
+	sw $t8, -36($sp)
+	lw $t8, g_varInt($zero)
+	sw $t8, -40($sp)
+	lw $t8, -36($sp)
+	lw $t9, -40($sp)
+	addu $v1, $t8, $t9
+	sw $v1, -44($sp)
+	addu $fp, $sp, $zero
+	addi $sp, $sp, -44
+	jal func_functionNoParam
+	addi $sp, $sp, 44
+	sw $v0, -48($sp)
+	lw $t8, -12($sp)
+	sw $t8, -56($sp)
+	lbu $t8, g_varChar($zero)
+	sw $t8, -60($sp)
+	addu $fp, $sp, $zero
+	addi $sp, $sp, -68
+	lw $a0, -56($fp)
+	lw $a1, -60($fp)
+	jal func_functionWithParams
+	addi $sp, $sp, 68
+	sw $v0, -64($sp)
+	lw $t8, -64($sp)
+	sw $t8, -52($sp)
+	lw $t8, -52($sp)
+	sw $t8, -68($sp)
+	la $t8, g_dqr8($zero)
+	sw $t8, -72($sp)
+	la $a0, g_dqr8($zero)
+	li $v0, 4
+	syscall
+	lw $a0, -68($sp)
+	li $v0, 1
+	syscall
+	la $t8, g_dqr9($zero)
+	sw $t8, -76($sp)
+	la $a0, g_dqr9($zero)
+	li $v0, 4
+	syscall
+	addu $fp, $sp, $zero
+	addi $sp, $sp, -80
+	jal func_functionReturnChar
+	addi $sp, $sp, 80
+	sw $v0, -84($sp)
+	lw $t8, -84($sp)
+	sb $t8, -80($sp)
+	lbu $t8, -80($sp)
+	sw $t8, -88($sp)
+	la $t8, g_dqr10($zero)
+	sw $t8, -92($sp)
+	la $a0, g_dqr10($zero)
+	li $v0, 4
+	syscall
+	lw $a0, -88($sp)
+	li $v0, 11
+	syscall
+	la $t8, g_dqr11($zero)
+	sw $t8, -96($sp)
+	la $a0, g_dqr11($zero)
+	li $v0, 4
+	syscall
+	lw $t8, -12($sp)
+	sw $t8, -104($sp)
+	addu $fp, $sp, $zero
+	addi $sp, $sp, -108
+	lw $a0, -104($fp)
+	jal func_functionSingleParam
+	addi $sp, $sp, 108
+	sw $v0, -108($sp)
+	lw $t8, -108($sp)
+	sw $t8, -100($sp)
+	lw $t8, -100($sp)
+	sw $t8, -112($sp)
+	la $t8, g_dqr12($zero)
+	sw $t8, -116($sp)
+	la $a0, g_dqr12($zero)
+	li $v0, 4
+	syscall
+	lw $a0, -112($sp)
+	li $v0, 1
+	syscall
+	la $t8, g_dqr13($zero)
+	sw $t8, -120($sp)
+	la $a0, g_dqr13($zero)
+	li $v0, 4
+	syscall
 	li $v0, 5
 	syscall
-	sw $v0, -12($sp)
-	lw $t8, -12($sp)
-	sw $t8, -8($sp)
-	la $t8, g_dqr2($zero)
-	sw $t8, -16($sp)
-	la $a0, g_dqr2($zero)
+	sw $v0, -128($sp)
+	lw $t8, -128($sp)
+	sw $t8, -124($sp)
+	lw $t8, -124($sp)
+	sw $t8, -132($sp)
+	la $t8, g_dqr14($zero)
+	sw $t8, -136($sp)
+	la $a0, g_dqr14($zero)
 	li $v0, 4
 	syscall
-	lw $t8, -8($sp)
-	sw $t8, -20($sp)
-	addu $fp, $sp, $zero
-	addi $sp, $sp, -36
-	lw $a0, -20($fp)
-	li $a1, 1
-	li $a2, 2
-	li $a3, 3
-	jal func_hanoi
-	addi $sp, $sp, 36
-	sw $v0, -24($sp)
-	li $t8, 0
-	sw $t8, -28($sp)
-	lw $t8, -28($sp)
-	sw $t8, -32($sp)
-	la $t8, g_dqr3($zero)
-	sw $t8, -36($sp)
-	la $a0, g_dqr3($zero)
-	li $v0, 4
-	syscall
-	lw $a0, -32($sp)
+	lw $a0, -132($sp)
 	li $v0, 1
+	syscall
+	la $t8, g_dqr15($zero)
+	sw $t8, -140($sp)
+	la $a0, g_dqr15($zero)
+	li $v0, 4
+	syscall
+	li $v0, 12
+	syscall
+	sw $v0, -148($sp)
+	lw $t8, -148($sp)
+	sb $t8, -144($sp)
+	lbu $t8, -144($sp)
+	sw $t8, -152($sp)
+	la $t8, g_dqr16($zero)
+	sw $t8, -156($sp)
+	la $a0, g_dqr16($zero)
+	li $v0, 4
+	syscall
+	lw $a0, -152($sp)
+	li $v0, 11
+	syscall
+	la $t8, g_dqr17($zero)
+	sw $t8, -160($sp)
+	la $a0, g_dqr17($zero)
+	li $v0, 4
 	syscall
 	li $v0, 0
 	lw $ra, -4($sp)
