@@ -176,12 +176,13 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
         } else if (is_const_value(arith_instr.op1)) {
             load_to_register(arith_instr.op2->id, manager->temp_regs_pool[9]);
             int op1 = get_const_value(arith_instr.op1);
-            auto div_instr = new ITypeInstr(Div, manager->retval_regs_pool[1], manager->temp_regs_pool[9], op1);
+            auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[8], op1);
+            auto div_instr = new RTypeInstr(Div, manager->retval_regs_pool[1], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
             manager->instr_list.push_back(div_instr);
         } else {
             load_to_register(arith_instr.op1->id, manager->temp_regs_pool[8]);
             int op2 = get_const_value(arith_instr.op2);
-            auto div_instr = new ITypeInstr(Div, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
+            auto div_instr = new NonTypeInstr(Div, manager->retval_regs_pool[1], manager->temp_regs_pool[8], op2);
             manager->instr_list.push_back(div_instr);
         }
         break;
