@@ -14,6 +14,13 @@ void ErrorList::print_errors() {
     sort(errors.begin(), errors.end(), [](const Error &a, const Error &b) {
         return a.line_number < b.line_number;
     });
+    // 保护措施: 去除重复错误
+    for (int i = 0; i < errors.size() - 1; i++) {
+        if (errors[i].line_number == errors[i + 1].line_number) {
+            errors.erase(errors.begin() + i);
+            i--;
+        }
+    }
     for (const auto &error : errors) {
         error_out << error.line_number << " " << error.type << std::endl;
     }

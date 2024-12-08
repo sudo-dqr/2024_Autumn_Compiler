@@ -363,6 +363,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
             auto param_symbol = std::make_shared<Symbol>(param_symbol_type, param_ident, cur_scope->get_scope());
             if (!cur_scope->add_symbol(param_symbol)) {
                 ErrorList::report_error(func_fparam->ident->ident->get_line_number(), 'b');
+                ir_param_types.push_back(ir_param_type);
             } else {
                 func_symbol->type.params.push_back(*param_symbol);
                 ir_param_types.push_back(ir_param_type);
