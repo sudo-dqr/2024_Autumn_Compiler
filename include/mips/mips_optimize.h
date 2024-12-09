@@ -1,6 +1,0 @@
-#ifndef MIPS_OPTIMIZE_H
-#define MIPS_OPTIMIZE_H
-
-
-
-#endif // MIPS_OPTIMIZE_H

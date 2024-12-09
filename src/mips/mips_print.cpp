@@ -55,7 +55,7 @@ void RTypeInstr::print(std::ostream &os) const {
         os << ", ";
         rs->printReg(os);
         os << ", ";
-        if (op == Sll || op == Srl) {
+        if (op == Sll || op == Srl || op == Sra) {
             os << shamt;
         } else {
             rt->printReg(os);
@@ -86,6 +86,9 @@ void ITypeInstr::print(std::ostream &os) const {
     } else if (op == Beq) {
         rt->printReg(os);
         os << ", ";
+        rs->printReg(os);
+        os << ", " << label;
+    } else if (op == Bgez) {
         rs->printReg(os);
         os << ", " << label;
     } else {
@@ -166,6 +169,17 @@ void NonTypeInstr::print(std::ostream &os) const {
             rs->printReg(os);
             os << ", " << imm;
             break;
+        case Mult:
+            os << "mult ";
+            rs->printReg(os);
+            os << ", ";
+            rt->printReg(os);
+            break;
+        case Mflo:
+        case Mfhi:
+            os << transfer_op_to_string(op) << " ";
+            rd->printReg(os);
+            break;
         default:
             std::cout << "Undefined NonTypeInstr!" << std::endl;
             break;
@@ -177,12 +191,15 @@ std::string transfer_op_to_string(OpType op) {
         case Addu: return "addu"; break;
         case Addi: return "addi"; break;
         case Addiu: return "addiu"; break;
+        case Andi: return "andi"; break;
         case Subu: return "subu"; break;
+        case Subiu: return "subiu"; break;
         case Mul: return "mul"; break;
         case Div: return "div"; break;
         case Rem: return "rem"; break;
         case Sll: return "sll"; break;
         case Srl: return "srl"; break;
+        case Sra: return "sra"; break;
         case Slt: return "slt"; break;
         case Slti: return "slti"; break;
         case Sle: return "sle"; break;
@@ -197,11 +214,15 @@ std::string transfer_op_to_string(OpType op) {
         case Li: return "li"; break;
         case La: return "la"; break;
         case Beq: return "beq"; break;
+        case Bgez: return "bgez"; break;
         case J: return "j"; break;
         case Jal: return "jal"; break;
         case Jr: return "jr"; break;
         case Label: return "label"; break;
         case Syscall: return "syscall"; break;
+        case Mult: return "mult"; break;
+        case Mflo: return "mflo"; break;
+        case Mfhi: return "mfhi"; break;
         default: return "Undefined MIPS Instr"; break;
     }
 }

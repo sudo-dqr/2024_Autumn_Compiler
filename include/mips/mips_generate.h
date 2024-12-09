@@ -53,6 +53,12 @@ struct MipsBackend {
         void generate_optimized_mips_code(BasicBlock &basic_block);
         void generate_optimized_mips_code(AllocaInstr &alloca_instr);
         void generate_optimized_mips_code(ArithmeticInstr &arith_instr);
+        int special_counter = 0;
+        void optimize_divide(ArithmeticInstr instr, MipsReg* op1, MipsReg* dst);
+        void choose_multiplier(int divisor, int &shift_log, long long &multiplier, int &shift);
+        int number_of_leading_zeros(int divisor);
+        bool optimize_multiply(int factor);
+        int factor_2_shift(int factor);
         void generate_optimized_mips_code(BrInstr &br_instr);
         void generate_optimized_mips_code(RetInstr &ret_instr);
         void generate_optimized_mips_code(CallInstr &call_instr);
