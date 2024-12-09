@@ -24,7 +24,7 @@ int main() {
     //visitor.print_symbol_list();
     Module::get_instance().print_llvm_ir();
     MipsBackend backend = MipsBackend();
-    backend.generate_mips_code(Module::get_instance());
+    backend.start_generate_mips_code(Module::get_instance(), MipsBackend::OPTIMIZED);
     backend.print_mips_code();
     ErrorList::print_errors();
     return 0;

@@ -1,21 +1,16 @@
 #include "mips_generate.h"
 #include "mips_utils.h"
 
-void MipsBackend::start_generate_mips_code(Module &module, Mode mode) {
-    if (mode == NORMAL) generate_mips_code(module);
-    else generate_optimized_mips_code(module);
-}
-
-void MipsBackend::generate_mips_code(Module &module) {
+void MipsBackend::generate_optimized_mips_code(Module &module) {
     for (auto &data : module.global_variables) {
-        generate_mips_code(*data);
+        generate_optimized_mips_code(*data);
     }
     for (auto &function: module.functions) {
-        generate_mips_code(*function);
+        generate_optimized_mips_code(*function);
     }
 }
 
-void MipsBackend::generate_mips_code(GlobalVariable &data) {
+void MipsBackend::generate_optimized_mips_code(GlobalVariable &data) {
     auto deref_type = ((PointerType*)data.type)->referenced_type;
     if (data.is_printf_str) {
         auto asciiz_data = new AsciizData(data.name, data.array_string);
@@ -56,7 +51,7 @@ void MipsBackend::generate_mips_code(GlobalVariable &data) {
     }
 }
 
-void MipsBackend::generate_mips_code(Function &function) {
+void MipsBackend::generate_optimized_mips_code(Function &function) {
     auto label_instr = new MipsLabel("func_" + function.name);
     // std::cout << "Function Name : " << function.name << std::endl;
     manager->instr_list.push_back(label_instr);
@@ -68,42 +63,42 @@ void MipsBackend::generate_mips_code(Function &function) {
     auto sw_instr = new ITypeInstr(Sw, manager->ra_reg, manager->sp_reg, cur_sp_offset);
     manager->instr_list.push_back(sw_instr);
     for (const auto &basic_block : function.basic_blocks) {
-        generate_mips_code(*basic_block);
+        generate_optimized_mips_code(*basic_block);
     }
 }
 
-void MipsBackend::generate_mips_code(BasicBlock &basic_block) {
+void MipsBackend::generate_optimized_mips_code(BasicBlock &basic_block) {
     if (basic_block.instrs.empty()) return;
     auto label_instr = new MipsLabel("func_" + cur_func_name + "_block_" + std::to_string(basic_block.id));
     manager->instr_list.push_back(label_instr);
     for (const auto &instr : basic_block.instrs) {
         if (auto alloca_ir = dynamic_cast<AllocaInstr*>(instr)) {
-            generate_mips_code(*alloca_ir);
+            generate_optimized_mips_code(*alloca_ir);
         } else if (auto arith_ir = dynamic_cast<ArithmeticInstr*>(instr)) {
-            generate_mips_code(*arith_ir);
+            generate_optimized_mips_code(*arith_ir);
         } else if (auto br_ir = dynamic_cast<BrInstr*>(instr)) {
-            generate_mips_code(*br_ir);
+            generate_optimized_mips_code(*br_ir);
         } else if (auto call_ir = dynamic_cast<CallInstr*>(instr)) {
-            generate_mips_code(*call_ir);
+            generate_optimized_mips_code(*call_ir);
         } else if (auto icmp_ir = dynamic_cast<IcmpInstr*>(instr)) {
-            generate_mips_code(*icmp_ir);
+            generate_optimized_mips_code(*icmp_ir);
         } else if (auto load_ir = dynamic_cast<LoadInstr*>(instr)) {
-            generate_mips_code(*load_ir);
+            generate_optimized_mips_code(*load_ir);
         } else if (auto store_ir = dynamic_cast<StoreInstr*>(instr)) {
-            generate_mips_code(*store_ir);
+            generate_optimized_mips_code(*store_ir);
         } else if (auto zext_ir = dynamic_cast<ZextInstr*>(instr)) {
-            generate_mips_code(*zext_ir);
+            generate_optimized_mips_code(*zext_ir);
         } else if (auto trunc_ir = dynamic_cast<TruncInstr*>(instr)) {
-            generate_mips_code(*trunc_ir);
+            generate_optimized_mips_code(*trunc_ir);
         } else if (auto ret_ir = dynamic_cast<RetInstr*>(instr)) {
-            generate_mips_code(*ret_ir);
+            generate_optimized_mips_code(*ret_ir);
         } else if (auto gep_ir = dynamic_cast<GetelementptrInstr*>(instr)) {
-            generate_mips_code(*gep_ir);
+            generate_optimized_mips_code(*gep_ir);
         }
     }
 }
 
-void MipsBackend::generate_mips_code(AllocaInstr &alloca_instr) {
+void MipsBackend::generate_optimized_mips_code(AllocaInstr &alloca_instr) {
     auto deref_type = ((PointerType*)alloca_instr.type)->referenced_type;
     int size = ir_type_size(deref_type);
     if (size % 4 != 0) size = (size / 4 + 1) * 4;
@@ -115,7 +110,7 @@ void MipsBackend::generate_mips_code(AllocaInstr &alloca_instr) {
 
 // 算数运算操作 每一种操作至多使用三种寄存器
 // 使用$v1存储结果, 使用$t8存储op1, 使用$t9存储op2
-void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
+void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
     switch (arith_instr.arith_type) {
     case ArithmeticInstr::ADD:
         if ((!is_const_value(arith_instr.op1)) && (!is_const_value(arith_instr.op2))) {
@@ -224,19 +219,7 @@ void MipsBackend::generate_mips_code(ArithmeticInstr &arith_instr) {
     manager->instr_list.push_back(sw_instr);
 }
 
-//! this function is used to load value stored in virtual register (memory) to a physical register
-void MipsBackend::load_to_register(int value_id, MipsReg* dst_reg, MipsReg* addr_reg) {
-    if (addr_reg == nullptr) addr_reg = manager->sp_reg;
-    if (cur_virtual_reg_offset.find(value_id) != cur_virtual_reg_offset.end()) {
-        auto lw_instr = new ITypeInstr(Lw, dst_reg, addr_reg, cur_virtual_reg_offset[value_id]);
-        manager->instr_list.push_back(lw_instr);
-    } else {
-        std::cout << "Cur Func : " << cur_func_name << std::endl;
-        std::cout << "LoadInstr : WHAT THE HELL! can't find virtual register!"<< " id : " << value_id << std::endl;
-    }
-}
-
-void MipsBackend::generate_mips_code(BrInstr &br_instr) {
+void MipsBackend::generate_optimized_mips_code(BrInstr &br_instr) {
     if (br_instr.condition) {
         load_to_register(br_instr.condition->id, manager->temp_regs_pool[8]);
         auto beq_instr = new ITypeInstr(Beq, manager->temp_regs_pool[8], manager->zero_reg, "func_" + cur_func_name + "_block_" + std::to_string(br_instr.false_block->id));
@@ -249,7 +232,7 @@ void MipsBackend::generate_mips_code(BrInstr &br_instr) {
     }
 }
 
-void MipsBackend::generate_mips_code(RetInstr &ret_instr) {
+void MipsBackend::generate_optimized_mips_code(RetInstr &ret_instr) {
     if (ret_instr.return_value) {
         if (is_const_value(ret_instr.return_value)) {
             auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], get_const_value(ret_instr.return_value));
@@ -262,7 +245,7 @@ void MipsBackend::generate_mips_code(RetInstr &ret_instr) {
     manager->instr_list.push_back(jr_instr);
 }
 
-void MipsBackend::generate_mips_code(CallInstr &call_instr) {
+void MipsBackend::generate_optimized_mips_code(CallInstr &call_instr) {
     if (call_instr.function->name == "getint") {
         auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 5);
         manager->instr_list.push_back(li_instr);
@@ -351,7 +334,7 @@ void MipsBackend::generate_mips_code(CallInstr &call_instr) {
     }
 }
 
-void MipsBackend::generate_mips_code(LoadInstr &load_instr) {
+void MipsBackend::generate_optimized_mips_code(LoadInstr &load_instr) {
     if (auto gv_ptr = dynamic_cast<GlobalVariable*>(load_instr.src_ptr)) {
         auto deref_type = ((PointerType*)load_instr.src_ptr->type)->referenced_type;
         if (auto char_type = dynamic_cast<CharType*>(deref_type)) {
@@ -391,7 +374,7 @@ void MipsBackend::generate_mips_code(LoadInstr &load_instr) {
     manager->instr_list.push_back(sw_instr);
 }
 
-void MipsBackend::generate_mips_code(StoreInstr &store_instr) {
+void MipsBackend::generate_optimized_mips_code(StoreInstr &store_instr) {
     int value_id = store_instr.store_value->id;
     int ptr_id = store_instr.dst_ptr->id;
     //! 需要先把存的值load进reg  $t8
@@ -449,7 +432,7 @@ void MipsBackend::generate_mips_code(StoreInstr &store_instr) {
     }
 }
 
-void MipsBackend::generate_mips_code(GetelementptrInstr &gep_instr) {
+void MipsBackend::generate_optimized_mips_code(GetelementptrInstr &gep_instr) {
     if (auto gv_array = dynamic_cast<GlobalVariable*>(gep_instr.array)) {
         auto la_instr = new NonTypeInstr(La, manager->temp_regs_pool[8], manager->zero_reg, "g_" + gv_array->name);
         manager->instr_list.push_back(la_instr);
@@ -494,19 +477,19 @@ void MipsBackend::generate_mips_code(GetelementptrInstr &gep_instr) {
     manager->instr_list.push_back(sw_instr);
 }
 
-void MipsBackend::generate_mips_code(ZextInstr &zext_instr) {
+void MipsBackend::generate_optimized_mips_code(ZextInstr &zext_instr) {
     if (cur_virtual_reg_offset[zext_instr.operand->id])
         cur_virtual_reg_offset[zext_instr.id] = cur_virtual_reg_offset[zext_instr.operand->id];
     else std::cout << "ZextInstr : Invalid Operand!" << std::endl;
 }
 
-void MipsBackend::generate_mips_code(TruncInstr &trunc_instr) {
+void MipsBackend::generate_optimized_mips_code(TruncInstr &trunc_instr) {
     if (cur_virtual_reg_offset[trunc_instr.operand->id])
         cur_virtual_reg_offset[trunc_instr.id] = cur_virtual_reg_offset[trunc_instr.operand->id];
     else std::cout << "TruncInstr : Invalid Operand!" << std::endl;
 }
 
-void MipsBackend::generate_mips_code(IcmpInstr &icmp_instr) {
+void MipsBackend::generate_optimized_mips_code(IcmpInstr &icmp_instr) {
     OpType op_type;
     switch (icmp_instr.compare_type) {
         case IcmpInstr::EQ: op_type = Seq; break;
@@ -564,30 +547,4 @@ void MipsBackend::generate_mips_code(IcmpInstr &icmp_instr) {
     cur_virtual_reg_offset[icmp_instr.id] = cur_sp_offset;
     auto sw_instr = new ITypeInstr(Sw, manager->retval_regs_pool[1], manager->sp_reg, cur_sp_offset);
     manager->instr_list.push_back(sw_instr);
-}
-
-void MipsBackend::print_mips_code() const {
-    std::ofstream mips_out("mips.txt", std::ios::trunc);
-    mips_out << ".data" << std::endl;
-    for (auto &data : manager->data_list) {
-        data->print(mips_out);
-        mips_out << std::endl;
-    }
-    mips_out << std::endl;
-    mips_out << std::endl;
-    mips_out << ".text" << std::endl;
-    auto jal_instr = new JTypeInstr(Jal, "func_main");
-    jal_instr->print(mips_out);
-    mips_out << std::endl;
-    auto li_instr = new NonTypeInstr(Li, manager->retval_regs_pool[0], 10);
-    li_instr->print(mips_out);
-    mips_out << std::endl;
-    auto syscall_instr = new NonTypeInstr(Syscall);
-    syscall_instr->print(mips_out);
-    mips_out << std::endl;
-    mips_out << std::endl;
-    for (auto &instr : manager->instr_list) {
-        instr->print(mips_out);
-        mips_out << std::endl;
-    }
 }
