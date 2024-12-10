@@ -50,18 +50,19 @@ void RTypeInstr::print(std::ostream &os) const {
     MipsInstr::print(os);
     std::string op_str = transfer_op_to_string(op);
     os << op_str << " ";
-    if (op != Jr) {
+    if (op == Jr) {
+        rs->printReg(os);
+    } else if (op == Srl || op == Sll || op == Sra) {
+        rd->printReg(os);
+        os << ", ";
+        rt->printReg(os);
+        os << ", " << shamt;
+    } else {
         rd->printReg(os);
         os << ", ";
         rs->printReg(os);
         os << ", ";
-        if (op == Sll || op == Srl || op == Sra) {
-            os << shamt;
-        } else {
-            rt->printReg(os);
-        }
-    } else {
-        rs->printReg(os);
+        rt->printReg(os);
     }
 }
 

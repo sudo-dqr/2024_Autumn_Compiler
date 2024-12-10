@@ -1,6 +1,11 @@
 #include "mips_generate.h"
 #include "mips_utils.h"
 
+void MipsBackend::start_generate_mips_code(Module &module, Mode mode) {
+    if (mode == NORMAL) generate_mips_code(module);
+    else generate_optimized_mips_code(module);
+}
+
 void MipsBackend::generate_mips_code(Module &module) {
     for (auto &data : module.global_variables) {
         generate_mips_code(*data);

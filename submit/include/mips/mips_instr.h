@@ -5,10 +5,12 @@
 enum OpType {
     Addu,
     Addi, Addiu,
+    Andi,
     Subu, // R type or pseudo instruction
+    Subiu, // I type
     Mul, Div,
     Rem, // pesudo instruction
-    Sll, Srl,
+    Sll, Srl, Sra,
     Slt, Slti,
     Sle, // pseudo instruction
     Seq, Sne,
@@ -16,9 +18,10 @@ enum OpType {
     Sw, Lw,
     Sb, Lbu,
     Li, La,
-    Beq,
+    Beq, Bgez,
     J, Jal, Jr,
     Label,
+    Mult, Mflo, Mfhi,
     Syscall
 };
 
@@ -57,8 +60,12 @@ struct ITypeInstr : public MipsInstr{
     std::string label = "";
     ITypeInstr(OpType op, MipsReg* rt, MipsReg* rs, int imm)
     : MipsInstr(op), rt(rt), rs(rs), imm(imm) {}
+    // Beq
     ITypeInstr(OpType op, MipsReg* rt, MipsReg* rs, std::string label)
     : MipsInstr(op), rt(rt), rs(rs), label(label) {}
+    // Bgez
+    ITypeInstr(OpType op, MipsReg* rs, std::string label) 
+    : MipsInstr(op), rs(rs), label(label) {}
     void print(std::ostream &os) const override;
 };
 
@@ -99,6 +106,12 @@ struct NonTypeInstr : public MipsInstr {
     : MipsInstr(op), rd(rd), rs(rs), rt(rt) {}
     NonTypeInstr(OpType op, MipsReg* rt, MipsReg* rs, int imm)
     : MipsInstr(op), rs(rs), rt(rt), imm(imm), rd(nullptr) {}
+    // Mult
+    NonTypeInstr(OpType op, MipsReg* rs, MipsReg* rt)
+    : MipsInstr(op), rs(rs), rt(rt), rd(nullptr) {}
+    // Mflo, Mfhi
+    NonTypeInstr(OpType op, MipsReg* rd)
+    : MipsInstr(op), rd(rd) {}
     void print(std::ostream &os) const override;
 };
 
