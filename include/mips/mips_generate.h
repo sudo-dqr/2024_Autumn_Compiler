@@ -3,6 +3,7 @@
 #include "value.h"
 #include "instr.h"
 #include "mips_manager.h"
+#include "register_allocator.h"
 #include <unordered_map>
 
 #define XBIT_MAX 32767
@@ -15,12 +16,17 @@ struct MipsBackend {
         OPTIMIZED
     };
 
-    MipsBackend() { this->manager = new MipsManager();}
+    MipsBackend() { 
+        this->manager = new MipsManager();
+        this->register_allocator = new RegisterAllocator();
+    }
+
     void start_generate_mips_code(Module &module, Mode mode);
     void print_mips_code() const;
 
     private:
         MipsManager* manager;
+        RegisterAllocator* register_allocator;
         std::string cur_func_name;
         int cur_func_param_num = 0;
         int cur_sp_offset = 0;

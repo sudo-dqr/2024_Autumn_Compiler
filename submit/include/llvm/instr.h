@@ -72,6 +72,14 @@ struct CallInstr : public Instruction { // void / int/char
     : Instruction(&IR_VOID), function(function), args(args) {}
 
     void print(std::ostream &os) const override;
+
+    bool contains_arg_id(int id) {
+        for (auto arg : args) {
+            if (dynamic_cast<IntConst*>(arg) || dynamic_cast<CharConst*>(arg)) continue;
+            else if (arg->id == id) return true;
+        }
+        return false;
+    }
 };
 
 struct GetelementptrInstr : public Instruction {
