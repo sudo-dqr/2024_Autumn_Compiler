@@ -28,38 +28,27 @@ class RegisterAllocator {
     MipsReg* allocate_register(int vreg_id) {
         if (vreg_preg_map.find(vreg_id) != vreg_preg_map.end()) {
             std::cout << "virtual register " << vreg_id << " has already been allocated!" << std::endl;
-            int preg_id = vreg_preg_map[vreg_id];
-            return parse_id_to_reg(preg_id);
         } else if (!temp_regs_pool.empty()) {
             auto it = temp_regs_pool.begin();
-            temp_regs_pool.erase(it);
             vreg_preg_map[vreg_id] = *it;
             preg_vreg_map[*it] = vreg_id;
             MipsReg* preg = parse_id_to_reg(*it);
+            temp_regs_pool.erase(it);
             return preg;
         }
         std::cout << "No available physical register!" << std::endl;
         return nullptr;
     }
 
-    void free_register(int vreg_id) {
-        if (vreg_preg_map.find(vreg_id) == vreg_preg_map.end()) {
-            std::cout << "virtual register " << vreg_id << " has not been allocated!" << std::endl;
-            return;
-        }
-        int preg_id = vreg_preg_map[vreg_id];
-        vreg_preg_map.erase(vreg_id);
-        preg_vreg_map.erase(preg_id);
-        temp_regs_pool.insert(preg_id);
-    }
-
-    MipsReg* virtual_2_physical(int vreg_id) {
+    MipsReg* register_use(int vreg_id) {
         if (vreg_preg_map.find(vreg_id) == vreg_preg_map.end()) {
             std::cout << "virtual register %d has not been allocated!" << vreg_id << std::endl;
             return nullptr;
         }
         int preg_id = vreg_preg_map[vreg_id];
-        free_register(vreg_id);
+        // vreg_preg_map.erase(vreg_id);
+        // preg_vreg_map.erase(preg_id);
+        // temp_regs_pool.insert(preg_id);
         return parse_id_to_reg(preg_id);
     }
 
@@ -86,8 +75,8 @@ class RegisterAllocator {
 
     std::vector<MipsReg*> get_active_registers() {
         std::vector<MipsReg*> active_regs;
-        for (auto it = vreg_preg_map.begin(); it != vreg_preg_map.end(); it++) {
-            active_regs.push_back(parse_id_to_reg(it->second));
+        for (auto it = preg_vreg_map.begin(); it != preg_vreg_map.end(); it++) {
+            active_regs.push_back(parse_id_to_reg(it->first));
         }
         return active_regs;
     }

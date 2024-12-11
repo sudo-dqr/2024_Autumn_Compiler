@@ -469,7 +469,7 @@ void MipsBackend::generate_mips_code(GetelementptrInstr &gep_instr) {
         if (is_const_value(gep_instr.indices[i])) {
             offset += get_const_value(gep_instr.indices[i]) * cur_size;
         } else {
-            if (cur_type == &IR_CHAR) { // alignment = 1, no need to multiply
+            if (dynamic_cast<CharType*>(cur_type)) { // alignment = 1, no need to multiply
                 load_to_register(gep_instr.indices[i]->id, manager->temp_regs_pool[9]);
                 auto addu_instr = new RTypeInstr(Addu, manager->temp_regs_pool[8], manager->temp_regs_pool[8], manager->temp_regs_pool[9]);
                 manager->instr_list.push_back(addu_instr);
