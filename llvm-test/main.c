@@ -1,22 +1,35 @@
-char str[7]  = {'\a', '\t', '\'', 0};
-const char str4[45]  = {'a', 'b', 'c', 0};
-char c = '\n';
-char c1[4] = "\n\n\n";
-const char c2[5] = "\n\n\0";
-int func() {
-    char str5[10]  = {'a', 'b', 'c', 0};
-    const char str6[4]  = {'a', 'b', 'c', 0};
-    return str5[6];
-}
-int main(){
-    int a = 4;
-    if (!a) {
-        char str2[4]  = {'a', 'b', 'c', 0};
-        const char str3[95]  = {'a', 'b', 'c', 0};
-    } else if (!func()) {
-        char tt[4] = "%c\n";
-        printf("\nthis is \n %c\n\n", tt[2]);
-        return 6;
+int pos_r[500];
+int pos_e[500];
+char s[500] = "RexloveStudybutstudyemmmrx";
+
+int main()
+{
+    //scanf("%s", s);
+    int l, i;
+    l = getint();
+    int size_r = 0, size_R = 0, size_e = 0, size_E = 0, top_r = 0, top_e = 0;
+    for (i = 0; i < l; i = i + 1) {
+        if (s[i] == 'R' || s[i] == 'r') {
+            pos_r[size_r++] = i;
+            size_R++;
+        }
+        if ((s[i] == 'e' || s[i] == 'E') && (size_R > size_E)) {
+            pos_e[size_e++] = i;
+            size_E++;
+        }
+        if (s[i] == 'x' || s[i] == 'X') {
+            if (size_R && size_E) {
+                s[pos_r[top_r++]] = '\0';
+                size_R--;
+                s[pos_e[top_e++]] = '\0';
+                size_E--;
+                s[i] = '\0';
+            }
+        }
     }
-    return 0;
+    for (i = 0; i < l; i = i + 1){
+        if (s[i] != '\0') {
+            printf("%c", s[i]);
+        }
+    }
 }
