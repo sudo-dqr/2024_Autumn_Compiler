@@ -374,6 +374,9 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
             manager->instr_list.push_back(rem_instr);
         } else if (is_const_value(arith_instr.op1)) {
             int intconst = get_const_value(arith_instr.op1);
+            auto li_instr = new NonTypeInstr(Li, manager->temp_regs_pool[8], intconst);
+            manager->instr_list.push_back(li_instr);
+            op1 = manager->temp_regs_pool[8];
             if (cur_virtual_reg_offset.find(arith_instr.op2->id) != cur_virtual_reg_offset.end()) {
                 auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[9], manager->sp_reg, cur_virtual_reg_offset[arith_instr.op2->id]);
                 manager->instr_list.push_back(lw_instr);
@@ -384,7 +387,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
             }
             dst = register_allocator->allocate_register(arith_instr.id);
             if (!dst) dst = manager->retval_regs_pool[1];
-            auto rem_instr = new NonTypeInstr(Rem, dst, op2, intconst);
+            auto rem_instr = new NonTypeInstr(Rem, dst, op1, op2);
             manager->instr_list.push_back(rem_instr);
         } else {
             if (cur_virtual_reg_offset.find(arith_instr.op1->id) != cur_virtual_reg_offset.end()) {
@@ -698,8 +701,8 @@ void MipsBackend::generate_optimized_mips_code(CallInstr &call_instr) {
         auto jal_instr = new JTypeInstr(Jal, "func_" + call_instr.function->name);
         manager->instr_list.push_back(jal_instr);
         // restore stack
-        auto addi_instr = new ITypeInstr(Addi, manager->sp_reg, manager->sp_reg, stack_size);
-        manager->instr_list.push_back(addi_instr);
+        addiu_instr = new ITypeInstr(Addiu, manager->sp_reg, manager->sp_reg, (arg_num * 4 - cur_sp_offset));
+        manager->instr_list.push_back(addiu_instr);
         for (int i = active_regs.size() - 1; i >= 0; i--) {
             //现在active_registers 中是否包含原来的active_registers
             if (register_allocator->is_active_register(active_regs[i])) {
