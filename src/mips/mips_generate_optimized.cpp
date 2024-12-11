@@ -72,7 +72,7 @@ void MipsBackend::generate_optimized_mips_code(Function &function) {
 }
 
 void MipsBackend::generate_optimized_mips_code(BasicBlock &basic_block) {
-    if (basic_block.instrs.empty()) return;
+    // if (basic_block.instrs.empty()) return;
     register_allocator = new RegisterAllocator();
     auto label_instr = new MipsLabel("func_" + cur_func_name + "_block_" + std::to_string(basic_block.id));
     manager->instr_list.push_back(label_instr);
