@@ -59,7 +59,7 @@ class RegisterAllocator {
             return nullptr;
         }
         int preg_id = vreg_preg_map[vreg_id];
-        free_register(vreg_id);
+        // free_register(vreg_id);
         return parse_id_to_reg(preg_id);
     }
 

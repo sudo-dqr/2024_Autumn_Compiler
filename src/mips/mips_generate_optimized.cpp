@@ -3,6 +3,8 @@
 #include <cmath>
 #include <climits>
 
+//TODO: 寄存器分配中不free可以通过 free后testcase6会出错 
+
 void MipsBackend::generate_optimized_mips_code(Module &module) {
     for (auto &data : module.global_variables) {
         generate_optimized_mips_code(*data);
@@ -126,7 +128,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op1 = manager->temp_regs_pool[8];
             } else {
                 op1 = register_allocator->virtual_2_physical(arith_instr.op1->id);
-                register_allocator->free_register(arith_instr.op1->id);
+                // register_allocator->free_register(arith_instr.op1->id);
             }
             if (cur_virtual_reg_offset.find(arith_instr.op2->id) != cur_virtual_reg_offset.end()) {
                 auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[9], manager->sp_reg, cur_virtual_reg_offset[arith_instr.op2->id]);
@@ -134,7 +136,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op2 = manager->temp_regs_pool[9];
             } else {
                 op2 = register_allocator->virtual_2_physical(arith_instr.op2->id);
-                register_allocator->free_register(arith_instr.op2->id);
+                // register_allocator->free_register(arith_instr.op2->id);
             }
             dst = register_allocator->allocate_register(arith_instr.id);
             if (!dst) dst = manager->retval_regs_pool[1];
@@ -147,7 +149,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op2 = manager->temp_regs_pool[9];
             } else {
                 op2 = register_allocator->virtual_2_physical(arith_instr.op2->id);
-                register_allocator->free_register(arith_instr.op2->id);
+                // register_allocator->free_register(arith_instr.op2->id);
             }
             int op1 = get_const_value(arith_instr.op1);
             dst = register_allocator->allocate_register(arith_instr.id);
@@ -161,7 +163,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op1 = manager->temp_regs_pool[8];
             } else {
                 op1 = register_allocator->virtual_2_physical(arith_instr.op1->id);
-                register_allocator->free_register(arith_instr.op1->id);
+                // register_allocator->free_register(arith_instr.op1->id);
             }
             int op2 = get_const_value(arith_instr.op2);
             dst = register_allocator->allocate_register(arith_instr.id);
@@ -178,7 +180,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op1 = manager->temp_regs_pool[8];
             } else {
                 op1 = register_allocator->virtual_2_physical(arith_instr.op1->id);
-                register_allocator->free_register(arith_instr.op1->id);
+                // register_allocator->free_register(arith_instr.op1->id);
             }
             if (cur_virtual_reg_offset.find(arith_instr.op2->id) != cur_virtual_reg_offset.end()) {
                 auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[9], manager->sp_reg, cur_virtual_reg_offset[arith_instr.op2->id]);
@@ -186,7 +188,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op2 = manager->temp_regs_pool[9];
             } else {
                 op2 = register_allocator->virtual_2_physical(arith_instr.op2->id);
-                register_allocator->free_register(arith_instr.op2->id);
+                // register_allocator->free_register(arith_instr.op2->id);
             }
             dst = register_allocator->allocate_register(arith_instr.id);
             if (!dst) dst = manager->retval_regs_pool[1];
@@ -203,7 +205,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op2 = manager->temp_regs_pool[9];
             } else {
                 op2 = register_allocator->virtual_2_physical(arith_instr.op2->id);
-                register_allocator->free_register(arith_instr.op2->id);
+                // register_allocator->free_register(arith_instr.op2->id);
             }
             dst = register_allocator->allocate_register(arith_instr.id);
             if (!dst) dst = manager->retval_regs_pool[1];
@@ -216,7 +218,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op1 = manager->temp_regs_pool[8];
             } else {
                 op1 = register_allocator->virtual_2_physical(arith_instr.op1->id);
-                register_allocator->free_register(arith_instr.op1->id);
+                // register_allocator->free_register(arith_instr.op1->id);
             }
             int intconst = get_const_value(arith_instr.op2);
             dst = register_allocator->allocate_register(arith_instr.id);
@@ -238,7 +240,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op1 = manager->temp_regs_pool[8];
             } else {
                 op1 = register_allocator->virtual_2_physical(arith_instr.op1->id);
-                register_allocator->free_register(arith_instr.op1->id);
+                // register_allocator->free_register(arith_instr.op1->id);
             }
             if (cur_virtual_reg_offset.find(arith_instr.op2->id) != cur_virtual_reg_offset.end()) {
                 auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[9], manager->sp_reg, cur_virtual_reg_offset[arith_instr.op2->id]);
@@ -246,7 +248,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op2 = manager->temp_regs_pool[9];
             } else {
                 op2 = register_allocator->virtual_2_physical(arith_instr.op2->id);
-                register_allocator->free_register(arith_instr.op2->id);
+                // register_allocator->free_register(arith_instr.op2->id);
             }
             dst = register_allocator->allocate_register(arith_instr.id);
             if (!dst) dst = manager->retval_regs_pool[1];
@@ -259,7 +261,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op2 = manager->temp_regs_pool[9];
             } else {
                 op2 = register_allocator->virtual_2_physical(arith_instr.op2->id);
-                register_allocator->free_register(arith_instr.op2->id);
+                // register_allocator->free_register(arith_instr.op2->id);
             }
             int intconst = get_const_value(arith_instr.op1);
             dst = register_allocator->allocate_register(arith_instr.id);
@@ -279,7 +281,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op1 = manager->temp_regs_pool[8];
             } else {
                 op1 = register_allocator->virtual_2_physical(arith_instr.op1->id);
-                register_allocator->free_register(arith_instr.op1->id);
+                // register_allocator->free_register(arith_instr.op1->id);
             }
             int intconst = get_const_value(arith_instr.op2);
             dst = register_allocator->allocate_register(arith_instr.id);
@@ -302,7 +304,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op1 = manager->temp_regs_pool[8];
             } else {
                 op1 = register_allocator->virtual_2_physical(arith_instr.op1->id);
-                register_allocator->free_register(arith_instr.op1->id);
+                // register_allocator->free_register(arith_instr.op1->id);
             }
             if (cur_virtual_reg_offset.find(arith_instr.op2->id) != cur_virtual_reg_offset.end()) {
                 auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[9], manager->sp_reg, cur_virtual_reg_offset[arith_instr.op2->id]);
@@ -310,7 +312,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op2 = manager->temp_regs_pool[9];
             } else {
                 op2 = register_allocator->virtual_2_physical(arith_instr.op2->id);
-                register_allocator->free_register(arith_instr.op2->id);
+                // register_allocator->free_register(arith_instr.op2->id);
             }
             dst = register_allocator->allocate_register(arith_instr.id);
             if (!dst) dst = manager->retval_regs_pool[1];
@@ -327,7 +329,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op2 = manager->temp_regs_pool[9];
             } else {
                 op2 = register_allocator->virtual_2_physical(arith_instr.op2->id);
-                register_allocator->free_register(arith_instr.op2->id);
+                // register_allocator->free_register(arith_instr.op2->id);
             }
             dst = register_allocator->allocate_register(arith_instr.id);
             if (!dst) dst = manager->retval_regs_pool[1];
@@ -340,7 +342,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op1 = manager->temp_regs_pool[8];
             } else {
                 op1 = register_allocator->virtual_2_physical(arith_instr.op1->id);
-                register_allocator->free_register(arith_instr.op1->id);
+                // register_allocator->free_register(arith_instr.op1->id);
             }
             dst = register_allocator->allocate_register(arith_instr.id);
             if (!dst) dst = manager->retval_regs_pool[1];
@@ -358,7 +360,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op1 = manager->temp_regs_pool[8];
             } else {
                 op1 = register_allocator->virtual_2_physical(arith_instr.op1->id);
-                register_allocator->free_register(arith_instr.op1->id);
+                // register_allocator->free_register(arith_instr.op1->id);
             }
             if (cur_virtual_reg_offset.find(arith_instr.op2->id) != cur_virtual_reg_offset.end()) {
                 auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[9], manager->sp_reg, cur_virtual_reg_offset[arith_instr.op2->id]);
@@ -366,7 +368,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op2 = manager->temp_regs_pool[9];
             } else {
                 op2 = register_allocator->virtual_2_physical(arith_instr.op2->id);
-                register_allocator->free_register(arith_instr.op2->id);
+                // register_allocator->free_register(arith_instr.op2->id);
             }
             dst = register_allocator->allocate_register(arith_instr.id);
             if (!dst) dst = manager->retval_regs_pool[1];
@@ -383,7 +385,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op2 = manager->temp_regs_pool[9];
             } else {
                 op2 = register_allocator->virtual_2_physical(arith_instr.op2->id);
-                register_allocator->free_register(arith_instr.op2->id);
+                // register_allocator->free_register(arith_instr.op2->id);
             }
             dst = register_allocator->allocate_register(arith_instr.id);
             if (!dst) dst = manager->retval_regs_pool[1];
@@ -396,7 +398,7 @@ void MipsBackend::generate_optimized_mips_code(ArithmeticInstr &arith_instr) {
                 op1 = manager->temp_regs_pool[8];
             } else {
                 op1 = register_allocator->virtual_2_physical(arith_instr.op1->id);
-                register_allocator->free_register(arith_instr.op1->id);
+                // register_allocator->free_register(arith_instr.op1->id);
             }
             int intconst = get_const_value(arith_instr.op2);
             dst = register_allocator->allocate_register(arith_instr.id);
@@ -536,7 +538,7 @@ void MipsBackend::generate_optimized_mips_code(BrInstr &br_instr) {
             op1 = manager->temp_regs_pool[8];
         } else {
             op1 = register_allocator->virtual_2_physical(br_instr.condition->id);
-            register_allocator->free_register(br_instr.condition->id);
+            // register_allocator->free_register(br_instr.condition->id);
         }
         auto beq_instr = new ITypeInstr(Beq, op1, manager->zero_reg, "func_" + cur_func_name + "_block_" + std::to_string(br_instr.false_block->id));
         manager->instr_list.push_back(beq_instr);
@@ -559,7 +561,7 @@ void MipsBackend::generate_optimized_mips_code(RetInstr &ret_instr) {
                 manager->instr_list.push_back(lw_instr);
             } else {
                 auto op = register_allocator->virtual_2_physical(ret_instr.return_value->id);
-                register_allocator->free_register(ret_instr.return_value->id);
+                // register_allocator->free_register(ret_instr.return_value->id);
                 auto addu_instr = new RTypeInstr(Addu, manager->retval_regs_pool[0], op, manager->zero_reg);
                 manager->instr_list.push_back(addu_instr);
             }
@@ -611,7 +613,7 @@ void MipsBackend::generate_optimized_mips_code(CallInstr &call_instr) {
             manager->instr_list.push_back(lw_instr);
         } else {
             auto op = register_allocator->virtual_2_physical(call_instr.args[0]->id);
-            register_allocator->free_register(call_instr.args[0]->id);
+            // register_allocator->free_register(call_instr.args[0]->id);
             auto addu_instr = new RTypeInstr(Addu, manager->arg_regs_pool[0], op, manager->zero_reg);
             manager->instr_list.push_back(addu_instr);
         }
@@ -628,7 +630,7 @@ void MipsBackend::generate_optimized_mips_code(CallInstr &call_instr) {
             manager->instr_list.push_back(lw_instr);
         } else {
             auto op = register_allocator->virtual_2_physical(call_instr.args[0]->id);
-            register_allocator->free_register(call_instr.args[0]->id);
+            // register_allocator->free_register(call_instr.args[0]->id);
             auto addu_instr = new RTypeInstr(Addu, manager->arg_regs_pool[0], op, manager->zero_reg);
             manager->instr_list.push_back(addu_instr);
         }
@@ -676,7 +678,7 @@ void MipsBackend::generate_optimized_mips_code(CallInstr &call_instr) {
                     manager->instr_list.push_back(lw_instr);
                 } else {
                     auto op = register_allocator->virtual_2_physical(arg->id);
-                    register_allocator->free_register(arg->id);
+                    // register_allocator->free_register(arg->id);
                     auto addu_instr = new RTypeInstr(Addu, manager->arg_regs_pool[i], op, manager->zero_reg);
                     manager->instr_list.push_back(addu_instr);
                 }
@@ -692,7 +694,7 @@ void MipsBackend::generate_optimized_mips_code(CallInstr &call_instr) {
                     op = manager->temp_regs_pool[8];
                 } else {
                     op = register_allocator->virtual_2_physical(arg->id);
-                    register_allocator->free_register(arg->id);
+                    // register_allocator->free_register(arg->id);
                 }
                 auto sw_instr = new ITypeInstr(Sw, op, manager->sp_reg, 4 * i);
                 manager->instr_list.push_back(sw_instr);
@@ -763,7 +765,7 @@ void MipsBackend::generate_optimized_mips_code(LoadInstr &load_instr) {
         }
     } else {
         auto src_reg = register_allocator->virtual_2_physical(load_instr.src_ptr->id);
-        register_allocator->free_register(load_instr.src_ptr->id);
+        // register_allocator->free_register(load_instr.src_ptr->id);
         if (auto char_type = dynamic_cast<CharType*>(((PointerType*)load_instr.src_ptr->type)->referenced_type)) {
             auto lbu_instr = new ITypeInstr(Lbu, dst, src_reg, 0);
             manager->instr_list.push_back(lbu_instr);
@@ -810,7 +812,7 @@ void MipsBackend::generate_optimized_mips_code(StoreInstr &store_instr) {
             op = manager->temp_regs_pool[8];
         } else {
             op = register_allocator->virtual_2_physical(value_id);
-            register_allocator->free_register(value_id);
+            // register_allocator->free_register(value_id);
         }
     }
     //! 然后把ptr load进reg
@@ -845,7 +847,7 @@ void MipsBackend::generate_optimized_mips_code(StoreInstr &store_instr) {
         }
     } else {
         auto dst_reg = register_allocator->virtual_2_physical(dst_id);
-        register_allocator->free_register(dst_id);
+        // register_allocator->free_register(dst_id);
         if (auto char_type = dynamic_cast<CharType*>(((PointerType*)store_instr.dst_ptr->type)->referenced_type)) {
             auto sb_instr = new ITypeInstr(Sb, op, dst_reg, 0);
             manager->instr_list.push_back(sb_instr);
@@ -868,7 +870,7 @@ void MipsBackend::generate_optimized_mips_code(GetelementptrInstr &gep_instr) {
         manager->instr_list.push_back(lw_instr);
     } else {
         auto src_reg = register_allocator->virtual_2_physical(gep_instr.array->id);
-        register_allocator->free_register(gep_instr.array->id);
+        // register_allocator->free_register(gep_instr.array->id);
         auto addu_instr = new RTypeInstr(Addu, manager->temp_regs_pool[8], src_reg, manager->zero_reg);
         manager->instr_list.push_back(addu_instr);
     }
@@ -886,7 +888,7 @@ void MipsBackend::generate_optimized_mips_code(GetelementptrInstr &gep_instr) {
                 index = manager->temp_regs_pool[9];
             } else {
                 index = register_allocator->virtual_2_physical(gep_instr.indices[i]->id);
-                register_allocator->free_register(gep_instr.indices[i]->id);
+                // register_allocator->free_register(gep_instr.indices[i]->id);
             }
             if (cur_type == &IR_CHAR) { // alignment = 1, no need to multiply
                 auto addu_instr = new RTypeInstr(Addu, manager->temp_regs_pool[8], manager->temp_regs_pool[8], index);
@@ -959,7 +961,7 @@ void MipsBackend::generate_optimized_mips_code(IcmpInstr &icmp_instr) {
             op1 = manager->temp_regs_pool[8];
         } else {
             op1 = register_allocator->virtual_2_physical(icmp_instr.op1->id);
-            register_allocator->free_register(icmp_instr.op1->id);
+            // register_allocator->free_register(icmp_instr.op1->id);
         }
         if (cur_virtual_reg_offset.find(icmp_instr.op2->id) != cur_virtual_reg_offset.end()) {
             auto lw_instr = new ITypeInstr(Lw, manager->temp_regs_pool[9], manager->sp_reg, cur_virtual_reg_offset[icmp_instr.op2->id]);
@@ -967,7 +969,7 @@ void MipsBackend::generate_optimized_mips_code(IcmpInstr &icmp_instr) {
             op2 = manager->temp_regs_pool[9];
         } else {
             op2 = register_allocator->virtual_2_physical(icmp_instr.op2->id);
-            register_allocator->free_register(icmp_instr.op2->id);
+            // register_allocator->free_register(icmp_instr.op2->id);
         }
         dst = register_allocator->allocate_register(icmp_instr.id);
         if (!dst) dst = manager->retval_regs_pool[1];
@@ -989,7 +991,7 @@ void MipsBackend::generate_optimized_mips_code(IcmpInstr &icmp_instr) {
             op2 = manager->temp_regs_pool[9];
         } else {
             op2 = register_allocator->virtual_2_physical(icmp_instr.op2->id);
-            register_allocator->free_register(icmp_instr.op2->id);
+            // register_allocator->free_register(icmp_instr.op2->id);
         }
         int intconst = get_const_value(icmp_instr.op1);
         dst = register_allocator->allocate_register(icmp_instr.id);
@@ -1014,7 +1016,7 @@ void MipsBackend::generate_optimized_mips_code(IcmpInstr &icmp_instr) {
             op1 = manager->temp_regs_pool[8];
         } else {
             op1 = register_allocator->virtual_2_physical(icmp_instr.op1->id);
-            register_allocator->free_register(icmp_instr.op1->id);
+            // register_allocator->free_register(icmp_instr.op1->id);
         }
         int intconst = get_const_value(icmp_instr.op2);
         dst = register_allocator->allocate_register(icmp_instr.id);
