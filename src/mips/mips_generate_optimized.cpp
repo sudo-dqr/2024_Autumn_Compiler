@@ -636,7 +636,6 @@ void MipsBackend::generate_optimized_mips_code(CallInstr &call_instr) {
         addiu_instr = new ITypeInstr(Addiu, manager->sp_reg, manager->sp_reg, (arg_num * 4 - cur_sp_offset));
         manager->instr_list.push_back(addiu_instr);
         for (int i = active_regs.size() - 1; i >= 0; i--) {
-            //现在active_registers 中是否包含原来的active_registers
             if (register_allocator->is_active_register(active_regs[i])) {
                 auto lw_instr = new ITypeInstr(Lw, active_regs[i], manager->sp_reg, cur_sp_offset);
                 manager->instr_list.push_back(lw_instr);
