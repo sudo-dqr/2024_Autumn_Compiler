@@ -1,0 +1,308 @@
+.data
+	g_a: .word 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+	g_dqr0: .asciiz ", "
+	g_dqr1: .asciiz "\n"
+	g_dqr2: .asciiz ", "
+	g_dqr3: .asciiz ", "
+	g_dqr4: .asciiz "\n"
+
+
+.text
+	jal func_main
+	li $v0, 10
+	syscall
+
+func_fib:
+	sw $ra, -4($sp)
+func_fib_block_1:
+	sw $a0, -8($sp)
+	lw $t0, -8($sp)
+	seq $t0, $t0, 1
+	beq $t0, $zero, func_fib_block_7
+	j func_fib_block_5
+func_fib_block_5:
+	li $v0, 1
+	lw $ra, -4($sp)
+	jr $ra
+func_fib_block_6:
+	j func_fib_block_7
+func_fib_block_7:
+	lw $t0, -8($sp)
+	seq $t0, $t0, 2
+	beq $t0, $zero, func_fib_block_12
+	j func_fib_block_10
+func_fib_block_10:
+	li $v0, 2
+	lw $ra, -4($sp)
+	jr $ra
+func_fib_block_11:
+	j func_fib_block_12
+func_fib_block_12:
+	lw $t0, -8($sp)
+	addiu $t0, $t0, -1
+	addu $fp, $sp, $zero
+	addiu $sp, $sp, -20
+	addu $a0, $t0, $zero
+	jal func_fib
+	addiu $sp, $sp, 20
+	lw $t0, -16($sp)
+	addu $t0, $v0, $zero
+	lw $t1, -8($sp)
+	addiu $t1, $t1, -2
+	sw $t0, -20($sp)
+	addu $fp, $sp, $zero
+	addiu $sp, $sp, -24
+	addu $a0, $t1, $zero
+	jal func_fib
+	addiu $sp, $sp, 24
+	lw $t0, -20($sp)
+	lw $t1, -16($sp)
+	addu $t1, $v0, $zero
+	addu $t0, $t0, $t1
+	addu $v0, $t0, $zero
+	lw $ra, -4($sp)
+	jr $ra
+func_fib_block_20:
+func_main:
+	sw $ra, -4($sp)
+func_main_block_0:
+	li $t8, 2
+	sw $t8, -8($sp)
+	li $t8, 5
+	sw $t8, -12($sp)
+	li $v0, 5
+	syscall
+	addu $t0, $v0, $zero
+	sw $t0, -8($sp)
+	li $v0, 5
+	syscall
+	addu $t0, $v0, $zero
+	sw $t0, -12($sp)
+	lw $t0, -8($sp)
+	lw $t1, -12($sp)
+	mul $t0, $t0, $t1
+	li $t8, 0
+	subu $t0, $t8, $t0
+	sw $t0, -16($sp)
+	addu $fp, $sp, $zero
+	addiu $sp, $sp, -20
+	li $a0, 4
+	jal func_fib
+	addiu $sp, $sp, 20
+	lw $t0, -16($sp)
+	addu $t1, $v0, $zero
+	mul $t0, $t0, $t1
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 4
+	addu $t1, $t8, $zero
+	lw $t2, 0($t1)
+	addu $t0, $t0, $t2
+	li $k0, 1717986919
+	mult $k0, $t0
+	mfhi $k0
+	sra $k0, $k0, 1
+	sra $k1, $t0, 31
+	subu $t0, $k0, $k1
+	sw $t0, -8($sp)
+	addu $fp, $sp, $zero
+	addiu $sp, $sp, -16
+	li $a0, 5
+	jal func_fib
+	addiu $sp, $sp, 16
+	addu $t0, $v0, $zero
+	addiu $t0, $t0, 2
+	addu $fp, $sp, $zero
+	addiu $sp, $sp, -20
+	addu $a0, $t0, $zero
+	jal func_fib
+	addiu $sp, $sp, 20
+	lw $t0, -16($sp)
+	addu $t0, $v0, $zero
+	li $t8, 1197
+	subu $t0, $t8, $t0
+	addiu $t0, $t0, -10091
+	sw $t0, -12($sp)
+	li $t8, -6
+	sw $t8, -16($sp)
+	la $t8, g_a($zero)
+	addu $t0, $t8, $zero
+	la $t8, g_a($zero)
+	addu $t1, $t8, $zero
+	lw $t2, 0($t1)
+	lw $t1, -8($sp)
+	lw $t3, -8($sp)
+	mul $t1, $t1, $t3
+	addu $t1, $t2, $t1
+	sw $t1, 0($t0)
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 4
+	addu $t0, $t8, $zero
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 4
+	addu $t1, $t8, $zero
+	lw $t2, 0($t1)
+	lw $t1, -8($sp)
+	lw $t3, -8($sp)
+	mul $t1, $t1, $t3
+	addu $t1, $t2, $t1
+	sw $t1, 0($t0)
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 8
+	addu $t0, $t8, $zero
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 8
+	addu $t1, $t8, $zero
+	lw $t2, 0($t1)
+	lw $t1, -8($sp)
+	lw $t3, -8($sp)
+	mul $t1, $t1, $t3
+	addu $t1, $t2, $t1
+	sw $t1, 0($t0)
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 12
+	addu $t0, $t8, $zero
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 12
+	addu $t1, $t8, $zero
+	lw $t2, 0($t1)
+	lw $t1, -8($sp)
+	lw $t3, -8($sp)
+	mul $t1, $t1, $t3
+	addu $t1, $t2, $t1
+	sw $t1, 0($t0)
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 16
+	addu $t0, $t8, $zero
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 16
+	addu $t1, $t8, $zero
+	lw $t2, 0($t1)
+	lw $t1, -8($sp)
+	lw $t3, -8($sp)
+	mul $t1, $t1, $t3
+	addu $t1, $t2, $t1
+	sw $t1, 0($t0)
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 20
+	addu $t0, $t8, $zero
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 20
+	addu $t1, $t8, $zero
+	lw $t2, 0($t1)
+	lw $t1, -8($sp)
+	lw $t3, -8($sp)
+	mul $t1, $t1, $t3
+	addu $t1, $t2, $t1
+	sw $t1, 0($t0)
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 24
+	addu $t0, $t8, $zero
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 24
+	addu $t1, $t8, $zero
+	lw $t2, 0($t1)
+	lw $t1, -8($sp)
+	lw $t3, -8($sp)
+	mul $t1, $t1, $t3
+	addu $t1, $t2, $t1
+	sw $t1, 0($t0)
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 28
+	addu $t0, $t8, $zero
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 28
+	addu $t1, $t8, $zero
+	lw $t2, 0($t1)
+	lw $t1, -8($sp)
+	lw $t3, -8($sp)
+	mul $t1, $t1, $t3
+	addu $t1, $t2, $t1
+	sw $t1, 0($t0)
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 32
+	addu $t0, $t8, $zero
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 32
+	addu $t1, $t8, $zero
+	lw $t2, 0($t1)
+	lw $t1, -8($sp)
+	lw $t3, -8($sp)
+	mul $t1, $t1, $t3
+	addu $t1, $t2, $t1
+	sw $t1, 0($t0)
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 36
+	addu $t0, $t8, $zero
+	la $t8, g_a($zero)
+	addiu $t8, $t8, 36
+	addu $t1, $t8, $zero
+	lw $t2, 0($t1)
+	lw $t1, -8($sp)
+	lw $t3, -8($sp)
+	mul $t1, $t1, $t3
+	addu $t1, $t2, $t1
+	sw $t1, 0($t0)
+	li $t8, 0
+	sw $t8, -8($sp)
+	j func_main_block_91
+func_main_block_91:
+	lw $t0, -8($sp)
+	slti $t0, $t0, 10
+	beq $t0, $zero, func_main_block_101
+	j func_main_block_94
+func_main_block_94:
+	lw $t0, -8($sp)
+	la $t8, g_a($zero)
+	sll $t0, $t0, 2
+	addu $t8, $t8, $t0
+	addu $t0, $t8, $zero
+	lw $t1, 0($t0)
+	addu $a0, $t1, $zero
+	li $v0, 1
+	syscall
+	la $t8, g_dqr0($zero)
+	addu $t0, $t8, $zero
+	la $a0, g_dqr0($zero)
+	li $v0, 4
+	syscall
+	lw $t1, -8($sp)
+	addiu $t1, $t1, 1
+	sw $t1, -8($sp)
+	j func_main_block_91
+func_main_block_101:
+	lw $t0, -8($sp)
+	lw $t1, -12($sp)
+	lw $t2, -16($sp)
+	la $t8, g_dqr1($zero)
+	addu $t3, $t8, $zero
+	la $a0, g_dqr1($zero)
+	li $v0, 4
+	syscall
+	addu $a0, $t0, $zero
+	li $v0, 1
+	syscall
+	la $t8, g_dqr2($zero)
+	addu $t0, $t8, $zero
+	la $a0, g_dqr2($zero)
+	li $v0, 4
+	syscall
+	addu $a0, $t1, $zero
+	li $v0, 1
+	syscall
+	la $t8, g_dqr3($zero)
+	addu $t1, $t8, $zero
+	la $a0, g_dqr3($zero)
+	li $v0, 4
+	syscall
+	addu $a0, $t2, $zero
+	li $v0, 1
+	syscall
+	la $t8, g_dqr4($zero)
+	addu $t2, $t8, $zero
+	la $a0, g_dqr4($zero)
+	li $v0, 4
+	syscall
+	li $v0, 0
+	lw $ra, -4($sp)
+	jr $ra
+func_main_block_109:
