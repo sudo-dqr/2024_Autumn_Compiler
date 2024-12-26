@@ -54,25 +54,25 @@ struct GlobalVariable : public Value {
         //! if you wants to print standard llvm ir code, you need to recover the following code
         //! I turn it off when generating mips code
         // 将转义字符转换为ASCII码 \n -> \0A
-        // std::string str_value = "";
-        // for (int i = 0; i < str.length(); i++) {
-        //     if (str[i] == '\\') {
-        //         i++;
-        //         switch (str[i]) {
-        //             case '0' : str_value += "\\00"; break;
-        //             case 'a' : str_value += "\\07"; break;
-        //             case 'b' : str_value += "\\08"; break;
-        //             case 't' : str_value += "\\09"; break;
-        //             case 'n' : str_value += "\\0A"; break;
-        //             case 'v' : str_value += "\\0B"; break;
-        //             case 'f' : str_value += "\\0C"; break;
-        //             case '\'' : str_value += "\\27"; break;
-        //             case '\"' : str_value += "\\22"; break;
-        //             case '\\' : str_value += "\\5C"; break;
-        //         }
-        //     } else str_value += str[i];
-        // }
-        // array_string = str_value;
+        std::string str_value = "";
+        for (int i = 0; i < str.length(); i++) {
+            if (str[i] == '\\') {
+                i++;
+                switch (str[i]) {
+                    case '0' : str_value += "\\00"; break;
+                    case 'a' : str_value += "\\07"; break;
+                    case 'b' : str_value += "\\08"; break;
+                    case 't' : str_value += "\\09"; break;
+                    case 'n' : str_value += "\\0A"; break;
+                    case 'v' : str_value += "\\0B"; break;
+                    case 'f' : str_value += "\\0C"; break;
+                    case '\'' : str_value += "\\27"; break;
+                    case '\"' : str_value += "\\22"; break;
+                    case '\\' : str_value += "\\5C"; break;
+                }
+            } else str_value += str[i];
+        }
+        array_string = str_value;
     }
 
     void print(std::ostream &os) const override;
