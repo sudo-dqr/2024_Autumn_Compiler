@@ -417,6 +417,7 @@ void Visitor::visit_main_func(const MainFunc &main_func) {
     std::string ident = "main";
     SymbolType type = SymbolType(func_type, std::deque<Symbol>());
     auto func_symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
+    // main函数不需要加入符号表
     // symbol_list.push_back(*func_symbol);
     // cur_scope->add_symbol(func_symbol); // main函数不会发生b错误
     Utils::reset_counter();

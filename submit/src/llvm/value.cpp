@@ -52,7 +52,7 @@ void FParam::print(std::ostream &os) const {
 }
 
 void BasicBlock::print(std::ostream &os) const {
-    // if (instrs.empty()) return;
+    if (instrs.empty()) return;
     os << id << ":\n";
     for (auto &instr : instrs) {
         instr->print(os);
