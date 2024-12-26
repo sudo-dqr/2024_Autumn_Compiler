@@ -8,7 +8,7 @@ int Utils::cut_str(const std::string &str, int start) {
     while (i < str.length() - 1) {
         if (str[i] == '%' && i + 1 < str.length() - 1) {
             if (str[i + 1] == 'd' || str[i + 1] == 'c') break;
-        } // else if (str[i] == '\\') break;
+        } else if (str[i] == '\\') break;
         //! if you wants to print standard llvm ir code, you need to recover the upper else code
         //! I turn it off when generating mips code
         i++;

@@ -12,7 +12,7 @@ void Lexer::initialize_reverse_word_map() {
     reserve_words["else"] = Token::TokenType::ELSETK;
     reserve_words["for"] = Token::TokenType::FORTK;
     reserve_words["return"] = Token::TokenType::RETURNTK;
-    reserve_words["int"] = Token::TokenType::INTTK;
+    reserve_words["integer"] = Token::TokenType::INTTK;
     reserve_words["char"] = Token::TokenType::CHARTK;
     reserve_words["void"] = Token::TokenType::VOIDTK;
     reserve_words["const"] = Token::TokenType::CONSTTK;

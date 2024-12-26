@@ -23,7 +23,7 @@ void GlobalVariable::print(std::ostream &os) const {
             } else if (array_string.length() != 0) { // string const
                 os << "c\"" << array_string;
                 int array_size = array_type->size;
-                for (int i = char_cnt; i <= array_size; i++) 
+                for (int i = char_cnt; i < array_size; i++) 
                     os << "\\00";
                 os << "\"";
             } else {
@@ -52,7 +52,7 @@ void FParam::print(std::ostream &os) const {
 }
 
 void BasicBlock::print(std::ostream &os) const {
-    // if (instrs.empty()) return;
+    if (instrs.empty()) return;
     os << id << ":\n";
     for (auto &instr : instrs) {
         instr->print(os);
