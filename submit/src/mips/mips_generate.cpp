@@ -3,6 +3,7 @@
 
 void MipsBackend::start_generate_mips_code(Module &module, Mode mode) {
     if (mode == NORMAL) generate_mips_code(module);
+    else if (mode == ONLY_MULT_DIV) _generate_optimized_mips_code(module);
     else generate_optimized_mips_code(module);
 }
 

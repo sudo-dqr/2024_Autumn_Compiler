@@ -13,7 +13,8 @@ struct MipsBackend {
     
     enum Mode {
         NORMAL,
-        OPTIMIZED
+        OPTIMIZED,
+        ONLY_MULT_DIV
     };
 
     MipsBackend() { 
@@ -74,6 +75,28 @@ struct MipsBackend {
         void generate_optimized_mips_code(GetelementptrInstr &gep_instr);
         void generate_optimized_mips_code(ZextInstr &zext_instr);
         void generate_optimized_mips_code(TruncInstr &trunc_instr);
+
+        // only multiply and divide
+        void _generate_optimized_mips_code(Module &module);
+        void _generate_optimized_mips_code(GlobalVariable &data);
+        void _generate_optimized_mips_code(Function &function);
+        void _generate_optimized_mips_code(BasicBlock &basic_block);
+        void _generate_optimized_mips_code(AllocaInstr &alloca_instr);
+        void _generate_optimized_mips_code(ArithmeticInstr &arith_instr);
+        void _generate_optimized_mips_code(BrInstr &br_instr);
+        void _generate_optimized_mips_code(RetInstr &ret_instr);
+        void _generate_optimized_mips_code(CallInstr &call_instr);
+        void _generate_optimized_mips_code(IcmpInstr &icmp_instr);
+        void _generate_optimized_mips_code(LoadInstr &load_instr);
+        void _generate_optimized_mips_code(StoreInstr &store_instr);
+        void _generate_optimized_mips_code(GetelementptrInstr &gep_instr);
+        void _generate_optimized_mips_code(ZextInstr &zext_instr);
+        void _generate_optimized_mips_code(TruncInstr &trunc_instr);
+        void _optimize_divide(ArithmeticInstr instr, MipsReg* op1, MipsReg* dst);
+        void _choose_multiplier(int divisor, int &shift_log, long long &multiplier, int &shift);
+        int _number_of_leading_zeros(int divisor);
+        bool _optimize_multiply(int factor);
+        int _factor_2_shift(int factor);
 };
 
 #endif // MIPS_MANAGER_H
