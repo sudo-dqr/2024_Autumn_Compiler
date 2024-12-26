@@ -21,7 +21,7 @@ int main() {
     auto comp_unit = parser.parse();
     Visitor visitor = Visitor();
     visitor.visit(*comp_unit);
-    //visitor.print_symbol_list();
+    visitor.print_symbol_list();
     Module::get_instance().print_llvm_ir();
     MipsBackend backend = MipsBackend();
     backend.start_generate_mips_code(Module::get_instance(), MipsBackend::OPTIMIZED);

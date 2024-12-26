@@ -417,8 +417,8 @@ void Visitor::visit_main_func(const MainFunc &main_func) {
     std::string ident = "main";
     SymbolType type = SymbolType(func_type, std::deque<Symbol>());
     auto func_symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
-    symbol_list.push_back(*func_symbol);
-    cur_scope->add_symbol(func_symbol); // main函数不会发生b错误
+    // symbol_list.push_back(*func_symbol);
+    // cur_scope->add_symbol(func_symbol); // main函数不会发生b错误
     Utils::reset_counter();
     cur_scope = cur_scope->push_scope();
     auto function_type = new FunctionType(&IR_INT, std::vector<ValueType*>());
@@ -1302,7 +1302,7 @@ ExpInfo Visitor::visit_rel_exp(const RelExp &rel_exp) { // > < >= <=
 
 void Visitor::print_symbol_list() {
     // bubble_sort by scope_cnt
-    std::ofstream symbol_out("symbol_list.txt", std::ios::trunc);
+    std::ofstream symbol_out("symbol.txt", std::ios::trunc);
     for (int i = 0; i < symbol_list.size(); i++) {
         for (int j = 0; j < symbol_list.size() - i - 1; j++) {
             if (symbol_list[j].scope_cnt > symbol_list[j + 1].scope_cnt) {
