@@ -6,6 +6,7 @@
 #include "parser.h"
 #include "visitor.h"
 #include "mips_generate.h"
+#include "log.h"
 
 int main() {
     std::ifstream file("testfile.txt");
@@ -27,6 +28,7 @@ int main() {
     backend.start_generate_mips_code(Module::get_instance(), MipsBackend::ONLY_MULT_DIV);
     backend.print_mips_code();
     ErrorList::print_errors();
+    CompilerLogger::get_instance().print_logs();
     return 0;
 }
 

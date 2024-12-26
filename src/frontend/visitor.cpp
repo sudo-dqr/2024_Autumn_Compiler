@@ -1,4 +1,5 @@
 #include "visitor.h"
+#include "log.h"
 
 Function* Visitor::getint_func = new Function("getint", new FunctionType(&IR_INT, std::vector<ValueType*>()));
 Function* Visitor::getchar_func = new Function("getchar", new FunctionType(&IR_CHAR, std::vector<ValueType*>()));
@@ -52,11 +53,11 @@ void Visitor::visit_const_decl(const ConstDecl &const_decl) {
 
 void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype) {
     auto ident = const_def.ident->ident->get_token();
-    // std::cout << "Const Def : " << ident << std::endl;
     int line_number = const_def.ident->ident->get_line_number();
     ExpInfo exp_info;
     std::shared_ptr<Symbol> symbol = nullptr;
     if (!const_def.const_exp) { // constant
+        CompilerLogger::get_instance().log("[visit_const_def/const_exp]:", ident, false, line_number, LOG_VISITOR);
         SymbolType type = SymbolType(true, false, btype);
         symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         if (auto constant = std::get_if<ConstExp>(&(*const_def.const_init_val))) {
@@ -70,6 +71,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
             std::cout << "Invalid Const Initval!" << std::endl;
         }
     } else { // array
+        CompilerLogger::get_instance().log("[visit_const_def/array]:", ident, false, line_number, LOG_VISITOR);
         exp_info = visit_constexp(*const_def.const_exp); // array size
         int array_size = exp_info.value;
         SymbolType type = SymbolType(true, false, btype, array_size);
@@ -156,6 +158,7 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
     }
     symbol_list.push_back(*symbol);
     if (!cur_scope->add_symbol(symbol)) { // b error : redefined identifier
+        CompilerLogger::get_instance().log("[visit_const_def]:", "b error: redefined identifier", true, line_number, LOG_VISITOR);
         ErrorList::report_error(line_number, 'b');
     }
 }
@@ -169,11 +172,11 @@ void Visitor::visit_var_decl(const VarDecl &var_decl) {
 
 void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
     auto ident = var_def.ident->ident->get_token();
-    // std::cout << "Var Def : " << ident << std::endl;
     int line_number = var_def.ident->ident->get_line_number();
     ExpInfo exp_info;
     std::shared_ptr<Symbol> symbol = nullptr;
     if (!var_def.const_exp) {
+        CompilerLogger::get_instance().log("[visit_var_def/const_exp]:", ident, false, line_number, LOG_VISITOR);
         SymbolType type = SymbolType(false, false, btype);
         symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
         if (cur_scope->is_in_global_scope()) {  // 使用变量对global_variable进行初始化, 所使用的必须为const
@@ -219,6 +222,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
             } // else 局部变量未初始化就是不store
         }
     } else { //'{' [ Exp { ',' Exp } ] '}' | StringConst
+        CompilerLogger::get_instance().log("[visit_var_def/array]:", ident, false, line_number, LOG_VISITOR);
         exp_info = visit_constexp(*var_def.const_exp);
         int array_size = exp_info.value;
         SymbolType type = SymbolType(false, false, btype, array_size);
@@ -324,11 +328,13 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
     }
     symbol_list.push_back(*symbol);
     if (!cur_scope->add_symbol(symbol)) {
+        CompilerLogger::get_instance().log("[visit_var_def]:", "b error: redefined identifier", true, line_number, LOG_VISITOR);
         ErrorList::report_error(line_number, 'b');
     }
 }
 
 void Visitor::visit_func_def(const FuncDef &func_def) {
+    CompilerLogger::get_instance().log("[visit_func_def]:", func_def.ident->ident->get_token(), false, func_def.ident->ident->get_line_number(), LOG_VISITOR);
     Token::TokenType func_type = func_def.func_type->func_type->get_type();
     this->is_void_func = (func_type == Token::VOIDTK);
     int line_number = func_def.func_type->func_type->get_line_number();
@@ -338,6 +344,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
     auto func_symbol = std::make_shared<Symbol>(type, ident, cur_scope->get_scope());
     symbol_list.push_back(*func_symbol);
     if (!cur_scope->add_symbol(func_symbol)) {
+        CompilerLogger::get_instance().log("[visit_func_def]:", "b error: redefined identifier", true, line_number, LOG_VISITOR);
         ErrorList::report_error(line_number, 'b');
     }
     cur_scope = cur_scope->push_scope();
@@ -362,6 +369,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
             }
             auto param_symbol = std::make_shared<Symbol>(param_symbol_type, param_ident, cur_scope->get_scope());
             if (!cur_scope->add_symbol(param_symbol)) {
+                CompilerLogger::get_instance().log("[visit_func_def]:", "b error: redefined identifier", true, func_fparam->ident->ident->get_line_number(), LOG_VISITOR);
                 ErrorList::report_error(func_fparam->ident->ident->get_line_number(), 'b');
                 ir_param_types.push_back(ir_param_type);
             } else {
@@ -387,6 +395,7 @@ void Visitor::visit_func_def(const FuncDef &func_def) {
     cur_scope = cur_scope->pop_scope();
     bool has_ending_return = func_block_has_ending_return(*func_def.block);
     if ((!is_void_func) &&  (!has_ending_return)) {
+        CompilerLogger::get_instance().log("[visit_func_def]:", "g error: function should return int/char", true, func_def.block->ending_line, LOG_VISITOR);
         ErrorList::report_error(func_def.block->ending_line, 'g');
     } else if (is_void_func && (!has_ending_return)) { // 没有return语句的void函数，自动添加return
         cur_ir_basic_block->instrs.push_back(new RetInstr());
@@ -432,6 +441,7 @@ void Visitor::visit_main_func(const MainFunc &main_func) {
     visit_block(*main_func.block);
     cur_scope = cur_scope->pop_scope();
     if (!func_block_has_ending_return(*main_func.block)) {
+        CompilerLogger::get_instance().log("[visit_main_func]:", "g error: main function should return int", true, main_func.block->ending_line, LOG_VISITOR);
         ErrorList::report_error(main_func.block->ending_line, 'g');
     }
     Module::get_instance().functions.push_back(cur_ir_function);
@@ -504,6 +514,7 @@ void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
     // std::cout << "Assign Stmt : " << lval_symbol->name << std::endl;
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
+            CompilerLogger::get_instance().log("[visit_assign_stmt]:", "h error: assign to const", true, assign_stmt.lval->ident->ident->get_line_number(), LOG_VISITOR);
             ErrorList::report_error(assign_stmt.lval->ident->ident->get_line_number(), 'h');
         } else {
             auto tmp_lval = cur_ir_lval;
@@ -540,6 +551,7 @@ void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
     // std::cout << "For Assign Stmt : " << lval_symbol->name << std::endl;
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
+            CompilerLogger::get_instance().log("[visit_for_assign_stmt]:", "h error: assign to const", true, for_assign_stmt.lval->ident->ident->get_line_number(), LOG_VISITOR);
             ErrorList::report_error(for_assign_stmt.lval->ident->ident->get_line_number(), 'h');
         } else {
             auto tmp_lval = cur_ir_lval;
@@ -656,6 +668,7 @@ void Visitor::visit_for_stmt(const ForStmt &for_stmt) {
 
 void Visitor::visit_break_stmt(const BreakStmt &break_stmt) {
     if (this->loop_cnt == 0) {
+        CompilerLogger::get_instance().log("[visit_break_stmt]:", "m error: break statement not within loop", true, break_stmt.break_token->get_line_number(), LOG_VISITOR);
         ErrorList::report_error(break_stmt.break_token->get_line_number(), 'm');
     } else {
         cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack.back())); // jump to next normal block
@@ -666,6 +679,7 @@ void Visitor::visit_break_stmt(const BreakStmt &break_stmt) {
 
 void Visitor::visit_continue_stmt(const ContinueStmt &continue_stmt) {
     if (this->loop_cnt == 0) {
+        CompilerLogger::get_instance().log("[visit_continue_stmt]:", "m error: continue statement not within loop", true, continue_stmt.continue_token->get_line_number(), LOG_VISITOR);
         ErrorList::report_error(continue_stmt.continue_token->get_line_number(), 'm');
     } else {
         cur_ir_basic_block->instrs.push_back(new BrInstr(for_stack[for_stack.size() - 3])); // cond block or assign2 block
@@ -677,6 +691,7 @@ void Visitor::visit_continue_stmt(const ContinueStmt &continue_stmt) {
 void Visitor::visit_return_stmt(const ReturnStmt &return_stmt) {
     if (return_stmt.return_exp) {
         if(this->is_void_func) {
+            CompilerLogger::get_instance().log("[visit_return_stmt]:", "f error: return statement in void function", true, return_stmt.return_token->get_line_number(), LOG_VISITOR);
             ErrorList::report_error(return_stmt.return_token->get_line_number(), 'f');
         } else {
             ExpInfo exp_info = visit_exp(*return_stmt.return_exp);
@@ -713,6 +728,7 @@ void Visitor::visit_get_int_stmt(const GetIntStmt &get_int_stmt) {
     auto lval_symbol = visit_lval(*get_int_stmt.lval);
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
+            CompilerLogger::get_instance().log("[visit_get_int_stmt]:", "h error: assign to const", true, get_int_stmt.lval->ident->ident->get_line_number(), LOG_VISITOR);
             ErrorList::report_error(get_int_stmt.lval->ident->ident->get_line_number(), 'h');
         } else {
             auto lval = cur_ir_lval;
@@ -736,6 +752,7 @@ void Visitor::visit_get_char_stmt(const GetCharStmt &get_char_stmt) {
     auto lval_symbol = visit_lval(*get_char_stmt.lval);
     if (lval_symbol) {
         if (lval_symbol->type.is_const) {
+            CompilerLogger::get_instance().log("[visit_get_char_stmt]:", "h error: assign to const", true, get_char_stmt.lval->ident->ident->get_line_number(), LOG_VISITOR);
             ErrorList::report_error(get_char_stmt.lval->ident->ident->get_line_number(), 'h');
         } else {
             auto lval = cur_ir_lval;
@@ -759,6 +776,7 @@ void Visitor::visit_get_char_stmt(const GetCharStmt &get_char_stmt) {
 void Visitor::visit_printf_stmt(const PrintfStmt &printf_stmt) {
     int cnt = Utils::control_cnt(printf_stmt.str->str->get_token());
     if (cnt != printf_stmt.exps.size()) {
+        CompilerLogger::get_instance().log("[visit_printf_stmt]:", "l error: printf format string and arguments mismatch", true, printf_stmt.str->str->get_line_number(), LOG_VISITOR);
         ErrorList::report_error(printf_stmt.str->str->get_line_number(), 'l');
     } else {
         std::vector<ExpInfo> exp_infos;
@@ -950,23 +968,24 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
         std::string ident = unary_exp.ident->ident->get_token();
         std::shared_ptr<Symbol> ident_symbol = cur_scope->get_symbol(ident);
         if (!ident_symbol) { // c error : undefined identifier
+            CompilerLogger::get_instance().log("[visit_unary_exp]:", "c error: undefined identifier", true, unary_exp.ident->ident->get_line_number(), LOG_VISITOR);
             ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'c');
         } else {
             std::vector<Value*> ir_rparams;
             if (unary_exp.func_rparams) {
                 if (unary_exp.func_rparams->exps.size() != ident_symbol->type.params.size()) {
+                    CompilerLogger::get_instance().log("[visit_unary_exp]:", "d error: function call parameter number mismatch", true, unary_exp.ident->ident->get_line_number(), LOG_VISITOR);
                     ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'd');
                 } else {
                     for (int i = 0; i < ident_symbol->type.params.size(); i++) {
                         auto fparam_type = ((FunctionType*)(ident_symbol->ir_value->type))->arg_types[i];
                         ExpInfo rparam_info = visit_exp(*unary_exp.func_rparams->exps[i]);
                         if (is_diff_type(fparam_type, rparam_info)) {
-                            std::cout << "Function call parameter type mismatch" << std::endl;
+                            CompilerLogger::get_instance().log("[visit_unary_exp]:", "e error: function call parameter type mismatch", true, unary_exp.ident->ident->get_line_number(), LOG_VISITOR);
                             ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'e');
                         } else { // int <-> char conversion
                             auto f_type = fparam_type;
                             auto r_type = rparam_info.ir_value->type;
-                            //TODO: 区分number constant 和 identifier
                             if (f_type == &IR_CHAR && rparam_info.type == Token::INTTK) {
                                 std::cout << "Call Function : RParam Truncate!" << std::endl;
                                 rparam_info.ir_value = new CharConst((char)rparam_info.value);
@@ -989,6 +1008,7 @@ ExpInfo Visitor::visit_unary_exp(const UnaryExp &unary_exp) { // c d e
                     }
                 }
             } else if (!ident_symbol->type.params.empty()) {
+                CompilerLogger::get_instance().log("[visit_unary_exp]:", "d error: function call parameter number mismatch", true, unary_exp.ident->ident->get_line_number(), LOG_VISITOR);
                 ErrorList::report_error(unary_exp.ident->ident->get_line_number(), 'd');
             }
             Instruction* call_instr = nullptr;
@@ -1057,6 +1077,7 @@ std::shared_ptr<Symbol> Visitor::visit_lval(const LVal &lval) {
     auto ident = lval.ident->ident->get_token();
     auto ident_symbol = cur_scope->get_symbol(ident);
     if (!ident_symbol) { // c error : undefined identifier
+        CompilerLogger::get_instance().log("[visit_lval]:", "c error: undefined identifier", true, lval.ident->ident->get_line_number(), LOG_VISITOR);
         ErrorList::report_error(lval.ident->ident->get_line_number(), 'c');
         cur_ir_lval = nullptr;
         return nullptr;

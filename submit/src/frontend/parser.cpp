@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "log.h"
 
 void Parser::next_token() {
     auto& buf = is_recovering ? recoverybuf : buffer; //! 注意这里要引用 否则会创建副本
@@ -124,6 +125,7 @@ std::unique_ptr<ConstDecl> Parser::parse_constdecl() {
         next_token();
     } else { // i error
         unget_token();
+        CompilerLogger::get_instance().log("[parse_constdecl]:", "i error: missing ;", true, get_curtoken().get_line_number(), LOG_PARSER);
         ErrorList::report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
@@ -142,6 +144,7 @@ std::unique_ptr<VarDecl> Parser::parse_vardecl() {
         next_token();
     } else { // i error
         unget_token();
+        CompilerLogger::get_instance().log("[parse_vardecl]:", "i error: missing ;", true, get_curtoken().get_line_number(), LOG_PARSER);
         ErrorList::report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
@@ -156,6 +159,7 @@ std::unique_ptr<BType> Parser::parse_btype() {
 
 std::unique_ptr<ConstDef> Parser::parse_constdef() {
     auto ident = parse_ident();
+    // CompilerLogger::get_instance().log("[parse_constdef]:", ident->ident->get_token(), false, ident->ident->get_line_number(), LOG_PARSER);
     std::unique_ptr<ConstExp> const_exp;
     std::unique_ptr<ConstInitVal> const_init_val;
     if (get_curtoken().get_type() == Token::LBRACK) {
@@ -165,6 +169,7 @@ std::unique_ptr<ConstDef> Parser::parse_constdef() {
             next_token();
         } else { // k  error
             unget_token();
+            CompilerLogger::get_instance().log("[parse_constdef]:", "k error: missing ]", true, get_curtoken().get_line_number(), LOG_PARSER);
             ErrorList::report_error(get_curtoken().get_line_number(), 'k');
             next_token();
         }
@@ -176,6 +181,7 @@ std::unique_ptr<ConstDef> Parser::parse_constdef() {
 
 std::unique_ptr<VarDef> Parser::parse_vardef() {
     auto ident = parse_ident();
+    // CompilerLogger::get_instance().log("[parse_vardef]:", ident->ident->get_token(), false, ident->ident->get_line_number(), LOG_PARSER);
     std::unique_ptr<ConstExp> const_exp;
     std::unique_ptr<InitVal> init_val;
     if (get_curtoken().get_type() == Token::LBRACK) {
@@ -185,6 +191,7 @@ std::unique_ptr<VarDef> Parser::parse_vardef() {
             next_token();
         } else { // k error
             unget_token();
+            CompilerLogger::get_instance().log("[parse_vardef]:", "k error: missing ]", true, get_curtoken().get_line_number(), LOG_PARSER);
             ErrorList::report_error(get_curtoken().get_line_number(), 'k');
             next_token();
         }
@@ -203,6 +210,7 @@ std::unique_ptr<ConstExp> Parser::parse_constexp() {
 }
 
 std::unique_ptr<ConstInitVal> Parser::parse_const_initval() {
+    // CompilerLogger::get_instance().log("[parse_const_initval]:", "I just can't judge", false, get_curtoken().get_line_number(), LOG_PARSER);
     if (get_curtoken().get_type() == Token::STRCON) {
         auto stringconst = parse_stringconst();
         return std::make_unique<ConstInitVal>(std::in_place_type<StringConst>,std::move(*stringconst));
@@ -225,6 +233,7 @@ std::unique_ptr<ConstInitVal> Parser::parse_const_initval() {
 }
 
 std::unique_ptr<InitVal> Parser::parse_initval() {
+    // CompilerLogger::get_instance().log("[parse_initval]:", "I just can't judge", false, get_curtoken().get_line_number(), LOG_PARSER);
     if (get_curtoken().get_type() == Token::STRCON) {
         auto stringconst = parse_stringconst();
         return std::make_unique<InitVal>(std::in_place_type<StringConst>,std::move(*stringconst));
@@ -249,12 +258,14 @@ std::unique_ptr<InitVal> Parser::parse_initval() {
 std::unique_ptr<FuncDef> Parser::parse_funcdef() {
     auto func_type = parse_functype();
     auto ident = parse_ident();
+    CompilerLogger::get_instance().log("[parse_funcdef]:", ident->ident->get_token(), false, ident->ident->get_line_number(), LOG_PARSER);
     std::unique_ptr<FuncFParams> func_fparams;
     std::unique_ptr<Block> block;
     next_token(); // 跳过 (
     if (get_curtoken().get_type() == Token::LBRACE) {
         func_fparams = nullptr;
         unget_token();
+        CompilerLogger::get_instance().log("[parse_funcdef]:", "j error: missing )", true, get_curtoken().get_line_number(), LOG_PARSER);
         ErrorList::report_error(get_curtoken().get_line_number(), 'j');
         next_token();
     } else if (get_curtoken().get_type() != Token::RPARENT) {
@@ -263,6 +274,7 @@ std::unique_ptr<FuncDef> Parser::parse_funcdef() {
             next_token();
         } else { // j error
             unget_token();
+            CompilerLogger::get_instance().log("[parse_funcdef]:", "j error: missing )", true, get_curtoken().get_line_number(), LOG_PARSER);
             ErrorList::report_error(get_curtoken().get_line_number(), 'j');
             next_token();
         }
@@ -293,6 +305,7 @@ std::unique_ptr<StringConst> Parser::parse_stringconst() {
 }
 
 std::unique_ptr<MainFunc> Parser::parse_mainfunc() {
+    // CompilerLogger::get_instance().log("[parse_mainfunc]:", "main", false, get_curtoken().get_line_number(), LOG_PARSER);
     next_token(); // 跳过int
     next_token(); // 跳过main
     next_token(); // 跳过(
@@ -300,6 +313,7 @@ std::unique_ptr<MainFunc> Parser::parse_mainfunc() {
         next_token();
     } else { // j error
         unget_token();
+        CompilerLogger::get_instance().log("[parse_mainfunc]:", "j error: missing )", true, get_curtoken().get_line_number(), LOG_PARSER);
         ErrorList::report_error(get_curtoken().get_line_number(), 'j');
         next_token();
     }
@@ -319,6 +333,7 @@ std::unique_ptr<FuncFParams> Parser::parse_funcfparams() {
 std::unique_ptr<FuncFParam> Parser::parse_funcfparam() {
     auto btype = parse_btype();
     auto ident = parse_ident();
+    // CompilerLogger::get_instance().log("[parse_funcfparam]:", ident->ident->get_token(), false, ident->ident->get_line_number(), LOG_PARSER);
     bool is_array = false;
     if (get_curtoken().get_type() == Token::LBRACK) {
         next_token();
@@ -326,6 +341,7 @@ std::unique_ptr<FuncFParam> Parser::parse_funcfparam() {
             next_token();
         } else { // k error
             unget_token();
+            CompilerLogger::get_instance().log("[parse_funcfparam]:", "k error: missing ]", true, get_curtoken().get_line_number(), LOG_PARSER);
             ErrorList::report_error(get_curtoken().get_line_number(), 'k');
             next_token();
         }
@@ -335,6 +351,7 @@ std::unique_ptr<FuncFParam> Parser::parse_funcfparam() {
 }
 
 std::unique_ptr<Block> Parser::parse_block() {
+    // CompilerLogger::get_instance().log("[parse_block]:", "{", false, get_curtoken().get_line_number(), LOG_PARSER);
     next_token(); // 跳过{
     auto block_items = std::vector<std::unique_ptr<BlockItem>>();
     while (get_curtoken().get_type() != Token::RBRACE) {
@@ -390,6 +407,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
             next_token();
         } else { // i error
             unget_token();
+            CompilerLogger::get_instance().log("[parse_stmt/exp]:", "i error: missing ;", true, get_curtoken().get_line_number(), LOG_PARSER);
             ErrorList::report_error(get_curtoken().get_line_number(), 'i');
             next_token();
         }
@@ -408,6 +426,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                 next_token(); // 读到LVal的起始token
             } else { // i error
                 unget_token();
+                CompilerLogger::get_instance().log("[parse_stmt/ident()]:", "i error: missing ;", true, get_curtoken().get_line_number(), LOG_PARSER);
                 ErrorList::report_error(get_curtoken().get_line_number(), 'i');
                 next_token();
             }
@@ -428,6 +447,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                         next_token();
                     } else { // j error
                         unget_token();
+                        CompilerLogger::get_instance().log("[parse_stmt/getint/getchar]:", "j error: missing )", true, get_curtoken().get_line_number(), LOG_PARSER);
                         ErrorList::report_error(get_curtoken().get_line_number(), 'j');
                         next_token();
                     }
@@ -435,6 +455,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                         next_token();
                     } else { // i error
                         unget_token();
+                        CompilerLogger::get_instance().log("[parse_stmt/getint/getchar]:", "i error: missing ;", true, get_curtoken().get_line_number(), LOG_PARSER);
                         ErrorList::report_error(get_curtoken().get_line_number(), 'i');
                         next_token();
                     }
@@ -449,6 +470,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                         next_token();
                     } else { // i error
                         unget_token();
+                        CompilerLogger::get_instance().log("[parse_stmt/assign]:", "i error: missing ;", true, get_curtoken().get_line_number(), LOG_PARSER);
                         ErrorList::report_error(get_curtoken().get_line_number(), 'i');
                         next_token();
                     }
@@ -461,6 +483,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
                     next_token();
                 } else { // i error
                     unget_token();
+                    CompilerLogger::get_instance().log("[parse_stmt/exp]:", "i error: missing ;", true, get_curtoken().get_line_number(), LOG_PARSER);
                     ErrorList::report_error(get_curtoken().get_line_number(), 'i');
                     next_token();
                 }
@@ -483,6 +506,7 @@ std::unique_ptr<Stmt> Parser::parse_stmt() {
 //! 为什么不能接着用backbuf? 因为我们要回复的其实就是LVal的tokens, 需要有一个明确的起始点
 
 std::unique_ptr<IfStmt> Parser::parse_ifstmt() {
+    // CompilerLogger::get_instance().log("[parse_ifstmt]:", "if", false, get_curtoken().get_line_number(), LOG_PARSER);
     next_token(); // 跳过if
     next_token(); // 跳过(
     auto condition = parse_cond();
@@ -490,6 +514,7 @@ std::unique_ptr<IfStmt> Parser::parse_ifstmt() {
         next_token();
     } else { // j error
         unget_token();
+        CompilerLogger::get_instance().log("[parse_ifstmt]:", "j error: missing )", true, get_curtoken().get_line_number(), LOG_PARSER);
         ErrorList::report_error(get_curtoken().get_line_number(), 'j');
         next_token();
     }
@@ -505,10 +530,12 @@ std::unique_ptr<IfStmt> Parser::parse_ifstmt() {
 }
 
 std::unique_ptr<Cond> Parser::parse_cond() {
+    // CompilerLogger::get_instance().log("[parse_cond]:", "I just can't judge", false, get_curtoken().get_line_number(), LOG_PARSER);
     return std::make_unique<Cond>(parse_lorexp());
 }
 
 std::unique_ptr<ForStmt> Parser::parse_forstmt() {
+    // CompilerLogger::get_instance().log("[parse_forstmt]:", "for", false, get_curtoken().get_line_number(), LOG_PARSER);
     next_token(); // 跳过for
     next_token(); // 跳过(
     std::unique_ptr<ForAssignStmt> assign1;
@@ -541,12 +568,14 @@ std::unique_ptr<ForStmt> Parser::parse_forstmt() {
 }
 
 std::unique_ptr<BreakStmt> Parser::parse_breakstmt() {
+    CompilerLogger::get_instance().log("[parse_breakstmt]:", "break", false, get_curtoken().get_line_number(), LOG_PARSER);
     Token break_token = get_curtoken();
     next_token(); // 跳过break
     if (get_curtoken().get_type() == Token::SEMICN) {
         next_token();
     } else { // i error
         unget_token();
+        CompilerLogger::get_instance().log("[parse_breakstmt]:", "i error: missing ;", true, get_curtoken().get_line_number(), LOG_PARSER);
         ErrorList::report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
@@ -554,12 +583,14 @@ std::unique_ptr<BreakStmt> Parser::parse_breakstmt() {
 }
 
 std::unique_ptr<ContinueStmt> Parser::parse_continuestmt() {
+    // CompilerLogger::get_instance().log("[parse_continuestmt]:", "continue", false, get_curtoken().get_line_number(), LOG_PARSER);
     Token continue_token = get_curtoken();
     next_token(); // 跳过continue
     if (get_curtoken().get_type() == Token::SEMICN) {
         next_token();
     } else { // i error
         unget_token();
+        CompilerLogger::get_instance().log("[parse_continuestmt]:", "i error: missing ;", true, get_curtoken().get_line_number(), LOG_PARSER);
         ErrorList::report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
@@ -567,6 +598,7 @@ std::unique_ptr<ContinueStmt> Parser::parse_continuestmt() {
 }
 
 std::unique_ptr<ReturnStmt> Parser::parse_returnstmt() {
+    // CompilerLogger::get_instance().log("[parse_returnstmt]:", "return", false, get_curtoken().get_line_number(), LOG_PARSER);
     auto return_token = get_curtoken();
     std::unique_ptr<Exp> return_exp;
     next_token(); // 跳过return
@@ -586,6 +618,7 @@ std::unique_ptr<ReturnStmt> Parser::parse_returnstmt() {
         next_token();
     } else { // i error
         unget_token();
+        CompilerLogger::get_instance().log("[parse_returnstmt]:", "i error: missing ;", true, get_curtoken().get_line_number(), LOG_PARSER);
         ErrorList::report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
@@ -593,6 +626,7 @@ std::unique_ptr<ReturnStmt> Parser::parse_returnstmt() {
 }
 
 std::unique_ptr<PrintfStmt> Parser::parse_printfstmt() {
+    // CompilerLogger::get_instance().log("[parse_printfstmt]:", "printf", false, get_curtoken().get_line_number(), LOG_PARSER);
     next_token(); // 跳过printf
     next_token(); // 跳过(
     auto str = parse_stringconst();
@@ -605,6 +639,7 @@ std::unique_ptr<PrintfStmt> Parser::parse_printfstmt() {
         next_token();
     } else { // j error
         unget_token();
+        CompilerLogger::get_instance().log("[parse_printfstmt]:", "j error: missing )", true, get_curtoken().get_line_number(), LOG_PARSER);
         ErrorList::report_error(get_curtoken().get_line_number(), 'j');
         next_token();
     }
@@ -612,6 +647,7 @@ std::unique_ptr<PrintfStmt> Parser::parse_printfstmt() {
         next_token();
     } else { // i error
         unget_token();
+        CompilerLogger::get_instance().log("[parse_printfstmt]:", "i error: missing ;", true, get_curtoken().get_line_number(), LOG_PARSER);
         ErrorList::report_error(get_curtoken().get_line_number(), 'i');
         next_token();
     }
@@ -623,6 +659,7 @@ std::unique_ptr<Exp> Parser::parse_exp() {
 }
 
 std::unique_ptr<AssignStmt> Parser::parse_assignstmt() {
+    // CompilerLogger::get_instance().log("[parse_assignstmt]:", "I just can't judge", false, get_curtoken().get_line_number(), LOG_PARSER);
     auto lval = parse_lval();
     next_token(); // 跳过=
     auto exp = parse_exp();
@@ -630,6 +667,7 @@ std::unique_ptr<AssignStmt> Parser::parse_assignstmt() {
 }
 
 std::unique_ptr<ForAssignStmt> Parser::parse_forassignstmt() {
+    // CompilerLogger::get_instance().log("[parse_forassignstmt]:", "I just can't judge", false, get_curtoken().get_line_number(), LOG_PARSER);
     auto lval = parse_lval();
     next_token();
     auto exp = parse_exp();
@@ -638,6 +676,7 @@ std::unique_ptr<ForAssignStmt> Parser::parse_forassignstmt() {
 
 std::unique_ptr<LVal> Parser::parse_lval() {
     auto ident = parse_ident();
+    CompilerLogger::get_instance().log("[parse_lval]:", ident->ident->get_token(), false, ident->ident->get_line_number(), LOG_PARSER);
     std::unique_ptr<Exp> exp;
     if (get_curtoken().get_type() == Token::LBRACK) {
         next_token();
@@ -646,6 +685,7 @@ std::unique_ptr<LVal> Parser::parse_lval() {
             next_token();
         } else { // k error
             unget_token();
+            CompilerLogger::get_instance().log("[parse_lval]:", "k error: missing ]", true, get_curtoken().get_line_number(), LOG_PARSER);
             ErrorList::report_error(get_curtoken().get_line_number(), 'k');
             next_token();
         }
@@ -656,18 +696,21 @@ std::unique_ptr<LVal> Parser::parse_lval() {
 }
 
 std::unique_ptr<Number> Parser::parse_number() {
+    CompilerLogger::get_instance().log("[parse_number]:", get_curtoken().get_token(), false, get_curtoken().get_line_number(), LOG_PARSER);
     auto res = std::make_unique<Number>(std::make_unique<Token>(get_curtoken()));
     next_token();
     return std::move(res);
 }
 
 std::unique_ptr<Character> Parser::parse_character() {
+    CompilerLogger::get_instance().log("[parse_character]:", get_curtoken().get_token(), false, get_curtoken().get_line_number(), LOG_PARSER);
     auto res = std::make_unique<Character>(std::make_unique<Token>(get_curtoken()));
     next_token();
     return std::move(res);
 }
 
 std::unique_ptr<PrimaryExp> Parser::parse_primaryexp() {
+    // CompilerLogger::get_instance().log("[parse_primaryexp]:", "I just can't judge", false, get_curtoken().get_line_number(), LOG_PARSER);
     if (get_curtoken().get_type() == Token::LPARENT) {
         next_token(); // 跳过(
         auto exp = parse_exp();
@@ -675,6 +718,7 @@ std::unique_ptr<PrimaryExp> Parser::parse_primaryexp() {
             next_token();
         } else { // j error
             unget_token();
+            CompilerLogger::get_instance().log("[parse_primaryexp]:", "j error: missing )", true, get_curtoken().get_line_number(), LOG_PARSER);
             ErrorList::report_error(get_curtoken().get_line_number(), 'j');
             next_token();
         }
@@ -692,12 +736,14 @@ std::unique_ptr<PrimaryExp> Parser::parse_primaryexp() {
 }
 
 std::unique_ptr<UnaryOp> Parser::parse_unaryop() {
+    CompilerLogger::get_instance().log("[parse_unaryop]:", get_curtoken().get_token(), false, get_curtoken().get_line_number(), LOG_PARSER);
     auto res = std::make_unique<UnaryOp>(std::make_unique<Token>(get_curtoken()));
     next_token();
     return std::move(res);
 }
 
 std::unique_ptr<UnaryExp> Parser::parse_unaryexp() {
+    // CompilerLogger::get_instance().log("[parse_unaryexp]:", "I just can't judge", false, get_curtoken().get_line_number(), LOG_PARSER);
     if (get_curtoken().get_type() == Token::PLUS ||
         get_curtoken().get_type() == Token::MINU ||
         get_curtoken().get_type() == Token::NOT) {
@@ -719,6 +765,7 @@ std::unique_ptr<UnaryExp> Parser::parse_unaryexp() {
 
 std::unique_ptr<UnaryExp> Parser::parse_callfunc() {
     auto ident = parse_ident();
+    CompilerLogger::get_instance().log("[parse_callfunc]:", ident->ident->get_token(), false, ident->ident->get_line_number(), LOG_PARSER);
     std::unique_ptr<FuncRParams> func_rparams;
     next_token(); // 跳过(
     if (get_curtoken().get_type() == Token::IDENFR ||
@@ -736,6 +783,7 @@ std::unique_ptr<UnaryExp> Parser::parse_callfunc() {
         next_token();
     } else { // j error
         unget_token();
+        CompilerLogger::get_instance().log("[parse_callfunc]:", "j error: missing )", true, get_curtoken().get_line_number(), LOG_PARSER);
         ErrorList::report_error(get_curtoken().get_line_number(), 'j');
         next_token();
     }
@@ -753,6 +801,7 @@ std::unique_ptr<FuncRParams> Parser::parse_funcrparams() {
 }
 
 std::unique_ptr<MulExp> Parser::parse_mulexp() {
+    // CompilerLogger::get_instance().log("[parse_mulexp]:", "I just can't judge", false, get_curtoken().get_line_number(), LOG_PARSER);
     std::unique_ptr<MulExp> mul_exp = std::make_unique<MulExp>(parse_unaryexp());
     while (get_curtoken().get_type() == Token::MULT ||
             get_curtoken().get_type() == Token::DIV ||
@@ -766,6 +815,7 @@ std::unique_ptr<MulExp> Parser::parse_mulexp() {
 }
 
 std::unique_ptr<AddExp> Parser::parse_addexp() {
+    // CompilerLogger::get_instance().log("[parse_addexp]:", "I just can't judge", false, get_curtoken().get_line_number(), LOG_PARSER);
     auto add_exp = std::make_unique<AddExp>(parse_mulexp());
     while (get_curtoken().get_type() == Token::PLUS ||
             get_curtoken().get_type() == Token::MINU ) {
@@ -778,6 +828,7 @@ std::unique_ptr<AddExp> Parser::parse_addexp() {
 }
 
 std::unique_ptr<RelExp> Parser::parse_relexp() {
+    // CompilerLogger::get_instance().log("[parse_relexp]:", "I just can't judge", false, get_curtoken().get_line_number(), LOG_PARSER);
     auto rel_exp = std::make_unique<RelExp>(parse_addexp());
     while (get_curtoken().get_type() == Token::GRE ||
             get_curtoken().get_type() == Token::GEQ ||
@@ -792,6 +843,7 @@ std::unique_ptr<RelExp> Parser::parse_relexp() {
 }
 
 std::unique_ptr<EqExp> Parser::parse_eqexp() {
+    // CompilerLogger::get_instance().log("[parse_eqexp]:", "I just can't judge", false, get_curtoken().get_line_number(), LOG_PARSER);
     auto eq_exp = std::make_unique<EqExp>(parse_relexp());
     while (get_curtoken().get_type() == Token::EQL ||
             get_curtoken().get_type() == Token::NEQ ) {
@@ -804,6 +856,7 @@ std::unique_ptr<EqExp> Parser::parse_eqexp() {
 }
 
 std::unique_ptr<LAndExp> Parser::parse_landexp() {
+    // CompilerLogger::get_instance().log("[parse_landexp]:", "I just can't judge", false, get_curtoken().get_line_number(), LOG_PARSER);
     auto land_exp = std::make_unique<LAndExp>(parse_eqexp());
     while (get_curtoken().get_type() == Token::AND) {
         next_token();
@@ -814,6 +867,7 @@ std::unique_ptr<LAndExp> Parser::parse_landexp() {
 }
 
 std::unique_ptr<LOrExp> Parser::parse_lorexp() {
+    // CompilerLogger::get_instance().log("[parse_lorexp]:", "I just can't judge", false, get_curtoken().get_line_number(), LOG_PARSER);
     auto lor_exp = std::make_unique<LOrExp>(parse_landexp());
     while (get_curtoken().get_type() == Token::OR) {
         next_token();
