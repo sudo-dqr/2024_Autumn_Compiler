@@ -113,23 +113,35 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                 PointerType* pointer_type = (btype == Token::CHARTK) ? 
                                             new PointerType(&IR_CHAR) : new PointerType(&IR_INT);
                 for (int i = 0; i < const_exps_ptr->const_exps.size(); i++) {
+                    auto index = std::deque<Value *>{new IntConst(i)};
+                    index.push_front(new IntConst(0));
+                    auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type,
+                                                                      alloc_instr, index);
+                    cur_ir_basic_block->instrs.push_back(getelementptr_instr);
+                    ExpInfo exp_info = visit_constexp(*const_exps_ptr->const_exps[i]);
+                    if (btype == Token::CHARTK && exp_info.type == Token::INTTK) {
+                        exp_info.ir_value = new CharConst((char) exp_info.value);
+                        std::cout << "Local Const Array Def : Int Trunc to Char, Value : " << (char) exp_info.value
+                                  << std::endl;
+                    }
+                    auto store_instr = new StoreInstr(exp_info.ir_value, getelementptr_instr);
+                    cur_ir_basic_block->instrs.push_back(store_instr);
+                }
+                for (int i = const_exps_ptr->const_exps.size(); i < array_size; ++i) {
                     auto index = std::deque<Value*>{new IntConst(i)};
                     index.push_front(new IntConst(0));
                     auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
                     cur_ir_basic_block->instrs.push_back(getelementptr_instr);
-                    ExpInfo exp_info = visit_constexp(*const_exps_ptr->const_exps[i]);
-                    if (btype == Token::CHARTK && exp_info.type == Token::INTTK) {
-                        exp_info.ir_value = new CharConst((char)exp_info.value);
-                        std::cout << "Local Const Array Def : Int Trunc to Char, Value : " << (char)exp_info.value << std::endl;
-                    }
-                    auto store_instr = new StoreInstr(exp_info.ir_value, getelementptr_instr);
+                    auto store_instr = new StoreInstr(new CharConst('\0'), getelementptr_instr);
                     cur_ir_basic_block->instrs.push_back(store_instr);
                 }
             } else { //局部字符数组则也需要通过 alloca 指令分配内存空间，逐个元素初始化
                 auto string_const_ptr = std::get_if<StringConst>(&(*const_def.const_init_val));
                 auto string_const = string_const_ptr->str->get_token().substr(1, string_const_ptr->str->get_token().length() - 2);
                 auto pointer_type = new PointerType(&IR_CHAR);
-                for (int i = 0; i < string_const.length(); i++) { 
+                // char_cnt部分修改
+                int char_cnt = 0;
+                for (int i = 0; i < string_const.length(); i++) {
                     auto index = std::deque<Value*>{new IntConst(i)};
                     index.push_front(new IntConst(0));
                     auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
@@ -142,10 +154,11 @@ void Visitor::visit_const_def(const ConstDef &const_def, Token::TokenType btype)
                     } else {
                         store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
                     }
+                    char_cnt++;
                     cur_ir_basic_block->instrs.push_back(store_instr);
                 }
                 // \0
-                for (int i = string_const.length(); i < array_size; i++) {
+                for (int i = char_cnt; i < array_size; i++) {
                     auto index = std::deque<Value*>{new IntConst(i)};
                     index.push_front(new IntConst(0));
                     auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
@@ -298,6 +311,7 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                     auto string_const_ptr = std::get_if<StringConst>(&(*var_def.init_val));
                     auto string_const = string_const_ptr->str->get_token().substr(1, string_const_ptr->str->get_token().length() - 2);
                     auto pointer_type = new PointerType(&IR_CHAR);
+                    int char_cnt = 0;
                     for (int i = 0; i < string_const.length(); i++) {
                         auto index = std::deque<Value*>{new IntConst(i)};
                         index.push_front(new IntConst(0));
@@ -311,10 +325,11 @@ void Visitor::visit_var_def(const VarDef &var_def, Token::TokenType btype) {
                         } else {
                             store_instr = new StoreInstr(new CharConst(string_const[i]), getelementptr_instr);
                         }
+                        char_cnt++;
                         cur_ir_basic_block->instrs.push_back(store_instr);
                     }
                     // \0
-                    for (int i = string_const.length(); i < array_size; i++) {
+                    for (int i = char_cnt; i < array_size; i++) {
                         auto index = std::deque<Value*>{new IntConst(i)};
                         index.push_front(new IntConst(0));
                         auto getelementptr_instr = new GetelementptrInstr(Utils::get_next_counter(), pointer_type, alloc_instr, index);
@@ -529,9 +544,10 @@ void Visitor::visit_assign_stmt(const AssignStmt &assign_stmt) {
                 exp_info.ir_value = trunc_instr;
                 std::cout << "Assign Stmt Trunc Int to Char" << std::endl;
             } else if (exp_info.type == Token::CHARTK && deref_type == &IR_INT) {
-                auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
-                cur_ir_basic_block->instrs.push_back(zext_instr);
-                exp_info.ir_value = zext_instr;
+                // auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
+                // cur_ir_basic_block->instrs.push_back(zext_instr);
+                // exp_info.ir_value = zext_instr;
+                exp_info.ir_value = new IntConst(exp_info.value);
                 std::cout << "Assign Stmt Zext Char to Int" << std::endl;
             } else if (exp_info.ir_value->type == &IR_CHAR && deref_type == &IR_INT) {
                 auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
@@ -566,9 +582,10 @@ void Visitor::visit_for_assign_stmt(const ForAssignStmt &for_assign_stmt) {
                 exp_info.ir_value = trunc_instr;
                 std::cout << "For Assign Stmt Trunc Int to Char" << std::endl;
             } else if (exp_info.type == Token::CHARTK && deref_type == &IR_INT) {
-                auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
-                cur_ir_basic_block->instrs.push_back(zext_instr);
-                exp_info.ir_value = zext_instr;
+                // auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
+                // cur_ir_basic_block->instrs.push_back(zext_instr);
+                // exp_info.ir_value = zext_instr;
+                exp_info.ir_value = new IntConst(exp_info.value);
                 std::cout << "For Assign Stmt Zext Char to Int" << std::endl;
             } else if (exp_info.ir_value->type == &IR_CHAR && deref_type == &IR_INT) {
                 auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
@@ -705,9 +722,10 @@ void Visitor::visit_return_stmt(const ReturnStmt &return_stmt) {
                 exp_info.ir_value = trunc_instr;
                 std::cout << "Return Stmt : Int Trunc to Char" << std::endl;
             } else if (exp_info.type == Token::CHARTK && func_type->return_type == &IR_INT) {
-                auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
-                cur_ir_basic_block->instrs.push_back(zext_instr);
-                exp_info.ir_value = zext_instr;
+                // auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
+                // cur_ir_basic_block->instrs.push_back(zext_instr);
+                // exp_info.ir_value = zext_instr;
+                exp_info.ir_value = new IntConst(exp_info.value);
                 std::cout << "Return Stmt : Char Zext to Int" << std::endl;
             } else if (exp_info.ir_value->type == &IR_CHAR && func_type->return_type == &IR_INT) {
                 auto zext_instr = new ZextInstr(Utils::get_next_counter(), exp_info.ir_value, &IR_INT);
